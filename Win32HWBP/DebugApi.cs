@@ -156,8 +156,8 @@ namespace Win32HWBP
     public struct DEBUG_EVENT
     {
         public DebugEventType dwDebugEventCode;
-        public uint dwProcessId;
-        public uint dwThreadId;
+        public int dwProcessId;
+        public int dwThreadId;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 86, ArraySubType = UnmanagedType.U1)]
         byte[] debugInfo;
@@ -274,6 +274,9 @@ namespace Win32HWBP
            IntPtr Null1,
            IntPtr Null2);
 
+        [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+        static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DebugActiveProcess(int dwProcessId);
@@ -287,7 +290,7 @@ namespace Win32HWBP
         public static extern bool DebugSetProcessKillOnExit(bool KillOnExit);
 
         [DllImport("kernel32.dll")]
-        public static extern bool ContinueDebugEvent(uint dwProcessId, uint dwThreadId, uint dwContinueStatus);
+        public static extern bool ContinueDebugEvent(int dwProcessId, int dwThreadId, uint dwContinueStatus);
 
         public static bool SetDebugPrivileges()
         {
@@ -301,9 +304,7 @@ namespace Win32HWBP
                 return false;
             }
             else
-            {
                 Console.WriteLine("OpenProcessToken() successfully");
-            }
 
             if (!LookupPrivilegeValue(null, SE_DEBUG_NAME, out luidSEDebugNameValue))
             {
@@ -312,16 +313,14 @@ namespace Win32HWBP
                 return false;
             }
             else
-            {
                 Console.WriteLine("LookupPrivilegeValue() successfully");
-            }
 
             tkpPrivileges.PrivilegeCount = 1;
             tkpPrivileges.Luid = luidSEDebugNameValue;
             tkpPrivileges.Attributes = WinApi.PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
 
             if (!AdjustTokenPrivileges(hToken, false, ref tkpPrivileges, 0, IntPtr.Zero, IntPtr.Zero))
-                Console.WriteLine("LookupPrivilegeValue() failed, error = {0} .SeDebugPrivilege is not available", Marshal.GetLastWin32Error());
+                Console.WriteLine("LookupPrivilegeValue() failed, error = {0}. SeDebugPrivilege is not available", Marshal.GetLastWin32Error());
             else
                 Console.WriteLine("SeDebugPrivilege is now available");
 

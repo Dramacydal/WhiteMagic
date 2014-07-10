@@ -99,7 +99,7 @@ namespace Win32HWBP
 
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle,
-           uint dwThreadId);
+           int dwThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int SuspendThread(IntPtr hThread);

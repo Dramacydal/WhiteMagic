@@ -35,7 +35,7 @@ namespace Win32HWBP
             }
         }
 
-        public void Set(uint threadId)
+        public void Set(int threadId)
         {
             // make sure this breakpoint isn't already set
             if (m_index != -1)
@@ -126,12 +126,7 @@ namespace Win32HWBP
             m_index = -1;
         }
 
-        public bool OnEvent(ref DEBUG_EVENT DebugEvent/*, ref ProcessDebugger pd*/)
-        {
-            return false;
-        }
-
-        public virtual bool HandleException(ref CONTEXT ctx/*, ref ProcessDebugger pd*/) { return false; }
+        public virtual bool HandleException(ref CONTEXT ctx, ProcessDebugger pd) { return false; }
 
         public void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
         {
@@ -149,12 +144,13 @@ namespace Win32HWBP
 
         public int Index { get { return m_index; } }
         public uint Address { get { return (uint)address; } }
+        public int ThreadId { get { return threadId; } }
 
         protected int m_index = -1;
         protected int address;
 
         protected readonly uint len;
         protected readonly Condition condition;
-        protected uint threadId = 0;
+        protected int threadId = 0;
     }
 }
