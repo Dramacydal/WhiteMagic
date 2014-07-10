@@ -26,6 +26,7 @@ namespace Win32HWBP
         protected BreakPointContainer breakPoints = new BreakPointContainer();
         protected BlackMagic bm;
         protected Process process;
+        protected Thread debugThread;
 
         public int ProcessId { get { return processId; } }
         public int ThreadId { get { return threadId; } }
@@ -220,13 +221,28 @@ namespace Win32HWBP
             Detach();
         }
 
-        public bool WaitForComeUp(uint delay)
+        public static Thread Run(ref ProcessDebugger pd)
+        {
+            Thread th = new Thread(new ParameterizedThreadStart(RunnerThread));
+            th.Start(pd);
+            return th;
+        }
+
+        public bool WaitForComeUp(int delay)
         {
             if (isDebugging)
                 return true;
 
-            Console.WriteLine("Waiting for thread to come up...");
+            Thread.Sleep(delay);
             return true;
+        }
+
+        public static void RunnerThread(object pd)
+        {
+            var _pd = (ProcessDebugger)pd;
+            _pd.FindAndAttach();
+            _pd.StartListener();
+            _pd.Detach();
         }
     }
 }

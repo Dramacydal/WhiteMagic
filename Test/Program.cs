@@ -50,32 +50,46 @@ namespace Test
                 return;
             }
 
-            var processes = Process.GetProcessesByName("program");
-            if (processes.Length == 0)
+            try
             {
-                Console.WriteLine("Could not get process");
-                return;
-            }
-            else
-                Console.WriteLine("Process found");
+                var processes = Process.GetProcessesByName("program");
+                if (processes.Length == 0)
+                {
+                    Console.WriteLine("Could not get process");
+                    return;
+                }
+                else
+                    Console.WriteLine("Process found");
 
-            var process = processes.First();
-            Console.WriteLine("Process Id: {0} Handle: {1} Threads: {2}", process.Id, process.Handle, process.Threads.Count);
-            if (process.Threads.Count == 0)
+                var process = processes.First();
+                Console.WriteLine("Process Id: {0} Handle: {1} Threads: {2}", process.Id, process.Handle, process.Threads.Count);
+                if (process.Threads.Count == 0)
+                {
+                    Console.WriteLine("WTF? No threads in process");
+                    return;
+                }
+
+                pd = new ProcessDebugger(process.Id);
+                Thread th = ProcessDebugger.Run(ref pd);
+                if (!pd.WaitForComeUp(500))
+                {
+                    Console.WriteLine("Failed to start thread");
+                    return;
+                }
+
+                var bp = new IncBreakPoint(0x4012B0 - 0x400000, 1, HardwareBreakPoint.Condition.Code);
+                pd.AddBreakPoint("program.exe", bp);
+
+                th.Join();
+            }
+            catch (BreakPointException e)
             {
-                Console.WriteLine("WTF? No threads in process");
-                return;
+                Console.WriteLine("Breakpoint Exception: \"{0}\"", e.Message);
             }
-
-            pd = new ProcessDebugger(process.Id);
-            pd.FindAndAttach();
-
-            var bp = new IncBreakPoint(0x4012B0 - 0x400000, 1, HardwareBreakPoint.Condition.Code);
-            pd.AddBreakPoint("program.exe", bp);
-
-            pd.StartListener();
-
-            pd.Detach();
+            catch (DebuggerException e)
+            {
+                Console.WriteLine("Debugger Exception: \"{0}\"", e.Message);
+            }
         }
     }
 }
