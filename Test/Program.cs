@@ -69,6 +69,9 @@ namespace Test
                     return;
                 }
 
+                foreach (ProcessModule module in process.Modules)
+                    Console.WriteLine("{0} - 0x{1:X}", module.ModuleName, (uint)module.BaseAddress);
+
                 pd = new ProcessDebugger(process.Id);
                 Thread th = ProcessDebugger.Run(ref pd);
                 if (!pd.WaitForComeUp(500))
@@ -79,6 +82,8 @@ namespace Test
 
                 var bp = new IncBreakPoint(0x4012B0 - 0x400000, 1, HardwareBreakPoint.Condition.Code);
                 pd.AddBreakPoint("program.exe", bp);
+
+                //pd.LoadModule("msscp.dll");
 
                 th.Join();
             }

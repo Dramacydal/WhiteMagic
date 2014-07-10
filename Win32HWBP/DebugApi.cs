@@ -275,7 +275,10 @@ namespace Win32HWBP
            IntPtr Null2);
 
         [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        public static extern uint GetProcAddress(uint hModule, string procName);
+
+        [DllImport("kernel32", SetLastError = true, EntryPoint = "GetProcAddress")]
+        public static extern uint GetProcAddressOrdinal(uint hModule, uint procName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

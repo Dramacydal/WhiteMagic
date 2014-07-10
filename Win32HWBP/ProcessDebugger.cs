@@ -61,10 +61,29 @@ namespace Win32HWBP
         public uint GetModuleAddress(string moduleName)
         {
             foreach (ProcessModule module in process.Modules)
-                if (module.FileName.Split('\\').Last() == moduleName)
+                if (module.ModuleName == moduleName)
                     return (uint)module.BaseAddress;
 
             return 0;
+        }
+
+        public void LoadModule(string name)
+        {
+            uint funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
+            Console.WriteLine("{0:X}", funcAddress);
+
+            var addr = bm.AllocateMemory(1024);
+            var argaddr = bm.AllocateMemory(1024);
+            bm.WriteASCIIString(argaddr, name);
+
+            bm.Asm.Clear();
+            bm.Asm.AddLine("push {0}", argaddr);
+            bm.Asm.AddLine("call {0}", funcAddress);
+            bm.Asm.AddLine("retn");
+            bm.Asm.InjectAndExecute(addr);
+
+            bm.FreeMemory(argaddr);
+            bm.FreeMemory(addr);
         }
 
         public void AddBreakPoint(string moduleName, HardwareBreakPoint bp)
@@ -77,7 +96,7 @@ namespace Win32HWBP
             if (offs > 0)
                 bp.Shift(moduleBase);
             else
-                throw new DebuggerException("Breakpoints with funcion ordinal values are not allowed");
+                bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
 
             try
             {
