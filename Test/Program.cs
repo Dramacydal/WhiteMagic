@@ -44,7 +44,11 @@ namespace Test
         {
             Console.CancelKeyPress += new ConsoleCancelEventHandler(myHandler);
 
-            WinApi.SetDebugPrivileges();
+            if (!WinApi.SetDebugPrivileges())
+            {
+                Console.WriteLine("Failed to set debug privileges");
+                return;
+            }
 
             var processes = Process.GetProcessesByName("program");
             if (processes.Length == 0)

@@ -299,30 +299,23 @@ namespace Win32HWBP
             TOKEN_PRIVILEGES tkpPrivileges;
 
             if (!OpenProcessToken(GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out hToken))
-            {
-                Console.WriteLine("OpenProcessToken() failed, error = {0} . SeDebugPrivilege is not available", Marshal.GetLastWin32Error());
                 return false;
-            }
-            else
-                Console.WriteLine("OpenProcessToken() successfully");
 
             if (!LookupPrivilegeValue(null, SE_DEBUG_NAME, out luidSEDebugNameValue))
             {
-                Console.WriteLine("LookupPrivilegeValue() failed, error = {0} .SeDebugPrivilege is not available", Marshal.GetLastWin32Error());
                 WinApi.CloseHandle(hToken);
                 return false;
             }
-            else
-                Console.WriteLine("LookupPrivilegeValue() successfully");
 
             tkpPrivileges.PrivilegeCount = 1;
             tkpPrivileges.Luid = luidSEDebugNameValue;
             tkpPrivileges.Attributes = WinApi.PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
 
             if (!AdjustTokenPrivileges(hToken, false, ref tkpPrivileges, 0, IntPtr.Zero, IntPtr.Zero))
-                Console.WriteLine("LookupPrivilegeValue() failed, error = {0}. SeDebugPrivilege is not available", Marshal.GetLastWin32Error());
-            else
-                Console.WriteLine("SeDebugPrivilege is now available");
+            {
+                CloseHandle(hToken);
+                return false;
+            }
 
             CloseHandle(hToken);
             return true;
