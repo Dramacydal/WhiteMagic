@@ -295,6 +295,10 @@ namespace Win32HWBP
         [DllImport("kernel32.dll")]
         public static extern bool ContinueDebugEvent(int dwProcessId, int dwThreadId, uint dwContinueStatus);
 
+        [DllImport("Kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, [MarshalAs(UnmanagedType.Bool)]ref bool isDebuggerPresent);
+
         public static bool SetDebugPrivileges()
         {
             IntPtr hToken;

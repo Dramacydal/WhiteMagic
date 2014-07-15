@@ -48,6 +48,13 @@ namespace Win32HWBP
 
             threadId = process.Threads[0].Id;
 
+            bool res = false;
+            if (!WinApi.CheckRemoteDebuggerPresent(process.Handle, ref res))
+                throw new DebuggerException("Failed to check if remote process is already being debugged");
+
+            if (res)
+                throw new DebuggerException("Process is already being debugged by another debugger");
+
             if (!WinApi.DebugActiveProcess(process.Id))
                 throw new DebuggerException("Failed to start debugging");
 
@@ -58,16 +65,16 @@ namespace Win32HWBP
             isDebugging = true;
         }
 
-        public uint GetModuleAddress(string moduleName)
+        protected uint GetModuleAddress(string moduleName)
         {
             foreach (ProcessModule module in process.Modules)
-                if (module.ModuleName == moduleName)
+                if (module.ModuleName.ToLower() == moduleName.ToLower())
                     return (uint)module.BaseAddress;
 
             return 0;
         }
 
-        public void LoadModule(string name)
+        protected void LoadModule(string name)
         {
             uint funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
             Console.WriteLine("{0:X}", funcAddress);
@@ -82,8 +89,8 @@ namespace Win32HWBP
             bm.Asm.AddLine("retn");
             bm.Asm.InjectAndExecute(addr);
 
-            bm.FreeMemory(argaddr);
             bm.FreeMemory(addr);
+            bm.FreeMemory(argaddr);
         }
 
         public void AddBreakPoint(string moduleName, HardwareBreakPoint bp)
@@ -151,7 +158,7 @@ namespace Win32HWBP
             isDebugging = false;
         }
 
-        public void Detach()
+        protected void Detach()
         {
             if (isDetached)
                 return;
@@ -256,7 +263,7 @@ namespace Win32HWBP
             return true;
         }
 
-        public static void RunnerThread(object pd)
+        protected static void RunnerThread(object pd)
         {
             var _pd = (ProcessDebugger)pd;
             _pd.FindAndAttach();
