@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
-namespace Win32HWBP
+namespace WhiteMagic
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct LUID

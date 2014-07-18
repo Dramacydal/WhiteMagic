@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
-namespace Win32HWBP
+namespace WhiteMagic
 {
     [Flags]
     public enum ProcessAccess
@@ -108,6 +108,6 @@ namespace Win32HWBP
     public static partial class WinApi
     {
         [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(ProcessAccess dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+        public static extern IntPtr OpenProcess(ProcessAccess dwDesiredAccess, bool bInheritHandle, int dwProcessId);
     }
 }

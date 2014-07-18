@@ -7,8 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Magic;
 
+using System.IO;
 
-namespace Win32HWBP
+namespace WhiteMagic
 {
     using BreakPointContainer = List<HardwareBreakPoint>;
 
@@ -19,16 +20,15 @@ namespace Win32HWBP
 
     public class ProcessDebugger
     {
-        protected int processId;
-        protected int threadId = 0;
+        protected Process process;
         protected bool isDebugging = false;
         protected bool isDetached = false;
         protected BreakPointContainer breakPoints = new BreakPointContainer();
         protected BlackMagic bm;
-        protected Process process;
         protected Thread debugThread;
+        protected int threadId = 0;
 
-        public int ProcessId { get { return processId; } }
+        public Process Process { get { return process; } }
         public int ThreadId { get { return threadId; } }
         public bool IsDebugging { get { return isDebugging; } }
         public bool IsDetached { get { return isDetached; } }
@@ -37,17 +37,16 @@ namespace Win32HWBP
 
         public ProcessDebugger(int processId)
         {
-            this.processId = processId;
-        }
-
-        public void FindAndAttach()
-        {
             process = Process.GetProcessById(processId);
             if (process == null)
                 throw new DebuggerException("Process " + processId + " not found");
 
             threadId = process.Threads[0].Id;
+            bm = new BlackMagic(process.Id);
+        }
 
+        public void Attach()
+        {
             bool res = false;
             if (!WinApi.CheckRemoteDebuggerPresent(process.Handle, ref res))
                 throw new DebuggerException("Failed to check if remote process is already being debugged");
@@ -61,23 +60,22 @@ namespace Win32HWBP
             if (!WinApi.DebugSetProcessKillOnExit(false))
                 throw new DebuggerException("Failed to set kill on exit");
 
-            bm = new BlackMagic(processId);
             isDebugging = true;
         }
 
-        protected uint GetModuleAddress(string moduleName)
+        public uint GetModuleAddress(string moduleName)
         {
+            process.Refresh();
             foreach (ProcessModule module in process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
                     return (uint)module.BaseAddress;
 
-            return 0;
+            return LoadModule(moduleName);
         }
 
-        protected void LoadModule(string name)
+        public uint LoadModule(string name)
         {
             uint funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
-            Console.WriteLine("{0:X}", funcAddress);
 
             var addr = bm.AllocateMemory(1024);
             var argaddr = bm.AllocateMemory(1024);
@@ -87,10 +85,12 @@ namespace Win32HWBP
             bm.Asm.AddLine("push {0}", argaddr);
             bm.Asm.AddLine("call {0}", funcAddress);
             bm.Asm.AddLine("retn");
-            bm.Asm.InjectAndExecute(addr);
+            var ret = bm.Asm.InjectAndExecute(addr);
 
             bm.FreeMemory(addr);
             bm.FreeMemory(argaddr);
+
+            return ret;
         }
 
         public void AddBreakPoint(string moduleName, HardwareBreakPoint bp)
@@ -107,7 +107,7 @@ namespace Win32HWBP
 
             try
             {
-                bp.Set(threadId);
+                bp.Set(ThreadId);
             }
             catch (BreakPointException e)
             {
@@ -166,8 +166,11 @@ namespace Win32HWBP
 
             RemoveBreakPoints();
 
-            if (!WinApi.DebugActiveProcessStop(processId))
+            if (!WinApi.DebugActiveProcessStop(process.Id))
                 throw new DebuggerException("Failed to stop process debugging");
+
+            bm.Close();
+            process.Dispose();
         }
 
         public void StartListener(uint waitInterval = 200)
@@ -182,7 +185,13 @@ namespace Win32HWBP
                     continue;
                 }
 
-                //Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
+                Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
+
+                System.IO.StreamWriter w = new StreamWriter(@"D:\git\Win32HWBP\Win32HWBP\bin\Debug\1.txt", true);
+
+                w.WriteLine(System.DateTime.Now + " " + DebugEvent.dwDebugEventCode);
+                w.Flush();
+                w.Close();
 
                 bool okEvent = false;
                 switch (DebugEvent.dwDebugEventCode)
@@ -190,7 +199,6 @@ namespace Win32HWBP
                     case DebugEventType.RIP_EVENT:
                     case DebugEventType.EXIT_PROCESS_DEBUG_EVENT:
                         //Console.WriteLine("Process has exited");
-                        isDetached = true;
                         isDebugging = false;
                         return;
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
@@ -235,8 +243,10 @@ namespace Win32HWBP
                     RemoveBreakPoints();
                     if (!WinApi.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                         throw new DebuggerException("Failed to continue debug event");
-                    if (!WinApi.DebugActiveProcessStop(processId))
+                    if (!WinApi.DebugActiveProcessStop(process.Id))
                         throw new DebuggerException("Failed to stop process debugging");
+                    bm.Close();
+                    process.Dispose();
                     return;
                 }
 
@@ -266,7 +276,7 @@ namespace Win32HWBP
         protected static void RunnerThread(object pd)
         {
             var _pd = (ProcessDebugger)pd;
-            _pd.FindAndAttach();
+            _pd.Attach();
             _pd.StartListener();
             _pd.Detach();
         }

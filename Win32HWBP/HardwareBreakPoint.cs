@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Win32HWBP
+namespace WhiteMagic
 {
     public class BreakPointException : Exception
     {

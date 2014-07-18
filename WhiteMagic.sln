@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Win32HWBP", "Win32HWBP\Win32HWBP.csproj", "{53C8BF13-5CA8-4A11-83AE-6A9E1A7D9CD4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiteMagic", "Win32HWBP\WhiteMagic.csproj", "{53C8BF13-5CA8-4A11-83AE-6A9E1A7D9CD4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{B75FD29B-DABC-42E7-9B4B-754070B43702}"
 EndProject
