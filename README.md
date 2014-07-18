@@ -1,4 +1,4 @@
-Win32HWBP
+WhiteMagic
 =========
 
-API to work with Win32 hardware breakpoints
+API to work with Win32 process memory and hardware breakpoints

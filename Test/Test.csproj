@@ -43,8 +43,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Win32HWBP">
-      <HintPath>..\Win32HWBP\bin\Debug\Win32HWBP.dll</HintPath>
+    <Reference Include="WhiteMagic">
+      <HintPath>..\WhiteMagic\bin\Debug\WhiteMagic.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -185,13 +185,7 @@ namespace WhiteMagic
                     continue;
                 }
 
-                Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
-
-                System.IO.StreamWriter w = new StreamWriter(@"D:\git\Win32HWBP\Win32HWBP\bin\Debug\1.txt", true);
-
-                w.WriteLine(System.DateTime.Now + " " + DebugEvent.dwDebugEventCode);
-                w.Flush();
-                w.Close();
+                //Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
 
                 bool okEvent = false;
                 switch (DebugEvent.dwDebugEventCode)
@@ -202,7 +196,7 @@ namespace WhiteMagic
                         isDebugging = false;
                         return;
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
-                        Console.WriteLine("Exception Code: {0:X}", DebugEvent.Exception.ExceptionRecord.ExceptionCode);
+                        //Console.WriteLine("Exception Code: {0:X}", DebugEvent.Exception.ExceptionRecord.ExceptionCode);
                         if (DebugEvent.Exception.ExceptionRecord.ExceptionCode == (uint)ExceptonStatus.STATUS_SINGLE_STEP)
                         {
                             /*if (DebugEvent.dwThreadId != threadId)
