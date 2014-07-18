@@ -26,10 +26,6 @@ namespace WhiteMagic
             SetProcess(process);
         }
 
-        ~MemoryHandler()
-        {
-        }
-
         public void SetProcess(Process process)
         {
             this.process = process;
@@ -80,6 +76,7 @@ namespace WhiteMagic
             }
         }
 
+        #region Memory reading
         public byte[] ReadBytes(uint addr, int count)
         {
             var buf = new byte[count];
@@ -126,26 +123,17 @@ namespace WhiteMagic
 
         public string ReadCString(uint addr, int len = 0)
         {
-            if (len == 0)
-                return Encoding.ASCII.GetString(ReadNullTerminatedBytes(addr));
-
-            return Encoding.ASCII.GetString(ReadBytes(addr, len));
+            return Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
 
         public string ReadUTF8String(uint addr, int len = 0)
         {
-            if (len == 0)
-                return Encoding.UTF8.GetString(ReadNullTerminatedBytes(addr));
-
-            return Encoding.UTF8.GetString(ReadBytes(addr, len));
+            return Encoding.UTF8.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
 
         public string ReadUTF16String(uint addr, int len = 0)
         {
-            if (len == 0)
-                return Encoding.Unicode.GetString(ReadNullTerminatedBytes(addr));
-
-            return Encoding.Unicode.GetString(ReadBytes(addr, len));
+            return Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
 
         public string ReadUTF32String(uint addr, int len = 0)
@@ -169,6 +157,20 @@ namespace WhiteMagic
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(int)));
 
             return BitConverter.ToInt32(buf, 0);
+        }
+
+        public ushort ReadUShort(uint addr)
+        {
+            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(ushort)));
+
+            return BitConverter.ToUInt16(buf, 0);
+        }
+
+        public short ReadShort(uint addr)
+        {
+            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(short)));
+
+            return BitConverter.ToInt16(buf, 0);
         }
 
         public ulong ReadULong(uint addr)
@@ -198,6 +200,98 @@ namespace WhiteMagic
 
             return (sbyte)buf[0];
         }
+        #endregion
+        #endregion
+
+        #region Memory writing
+        public void WriteBytes(uint addr, byte[] bytes)
+        {
+            PageProtection oldProtect, oldProtect2;
+            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+                throw new MemoryException("Failed to set page protection before write");
+
+            int numBytes;
+            if (!WinApi.WriteProcessMemory(process.Handle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+                throw new MemoryException("Failed to write memory");
+
+            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
+                throw new MemoryException("Failed to set page protection after write");
+        }
+
+        public void Write<T>(uint addr, T value)
+        {
+            var size = Marshal.SizeOf(typeof(T));
+            var bytes = new byte[size];
+            var ptr = Marshal.AllocHGlobal(size);
+
+            Marshal.StructureToPtr(value, ptr, true);
+            Marshal.Copy(ptr, bytes, 0, size);
+            Marshal.FreeHGlobal(ptr);
+
+            WriteBytes(addr, bytes);
+        }
+
+        public void WriteCString(uint addr, string str)
+        {
+            WriteBytes(addr, Encoding.ASCII.GetBytes(str + "\0"));
+        }
+
+        public void WriteUTF8String(uint addr, string str)
+        {
+            WriteBytes(addr, Encoding.UTF8.GetBytes(str + "\0"));
+        }
+
+        public void WriteUTF16String(uint addr, string str)
+        {
+            WriteBytes(addr, Encoding.Unicode.GetBytes(str + "\0"));
+        }
+
+        public void WriteUTF32String(uint addr, string str)
+        {
+            WriteBytes(addr, Encoding.UTF32.GetBytes(str + "\0"));
+        }
+
+        #region Faster Write functions for basic types
+        public void WriteUInt(uint addr, uint value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteInt(uint addr, int value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteUShort(uint addr, ushort value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteShort(uint addr, short value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteULong(uint addr, ulong value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteLong(uint addr, long value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteByte(uint addr, byte value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteSByte(uint addr, sbyte value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+        #endregion
         #endregion
     }
 }

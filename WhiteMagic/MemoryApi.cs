@@ -36,5 +36,13 @@ namespace WhiteMagic
             byte[] buffer,
             int dwSize,
             out int lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool WriteProcessMemory(
+            IntPtr hProcess,
+            IntPtr lpBaseAddress,
+            byte[] lpBuffer,
+            int nSize,
+            out int lpNumberOfBytesWritten);
     }
 }
