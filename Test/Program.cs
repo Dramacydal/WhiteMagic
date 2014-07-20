@@ -45,7 +45,7 @@ namespace Test
         static void Main(string[] args)
         {
             //TestBreakPoints();
-            TestMemory();
+            //TestMemory();
         }
 
         [StructLayout(LayoutKind.Explicit)]

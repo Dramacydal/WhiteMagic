@@ -323,6 +323,7 @@ namespace WhiteMagic
         #endregion
         #endregion
 
+        #region Memory allocators
         public uint AllocateMemory(int size)
         {
             var addr = WinApi.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, PageProtection.PAGE_EXECUTE_READWRITE);
@@ -337,6 +338,42 @@ namespace WhiteMagic
             if (!WinApi.VirtualFreeEx(processHandle, (IntPtr)addr, 0, FreeType.Release))
                 throw new MemoryException("Failed to free memory in remote process");
         }
+
+        public uint AllocateCString(string str)
+        {
+            return AllocateBytes(Encoding.ASCII.GetBytes(str));
+        }
+
+        public uint AllocateUTF8String(string str)
+        {
+            return AllocateBytes(Encoding.UTF8.GetBytes(str));
+        }
+
+        public uint AllocateUTF16String(string str)
+        {
+            return AllocateBytes(Encoding.Unicode.GetBytes(str));
+        }
+
+        public uint AllocateUTF32String(string str)
+        {
+            return AllocateBytes(Encoding.UTF32.GetBytes(str));
+        }
+
+        public uint AllocateBytes(byte[] bytes)
+        {
+            var addr = AllocateMemory(bytes.Length);
+            WriteBytes(addr, bytes);
+            return addr;
+        }
+
+        public uint Allocate<T>(T obj)
+        {
+            var size = Marshal.SizeOf(typeof(T));
+            var addr = AllocateMemory(size);
+            Write<T>(addr, obj);
+            return addr;
+        }
+        #endregion
 
         public uint ExecuteRemoteCode(byte[] bytes)
         {
