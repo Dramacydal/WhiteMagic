@@ -198,45 +198,18 @@ namespace Test
 
             try
             {
-                var printMessage = 0x6FB25EB0;
-                var getPlayer = 0x613C0 + 0x6FAB0000;
+                uint printMessage = 0x6FB25EB0;
+                uint getPlayer = 0x613C0 + 0x6FAB0000;
+                uint getUnitX = 0x1210 + 0x6FAB0000;
 
-                //for (var i = 0; i < 50; ++i)
-                {
-                    var addr = m.AllocateMemory(1024);
-                    //Console.WriteLine("{0:X}", addr);
-                    m.WriteUTF16String(addr, "asdadsdadssadasd"/* + i.ToString()*/);
-                    //var str = m.ReadUTF16String(addr);
-                    //Console.WriteLine("{0} {1}", str, Encoding.UTF8.GetByteCount(str));
-                    //Console.WriteLine();
+                var pPlayer = m.Call(getPlayer, CallingConvention.StdCall);
+                var x = m.Call(getUnitX, CallingConvention.FastCall, pPlayer);
 
-                    var asm = new ManagedFasm();
-                    asm.Clear();
-                    asm.AddLine("push 7");
-                    asm.AddLine("push {0}", addr);
-                    asm.AddLine("mov eax, {0}", printMessage);
-                    asm.AddLine("call eax");
-                    asm.AddLine("retn");
-                    //asm.AddLine("mov eax, {0}", getPlayer);
-                    //asm.AddLine("call eax");
-                    //asm.AddLine("retn");
+                var addr = m.AllocateMemory(1024);
+                m.WriteUTF16String(addr, string.Format("{0}", x));
+                m.Call(printMessage, CallingConvention.StdCall, addr, 2);
 
-                    var bytes = asm.Assemble();
-                    foreach (var b in bytes)
-                        Console.Write("{0:X} ", b);
-                    Console.WriteLine();
-
-                    //m.WriteBytes(addr + 50, bytes);
-
-                    var exitCode = m.ExecuteRemoteCode(bytes);
-
-                    //Console.WriteLine("Exit code: {0}", exitCode);
-                    //var unit = m.Read<UnitAny>(exitCode);
-                    //Console.WriteLine(unit.dwAct);
-
-
-                    m.FreeMemory(addr);
-                }
+                m.FreeMemory(addr);
             }
             catch (Exception e)
             {

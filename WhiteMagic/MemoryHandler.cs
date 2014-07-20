@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fasm;
 
 namespace WhiteMagic
 {
@@ -13,13 +14,25 @@ namespace WhiteMagic
         public MemoryException(string message) : base(message) { }
     }
 
+    /*public enum CallingConvention
+    {
+        cdecl,
+        stdcall,
+        fastcall,
+        register,   // borland fastcall
+        thiscall,
+    }*/
+
     public class MemoryHandler
     {
         public Process Process { get { return process; } }
         public IntPtr ProcessHandle { get { return processHandle; } }
+        public ManagedFasm Asm { get { return asm; } }
 
         protected IntPtr processHandle;
         protected Process process;
+
+        protected ManagedFasm asm = new ManagedFasm();
 
         public MemoryHandler()
         {
@@ -351,6 +364,81 @@ namespace WhiteMagic
                 throw new MemoryException("Failed to obtain exit code");
 
             return exitCode;
+        }
+
+        public uint Call(uint addr, CallingConvention cv, params uint[] args)
+        {
+            asm.Clear();
+
+            switch (cv)
+            {
+                case CallingConvention.Cdecl:
+                {
+                    for (var i = args.Length - 1; i >= 0; --i)
+                        asm.AddLine("push {0}", args[i]);
+                    asm.AddLine("mov eax, {0}", addr);
+                    asm.AddLine("call eax");
+                    if (args.Length != 0)
+                        asm.AddLine("retn {0}", 4 * args.Length);
+                    else
+                        asm.AddLine("retn");
+                    break;
+                }
+                case CallingConvention.StdCall:
+                {
+                    for (var i = args.Length - 1; i >= 0; --i)
+                        asm.AddLine("push {0}", args[i]);
+                    asm.AddLine("mov eax, {0}", addr);
+                    asm.AddLine("call eax");
+                    asm.AddLine("retn");
+                    break;
+                }
+                case CallingConvention.FastCall:
+                {
+                    if (args.Length > 0)
+                        asm.AddLine("mov ecx, {0}", args[0]);
+                    if (args.Length > 1)
+                        asm.AddLine("mov edx, {0}", args[1]);
+                    for (var i = args.Length - 1; i >= 2; --i)
+                        asm.AddLine("push {0}", args[i]);
+                    asm.AddLine("mov eax, {0}", addr);
+                    asm.AddLine("call eax");
+                    asm.AddLine("retn");
+                    break;
+                }
+                /*case CallingConvention.register:
+                {
+                    if (args.Length > 0)
+                        asm.AddLine("mov eax, {0}", args[0]);
+                    if (args.Length > 1)
+                        asm.AddLine("mov edx, {0}", args[1]);
+                    if (args.Length > 2)
+                        asm.AddLine("mov ecx, {0}", args[2]);
+                    for (var i = 3; i < args.Length; ++i)
+                        asm.AddLine("push {0}", args[i]);
+                    asm.AddLine("mov ebx, {0}", addr);
+                    asm.AddLine("call ebx");
+                    asm.AddLine("retn");
+                    break;
+                }*/
+                case CallingConvention.ThisCall:
+                {
+                    if (args.Length > 0)
+                        asm.AddLine("mov ecx, {0}", args[0]);
+                    for (var i = args.Length - 1; i >= 1; --i)
+                        asm.AddLine("push {0}", args[i]);
+                    asm.AddLine("mov eax, {0}", addr);
+                    asm.AddLine("call eax");
+                    asm.AddLine("retn");
+                    break;
+                }
+                default:
+                {
+                    throw new MemoryException("Unhandled calling convention " + cv.ToString());
+                }
+            }
+
+            return ExecuteRemoteCode(asm.Assemble());
         }
     }
 }
