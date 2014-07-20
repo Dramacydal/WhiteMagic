@@ -92,6 +92,14 @@ namespace WhiteMagic
         THREAD_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF)
     }
 
+    public enum WaitResult : uint
+    {
+        WAIT_OBJECT_0 = 0x00000000,
+        WAIT_ABANDONED = 0x00000080,
+        WAIT_TIMEOUT = 0x00000102,
+        WAIT_FAILED = 0xFFFFFFFF,
+    }
+
     public static partial class WinApi
     {
         public static uint MAX_BREAKPOINTS = 4;
@@ -116,5 +124,16 @@ namespace WhiteMagic
         [DllImport("kernel32.dll", EntryPoint = "WaitForDebugEvent")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr CreateRemoteThread(IntPtr hProcess,
+            IntPtr lpThreadAttributes, uint dwStackSize, uint lpStartAddress,
+            IntPtr lpParameter, uint dwCreationFlags, out int lpThreadId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern WaitResult WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
     }
 }

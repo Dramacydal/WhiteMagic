@@ -23,6 +23,27 @@ namespace WhiteMagic
         PAGE_WRITECOMBINE = 0x00000400
     }
 
+    [Flags]
+    public enum AllocationType : uint
+    {
+        Commit = 0x1000,
+        Reserve = 0x2000,
+        Decommit = 0x4000,
+        Release = 0x8000,
+        Reset = 0x80000,
+        Physical = 0x400000,
+        TopDown = 0x100000,
+        WriteWatch = 0x200000,
+        LargePages = 0x20000000
+    }
+
+    [Flags]
+    public enum FreeType : uint
+    {
+        Decommit = 0x4000,
+        Release = 0x8000,
+    }
+
     public static partial class WinApi
     {
         [DllImport("kernel32.dll")]
@@ -44,5 +65,13 @@ namespace WhiteMagic
             byte[] lpBuffer,
             int nSize,
             out int lpNumberOfBytesWritten);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern uint VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
+           int dwSize, AllocationType flAllocationType, PageProtection flProtect);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
+           int dwSize, FreeType dwFreeType);
     }
 }

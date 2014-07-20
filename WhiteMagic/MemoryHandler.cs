@@ -16,10 +16,20 @@ namespace WhiteMagic
     public class MemoryHandler
     {
         public Process Process { get { return process; } }
+        public IntPtr ProcessHandle { get { return processHandle; } }
 
+        protected IntPtr processHandle;
         protected Process process;
 
-        public MemoryHandler() { }
+        public MemoryHandler()
+        {
+        }
+
+        ~MemoryHandler()
+        {
+            if (processHandle != IntPtr.Zero)
+                WinApi.CloseHandle(processHandle);
+        }
 
         public MemoryHandler(Process process)
         {
@@ -29,6 +39,10 @@ namespace WhiteMagic
         public void SetProcess(Process process)
         {
             this.process = process;
+            if (processHandle != IntPtr.Zero)
+                WinApi.CloseHandle(processHandle);
+
+            processHandle = WinApi.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
         }
 
         public bool IsValid()
@@ -43,6 +57,8 @@ namespace WhiteMagic
 
         public void SuspendAllThreads(int except = -1)
         {
+            process.Refresh();
+
             foreach (ProcessThread pT in process.Threads)
             {
                 if (except != -1 && pT.Id == except)
@@ -82,15 +98,15 @@ namespace WhiteMagic
             var buf = new byte[count];
 
             PageProtection oldProtect, oldProtect2;
-            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, count, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
-                throw new MemoryException("Failed to set page protection before read");
+            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, count, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+                throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
-            if (!WinApi.ReadProcessMemory(process.Handle, (IntPtr)addr, buf, count, out numBytes) || numBytes != count)
-                throw new MemoryException("Failed to read memory");
+            if (!WinApi.ReadProcessMemory(processHandle, (IntPtr)addr, buf, count, out numBytes) || numBytes != count)
+                throw new MemoryException("Failed to read memory in remote process");
 
-            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, count, oldProtect, out oldProtect2))
-                throw new MemoryException("Failed to set page protection after read");
+            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, count, oldProtect, out oldProtect2))
+                throw new MemoryException("Failed to set page protection after read in remote process");
 
             return buf;
         }
@@ -207,15 +223,15 @@ namespace WhiteMagic
         public void WriteBytes(uint addr, byte[] bytes)
         {
             PageProtection oldProtect, oldProtect2;
-            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
-                throw new MemoryException("Failed to set page protection before write");
+            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+                throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
-            if (!WinApi.WriteProcessMemory(process.Handle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
-                throw new MemoryException("Failed to write memory");
+            if (!WinApi.WriteProcessMemory(processHandle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+                throw new MemoryException("Failed to write memory in remote process");
 
-            if (!WinApi.VirtualProtectEx(process.Handle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
-                throw new MemoryException("Failed to set page protection after write");
+            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
+                throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
         public void Write<T>(uint addr, T value)
@@ -293,5 +309,48 @@ namespace WhiteMagic
         }
         #endregion
         #endregion
+
+        public uint AllocateMemory(int size)
+        {
+            var addr = WinApi.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, PageProtection.PAGE_EXECUTE_READWRITE);
+            if (addr == 0)
+                throw new MemoryException("Failed to allocate memory in remote process");
+
+            return addr;
+        }
+
+        public void FreeMemory(uint addr)
+        {
+            if (!WinApi.VirtualFreeEx(processHandle, (IntPtr)addr, 0, FreeType.Release))
+                throw new MemoryException("Failed to free memory in remote process");
+        }
+
+        public uint ExecuteRemoteCode(byte[] bytes)
+        {
+            var addr = AllocateMemory(bytes.Length);
+            WriteBytes(addr, bytes);
+
+            var exitCode = ExecuteRemoteCode(addr);
+            FreeMemory(addr);
+
+            return exitCode;
+        }
+
+        public uint ExecuteRemoteCode(uint addr)
+        {
+            int threadId;
+            var h = WinApi.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
+            if (h == IntPtr.Zero)
+                throw new MemoryException("Failed to create remote thread");
+
+            if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
+                throw new MemoryException("Failed to wait for remote thread");
+
+            uint exitCode;
+            if (!WinApi.GetExitCodeThread(h, out exitCode))
+                throw new MemoryException("Failed to obtain exit code");
+
+            return exitCode;
+        }
     }
 }

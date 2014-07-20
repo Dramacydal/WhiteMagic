@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Magic;
 using WhiteMagic;
+using Fasm;
 using CONTEXT = WhiteMagic.CONTEXT;
 
 namespace Test
@@ -197,9 +198,45 @@ namespace Test
 
             try
             {
-                var val = m.Read<uint>(0x6FAB0000 + 0x11D050);
-                var unit = m.Read<UnitAny>(val);
-                Console.WriteLine(unit.dwAct);
+                var printMessage = 0x6FB25EB0;
+                var getPlayer = 0x613C0 + 0x6FAB0000;
+
+                //for (var i = 0; i < 50; ++i)
+                {
+                    var addr = m.AllocateMemory(1024);
+                    //Console.WriteLine("{0:X}", addr);
+                    m.WriteUTF16String(addr, "asdadsdadssadasd"/* + i.ToString()*/);
+                    //var str = m.ReadUTF16String(addr);
+                    //Console.WriteLine("{0} {1}", str, Encoding.UTF8.GetByteCount(str));
+                    //Console.WriteLine();
+
+                    var asm = new ManagedFasm();
+                    asm.Clear();
+                    asm.AddLine("push 7");
+                    asm.AddLine("push {0}", addr);
+                    asm.AddLine("mov eax, {0}", printMessage);
+                    asm.AddLine("call eax");
+                    asm.AddLine("retn");
+                    //asm.AddLine("mov eax, {0}", getPlayer);
+                    //asm.AddLine("call eax");
+                    //asm.AddLine("retn");
+
+                    var bytes = asm.Assemble();
+                    foreach (var b in bytes)
+                        Console.Write("{0:X} ", b);
+                    Console.WriteLine();
+
+                    //m.WriteBytes(addr + 50, bytes);
+
+                    var exitCode = m.ExecuteRemoteCode(bytes);
+
+                    //Console.WriteLine("Exit code: {0}", exitCode);
+                    //var unit = m.Read<UnitAny>(exitCode);
+                    //Console.WriteLine(unit.dwAct);
+
+
+                    m.FreeMemory(addr);
+                }
             }
             catch (Exception e)
             {
@@ -207,6 +244,8 @@ namespace Test
             }
 
             m.ResumeAllThreads();
+
+            //Console.ReadKey();
         }
 
         static void TestBreakPoints()

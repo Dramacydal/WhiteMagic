@@ -36,6 +36,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\BlackMagic.dll</HintPath>
     </Reference>
+    <Reference Include="fasmdll_managed, Version=1.0.4029.31566, Culture=neutral, PublicKeyToken=444e567e1ceb2e49, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\fasmdll_managed.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />

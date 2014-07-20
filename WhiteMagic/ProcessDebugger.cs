@@ -83,7 +83,8 @@ namespace WhiteMagic
 
             bm.Asm.Clear();
             bm.Asm.AddLine("push {0}", argaddr);
-            bm.Asm.AddLine("call {0}", funcAddress);
+            bm.Asm.AddLine("mov eax, {0}", funcAddress);
+            bm.Asm.AddLine("call eax");
             bm.Asm.AddLine("retn");
             var ret = bm.Asm.InjectAndExecute(addr);
 
