@@ -81,12 +81,14 @@ namespace WhiteMagic
 
             var ret = m.Call(funcAddress, CallingConventionEx.StdCall, arg);
             m.FreeMemory(arg);
+            if (ret == 0)
+                throw new DebuggerException("Failed to load module '" + name + "'");
             return ret;
         }
 
         public void AddBreakPoint(string moduleName, HardwareBreakPoint bp)
         {
-            uint moduleBase = GetModuleAddress(moduleName);
+            var moduleBase = GetModuleAddress(moduleName);
             if (moduleBase == 0)
                 throw new DebuggerException("Module " + moduleName + " is not loaded");
 
@@ -208,7 +210,7 @@ namespace WhiteMagic
                             if (bp == null)
                                 break;
 
-                            Console.WriteLine("Triggered");
+                            //Console.WriteLine("Triggered");
                             okEvent = true;
 
                             if (bp.HandleException(ref Context, this) && !WinApi.SetThreadContext(hThread, ref Context))
