@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace WhiteMagic
         protected bool isDebugging = false;
         protected bool isDetached = false;
         protected BreakPointContainer breakPoints = new BreakPointContainer();
-        protected BlackMagic bm;
+        protected MemoryHandler m;
         protected Thread debugThread;
         protected int threadId = 0;
 
@@ -33,7 +34,7 @@ namespace WhiteMagic
         public bool IsDebugging { get { return isDebugging; } }
         public bool IsDetached { get { return isDetached; } }
         public BreakPointContainer Breakpoints { get { return breakPoints; } }
-        public BlackMagic BlackMagic { get { return bm; } }
+        public MemoryHandler MemoryHandler { get { return m; } }
 
         public ProcessDebugger(int processId)
         {
@@ -42,7 +43,7 @@ namespace WhiteMagic
                 throw new DebuggerException("Process " + processId + " not found");
 
             threadId = process.Threads[0].Id;
-            bm = new BlackMagic(process.Id);
+            m = new MemoryHandler(process);
         }
 
         public void Attach()
@@ -75,22 +76,11 @@ namespace WhiteMagic
 
         public uint LoadModule(string name)
         {
-            uint funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
+            var funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
+            var arg = m.AllocateCString(name);
 
-            var addr = bm.AllocateMemory(1024);
-            var argaddr = bm.AllocateMemory(1024);
-            bm.WriteASCIIString(argaddr, name);
-
-            bm.Asm.Clear();
-            bm.Asm.AddLine("push {0}", argaddr);
-            bm.Asm.AddLine("mov eax, {0}", funcAddress);
-            bm.Asm.AddLine("call eax");
-            bm.Asm.AddLine("retn");
-            var ret = bm.Asm.InjectAndExecute(addr);
-
-            bm.FreeMemory(addr);
-            bm.FreeMemory(argaddr);
-
+            var ret = m.Call(funcAddress, CallingConventionEx.StdCall, arg);
+            m.FreeMemory(arg);
             return ret;
         }
 
@@ -104,7 +94,8 @@ namespace WhiteMagic
             if (offs > 0)
                 bp.Shift(moduleBase);
             else
-                bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
+                //bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
+                throw new DebuggerException("Function ordinals are not supported");
 
             try
             {
@@ -169,9 +160,6 @@ namespace WhiteMagic
 
             if (!WinApi.DebugActiveProcessStop(process.Id))
                 throw new DebuggerException("Failed to stop process debugging");
-
-            bm.Close();
-            process.Dispose();
         }
 
         public void StartListener(uint waitInterval = 200)
@@ -240,8 +228,6 @@ namespace WhiteMagic
                         throw new DebuggerException("Failed to continue debug event");
                     if (!WinApi.DebugActiveProcessStop(process.Id))
                         throw new DebuggerException("Failed to stop process debugging");
-                    bm.Close();
-                    process.Dispose();
                     return;
                 }
 

@@ -14,14 +14,14 @@ namespace WhiteMagic
         public MemoryException(string message) : base(message) { }
     }
 
-    /*public enum CallingConvention
+    public enum CallingConventionEx
     {
-        cdecl,
-        stdcall,
-        fastcall,
-        register,   // borland fastcall
-        thiscall,
-    }*/
+        Cdecl = 1,
+        StdCall = 2,
+        ThisCall = 3,
+        FastCall = 4,
+        Register = 5,   // borland fastcall
+    }
 
     public class MemoryHandler
     {
@@ -403,13 +403,13 @@ namespace WhiteMagic
             return exitCode;
         }
 
-        public uint Call(uint addr, CallingConvention cv, params uint[] args)
+        public uint Call(uint addr, CallingConventionEx cv, params uint[] args)
         {
             asm.Clear();
 
             switch (cv)
             {
-                case CallingConvention.Cdecl:
+                case CallingConventionEx.Cdecl:
                 {
                     for (var i = args.Length - 1; i >= 0; --i)
                         asm.AddLine("push {0}", args[i]);
@@ -421,7 +421,7 @@ namespace WhiteMagic
                         asm.AddLine("retn");
                     break;
                 }
-                case CallingConvention.StdCall:
+                case CallingConventionEx.StdCall:
                 {
                     for (var i = args.Length - 1; i >= 0; --i)
                         asm.AddLine("push {0}", args[i]);
@@ -430,7 +430,7 @@ namespace WhiteMagic
                     asm.AddLine("retn");
                     break;
                 }
-                case CallingConvention.FastCall:
+                case CallingConventionEx.FastCall:
                 {
                     if (args.Length > 0)
                         asm.AddLine("mov ecx, {0}", args[0]);
@@ -443,7 +443,7 @@ namespace WhiteMagic
                     asm.AddLine("retn");
                     break;
                 }
-                /*case CallingConvention.register:
+                case CallingConventionEx.Register:
                 {
                     if (args.Length > 0)
                         asm.AddLine("mov eax, {0}", args[0]);
@@ -457,8 +457,8 @@ namespace WhiteMagic
                     asm.AddLine("call ebx");
                     asm.AddLine("retn");
                     break;
-                }*/
-                case CallingConvention.ThisCall:
+                }
+                case CallingConventionEx.ThisCall:
                 {
                     if (args.Length > 0)
                         asm.AddLine("mov ecx, {0}", args[0]);

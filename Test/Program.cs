@@ -33,8 +33,8 @@ namespace Test
                 ctx.Eip += 6;
 
                 uint addr = 0x404430 - 0x400000 + pd.GetModuleAddress("program.exe");
-                pd.BlackMagic.WriteUInt(addr,
-                    pd.BlackMagic.ReadUInt(addr) + 10);
+                pd.MemoryHandler.WriteUInt(addr,
+                    pd.MemoryHandler.ReadUInt(addr) + 10);
 
                 return true;
             }
@@ -202,12 +202,12 @@ namespace Test
                 uint getPlayer = 0x613C0 + 0x6FAB0000;
                 uint getUnitX = 0x1210 + 0x6FAB0000;
 
-                var pPlayer = m.Call(getPlayer, CallingConvention.StdCall);
-                var x = m.Call(getUnitX, CallingConvention.FastCall, pPlayer);
+                var pPlayer = m.Call(getPlayer, CallingConventionEx.StdCall);
+                var x = m.Call(getUnitX, CallingConventionEx.FastCall, pPlayer);
 
                 var addr = m.AllocateMemory(1024);
                 m.WriteUTF16String(addr, string.Format("{0}", x));
-                m.Call(printMessage, CallingConvention.StdCall, addr, 2);
+                m.Call(printMessage, CallingConventionEx.StdCall, addr, 2);
 
                 m.FreeMemory(addr);
             }
