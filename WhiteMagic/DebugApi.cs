@@ -280,6 +280,12 @@ namespace WhiteMagic
         [DllImport("kernel32", SetLastError = true, EntryPoint = "GetProcAddress")]
         public static extern uint GetProcAddressOrdinal(uint hModule, uint procName);
 
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        public static extern uint GetModuleHandle(string lpModuleName);
+
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern uint LoadLibraryA(string lpFileName);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool DebugActiveProcess(int dwProcessId);

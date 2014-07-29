@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using Magic;
 using WhiteMagic;
 using Fasm;
 using CONTEXT = WhiteMagic.CONTEXT;
@@ -45,7 +45,23 @@ namespace Test
         static void Main(string[] args)
         {
             //TestBreakPoints();
-            //TestMemory();
+            TestMemory();
+            //TestThreads();
+            //DelegateTest();
+        }
+
+        static void DelegateTest()
+        {
+            var f = new MyFunc(Asd);
+
+            f();
+        }
+
+        public delegate void MyFunc();
+
+        static void Asd()
+        {
+            Console.WriteLine("123");
         }
 
         [StructLayout(LayoutKind.Explicit)]
@@ -161,6 +177,106 @@ namespace Test
             public uint pRoomNext;          // UnitAny*
         }
 
+        [StructLayout(LayoutKind.Explicit)]
+        public struct Inventory
+        {
+            [FieldOffset(0x0)]
+            public uint dwSignature;
+            [FieldOffset(0x04)]
+            public uint bGame1C;            // BYTE*
+            [FieldOffset(0x08)]
+            public uint pOwner;             // UnitAny*
+            [FieldOffset(0x0C)]
+            public uint pFirstItem;         // UnitAny*
+            [FieldOffset(0x10)]
+            public uint pLastItem;          // UnitAny*
+            [FieldOffset(0x14)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.U4)]
+            public uint[] _1;
+            [FieldOffset(0x1C)]
+            public uint dwLeftItemUid;
+            [FieldOffset(0x20)]
+            public uint pCursorItem;        // UnitAny*
+            [FieldOffset(0x24)]
+            public uint dwOwnerId;
+            [FieldOffset(0x28)]
+            public uint dwItemCount;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct ItemData
+        {
+            public uint dwQuality;				//0x00
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.U4)]
+            public uint[] _1;					//0x04
+            public uint dwItemFlags;				//0x0C 1 = Owned by player, 0xFFFFFFFF = Not owned
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.U4)]
+            public uint[] _2;					//0x10
+            public uint dwFlags;					//0x18
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3, ArraySubType = UnmanagedType.U4)]
+            public uint[] _3;					//0x1C
+            public uint dwQuality2;				//0x28
+            public uint dwItemLevel;				//0x2C
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.U4)]
+            public uint[] _4;					//0x30
+            public ushort wPrefix;					//0x38
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2, ArraySubType = UnmanagedType.U2)]
+            public ushort[] _5;						//0x3A
+            public ushort wSuffix;					//0x3E
+            public uint _6;						//0x40
+            public byte BodyLocation;				//0x44
+            public byte ItemLocation;				//0x45 Non-body/belt location (Body/Belt == 0xFF)
+            public byte _7;						//0x46
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x15, ArraySubType = UnmanagedType.U2)]
+            public byte[] _8;
+            public uint pOwnerInventory;		// Inventory 0x5C +
+            public uint _10;						//0x60
+            public uint pNextInvItem;			// UnitAny 0x64
+            public byte GameLocation;			//0x68
+            public byte NodePage;					//0x69 Actual location, this is the most reliable by far
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x9A, ArraySubType = UnmanagedType.U1)]
+            public byte[] _12;						//0x6A
+            public uint pOwner;				// UnitAny 0x84 0x104
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct ItemData2
+        {
+            [FieldOffset(0x2C)]
+            public uint dwItemLevel;
+            [FieldOffset(0x70)]
+            public uint pNextInvItem;
+            [FieldOffset(0x104)]
+            public uint pOwner;
+        }
+
+        static void TestThreads()
+        {
+            Process proc = null;
+            var processes = Process.GetProcessesByName("ThreadTest2");
+            if (processes.Length == 0)
+            {
+                Console.WriteLine("Could not find process");
+                return;
+            }
+
+            proc = processes[0];
+
+            if (!WinApi.SetDebugPrivileges())
+            {
+                Console.WriteLine("Failed to set debug privileges");
+                return;
+            }
+
+            Console.WriteLine("Threads count: {0}", proc.Threads.Count);
+
+            var m = new MemoryHandler(proc);
+            m.SuspendAllThreads();
+            m.Call(0x4155B0 - 0x400000 + (uint)proc.MainModule.BaseAddress,
+                CallingConventionEx.StdCall, 999999);
+            m.ResumeAllThreads();
+        }
+
         static void TestMemory()
         {
             Process proc = null;
@@ -196,29 +312,67 @@ namespace Test
 
             m.SuspendAllThreads();
 
+            var w = new StreamWriter(@"d:\d2work\codes.txt");
             try
             {
-                uint printMessage = 0x6FB25EB0;
-                uint getPlayer = 0x613C0 + 0x6FAB0000;
-                uint getUnitX = 0x1210 + 0x6FAB0000;
+                uint pMaxItem = 0x6FDF4CB0;
+                uint pData = 0x6FDF4CB4;
+                uint getTxt = 0x62C70 + 0x6FD50000;
 
-                var pPlayer = m.Call(getPlayer, CallingConventionEx.StdCall);
-                var x = m.Call(getUnitX, CallingConventionEx.FastCall, pPlayer);
-
-                var addr = m.AllocateMemory(1024);
-                m.WriteUTF16String(addr, string.Format("{0}", x));
-                m.Call(printMessage, CallingConventionEx.StdCall, addr, 2);
-
-                m.FreeMemory(addr);
+                var maxItem = m.ReadUInt(pMaxItem);
+                Console.WriteLine("Max item: " + maxItem.ToString());
+                for (uint i = 0; i <= maxItem; ++i)
+                {
+                    var pText = m.Call(getTxt, CallingConventionEx.StdCall, i);
+                    
+                    var txt = m.Read<ItemTxt>(pText);
+                    w.WriteLine("{0}\t{1}", i, txt.GetCode());
+                }
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e.GetType().ToString() + ": " + e.Message);
             }
+
+            w.Close();
 
             m.ResumeAllThreads();
 
             //Console.ReadKey();
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct ItemTxt
+        {
+            [FieldOffset(0)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string szFlippyFile;     // 0x00
+            [FieldOffset(0x20)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string szInvFile;        // 0x20
+            [FieldOffset(0x40)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string szUniqueInvFile;  // 0x40
+            [FieldOffset(0x60)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 0x20)]
+            public string szSetInvFile;     // 0x60
+            [FieldOffset(0x80)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4, ArraySubType = UnmanagedType.U1)]
+            public byte[] szCode;           // 0x40
+            [FieldOffset(0x10F)]
+            public byte xSize;              // 0x10F
+            [FieldOffset(0x110)]
+            public byte ySize;              // 0x110
+
+            public string GetCode()
+            {
+                return Encoding.ASCII.GetString(szCode).Replace(" ", "");
+            }
+
+            public uint GetDwCode()
+            {
+                return BitConverter.ToUInt32(szCode, 0) & 0xFFF;
+            }
         }
 
         static void TestBreakPoints()

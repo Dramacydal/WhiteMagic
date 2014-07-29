@@ -27,12 +27,9 @@ namespace WhiteMagic
     {
         public Process Process { get { return process; } }
         public IntPtr ProcessHandle { get { return processHandle; } }
-        public ManagedFasm Asm { get { return asm; } }
 
         protected IntPtr processHandle;
         protected Process process;
-
-        protected ManagedFasm asm = new ManagedFasm();
 
         public MemoryHandler()
         {
@@ -68,20 +65,21 @@ namespace WhiteMagic
             return !process.HasExited;
         }
 
-        public void SuspendAllThreads(int except = -1)
+        public void SuspendAllThreads(params int[] except)
         {
             process.Refresh();
 
             foreach (ProcessThread pT in process.Threads)
             {
-                if (except != -1 && pT.Id == except)
+                if (except.Contains(pT.Id))
                     continue;
 
-                IntPtr pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
+                var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
                 if (pOpenThread == IntPtr.Zero)
                     continue;
 
                 WinApi.SuspendThread(pOpenThread);
+
                 WinApi.CloseHandle(pOpenThread);
             }
         }
@@ -136,21 +134,32 @@ namespace WhiteMagic
             return t;
         }
 
-        protected byte[] ReadNullTerminatedBytes(uint addr)
+        protected byte[] ReadNullTerminatedBytes(uint addr, int step = 1)
         {
+            if (step == 0)
+                throw new MemoryException("Wrong step specified for ReadNullTerminatedBytes");
+
             var bytes = new List<byte>();
             for (; ; )
             {
-                var b = ReadByte(addr++);
-                bytes.Add(b);
-                if (b == 0)
+                bool notNull = false;
+                for (var i = 0; i < step; ++i)
+                {
+                    var b = ReadByte(addr++);
+                    bytes.Add(b);
+                    notNull |= b != 0;
+                }
+                if (!notNull)
+                {
+                    bytes.RemoveRange(bytes.Count - step, step);
                     break;
+                }
             }
 
             return bytes.ToArray();
         }
 
-        public string ReadCString(uint addr, int len = 0)
+        public string ReadASCIIString(uint addr, int len = 0)
         {
             return Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
@@ -162,15 +171,12 @@ namespace WhiteMagic
 
         public string ReadUTF16String(uint addr, int len = 0)
         {
-            return Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
+            return Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 2) : ReadBytes(addr, len));
         }
 
         public string ReadUTF32String(uint addr, int len = 0)
         {
-            if (len == 0)
-                return Encoding.UTF32.GetString(ReadNullTerminatedBytes(addr));
-
-            return Encoding.UTF32.GetString(ReadBytes(addr, len));
+            return Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
         }
 
         #region Faster Read functions for basic types
@@ -377,10 +383,9 @@ namespace WhiteMagic
 
         public uint ExecuteRemoteCode(byte[] bytes)
         {
-            var addr = AllocateMemory(bytes.Length);
-            WriteBytes(addr, bytes);
-
+            var addr = AllocateBytes(bytes);
             var exitCode = ExecuteRemoteCode(addr);
+
             FreeMemory(addr);
 
             return exitCode;
@@ -392,6 +397,16 @@ namespace WhiteMagic
             var h = WinApi.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
             if (h == IntPtr.Zero)
                 throw new MemoryException("Failed to create remote thread");
+
+            /*IntPtr pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, threadId);
+            int val;
+            int lastError = 0;
+            if (pOpenThread != IntPtr.Zero)
+            {
+                val = WinApi.ResumeThread(pOpenThread);
+                lastError = Marshal.GetLastWin32Error();
+                WinApi.CloseHandle(pOpenThread);
+            }*/
 
             if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
                 throw new MemoryException("Failed to wait for remote thread");
@@ -405,6 +420,7 @@ namespace WhiteMagic
 
         public uint Call(uint addr, CallingConventionEx cv, params uint[] args)
         {
+            var asm = new ManagedFasm();
             asm.Clear();
 
             switch (cv)

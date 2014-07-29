@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Magic;
 
 using System.IO;
 
@@ -66,7 +65,14 @@ namespace WhiteMagic
 
         public uint GetModuleAddress(string moduleName)
         {
+            foreach (ProcessModule module in process.Modules)
+                if (module.ModuleName.ToLower() == moduleName.ToLower())
+                    return (uint)module.BaseAddress;
+
             process.Refresh();
+            if (process.HasExited)
+                return 0;
+
             foreach (ProcessModule module in process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
                     return (uint)module.BaseAddress;
@@ -76,13 +82,20 @@ namespace WhiteMagic
 
         public uint LoadModule(string name)
         {
-            var funcAddress = WinApi.GetProcAddress(GetModuleAddress("kernel32.dll"), "LoadLibraryA");
+            var hModule = WinApi.GetModuleHandle("kernel32.dll");
+            if (hModule == 0)
+                hModule = WinApi.LoadLibraryA("kernel32.dll");
+            if (hModule == 0)
+                throw new DebuggerException("Failed to get kernel32.dll module");
+
+            var funcAddress = WinApi.GetProcAddress(hModule, "LoadLibraryA");
             var arg = m.AllocateCString(name);
 
-            var ret = m.Call(funcAddress, CallingConventionEx.StdCall, arg);
+            var ret = m.Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
             m.FreeMemory(arg);
             if (ret == 0)
                 throw new DebuggerException("Failed to load module '" + name + "'");
+
             return ret;
         }
 
@@ -157,6 +170,10 @@ namespace WhiteMagic
             if (isDetached)
                 return;
             isDetached = true;
+
+            process.Refresh();
+            if (process.HasExited)
+                return;
 
             RemoveBreakPoints();
 

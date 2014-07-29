@@ -30,9 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BlackMagic">
-      <HintPath>E:\BlackMagic\BlackMagic.dll</HintPath>
-    </Reference>
     <Reference Include="fasmdll_managed">
       <HintPath>..\fasmdll_managed.dll</HintPath>
     </Reference>
@@ -49,6 +46,7 @@
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MemoryApi.cs" />
     <Compile Include="MemoryHandler.cs" />
+    <Compile Include="Misc.cs" />
     <Compile Include="ProcessApi.cs" />
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

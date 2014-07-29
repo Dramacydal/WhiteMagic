@@ -32,10 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BlackMagic, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1714773799189aa7, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\BlackMagic.dll</HintPath>
-    </Reference>
     <Reference Include="fasmdll_managed, Version=1.0.4029.31566, Culture=neutral, PublicKeyToken=444e567e1ceb2e49, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\fasmdll_managed.dll</HintPath>
