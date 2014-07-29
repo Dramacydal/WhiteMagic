@@ -46,6 +46,14 @@ namespace WhiteMagic
             SetProcess(process);
         }
 
+        public MemoryHandler(int processId)
+        {
+            var process = Process.GetProcessById(processId);
+            if (process == null)
+                throw new MemoryException("Process " + processId + " not found");
+            SetProcess(process);
+        }
+
         public void SetProcess(Process process)
         {
             this.process = process;

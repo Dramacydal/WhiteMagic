@@ -18,31 +18,22 @@ namespace WhiteMagic
         public DebuggerException(string message) : base(message) { }
     }
 
-    public class ProcessDebugger
+    public class ProcessDebugger : MemoryHandler
     {
-        protected Process process;
         protected bool isDebugging = false;
         protected bool isDetached = false;
         protected BreakPointContainer breakPoints = new BreakPointContainer();
-        protected MemoryHandler m;
         protected Thread debugThread;
         protected int threadId = 0;
 
-        public Process Process { get { return process; } }
         public int ThreadId { get { return threadId; } }
         public bool IsDebugging { get { return isDebugging; } }
         public bool IsDetached { get { return isDetached; } }
         public BreakPointContainer Breakpoints { get { return breakPoints; } }
-        public MemoryHandler MemoryHandler { get { return m; } }
 
-        public ProcessDebugger(int processId)
+        public ProcessDebugger(int processId) : base(processId)
         {
-            process = Process.GetProcessById(processId);
-            if (process == null)
-                throw new DebuggerException("Process " + processId + " not found");
-
             threadId = process.Threads[0].Id;
-            m = new MemoryHandler(process);
         }
 
         public void Attach()
@@ -89,10 +80,10 @@ namespace WhiteMagic
                 throw new DebuggerException("Failed to get kernel32.dll module");
 
             var funcAddress = WinApi.GetProcAddress(hModule, "LoadLibraryA");
-            var arg = m.AllocateCString(name);
+            var arg = AllocateCString(name);
 
-            var ret = m.Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
-            m.FreeMemory(arg);
+            var ret = Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
+            FreeMemory(arg);
             if (ret == 0)
                 throw new DebuggerException("Failed to load module '" + name + "'");
 
