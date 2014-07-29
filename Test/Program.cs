@@ -33,8 +33,8 @@ namespace Test
                 ctx.Eip += 6;
 
                 uint addr = 0x404430 - 0x400000 + pd.GetModuleAddress("program.exe");
-                pd.MemoryHandler.WriteUInt(addr,
-                    pd.MemoryHandler.ReadUInt(addr) + 10);
+                pd.WriteUInt(addr,
+                    pd.ReadUInt(addr) + 10);
 
                 return true;
             }

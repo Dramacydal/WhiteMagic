@@ -174,7 +174,7 @@ namespace WhiteMagic
 
         public void StartListener(uint waitInterval = 200)
         {
-            DEBUG_EVENT DebugEvent = new DEBUG_EVENT();
+            var DebugEvent = new DEBUG_EVENT();
             for (; isDebugging; )
             {
                 if (!WinApi.WaitForDebugEvent(ref DebugEvent, waitInterval))
@@ -213,7 +213,7 @@ namespace WhiteMagic
                             if (!WinApi.GetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            HardwareBreakPoint bp = breakPoints.Find(b => b.Address == Context.Eip &&
+                            var bp = breakPoints.Find(b => b.Address == Context.Eip &&
                                 b.ThreadId == DebugEvent.dwThreadId);
                             if (bp == null)
                                 break;

@@ -40,6 +40,102 @@ namespace WhiteMagic
     [StructLayout(LayoutKind.Sequential)]
     public struct CONTEXT
     {
+        // Eax parts
+        public ushort Ax
+        {
+            get { return (ushort)(Eax & 0xFFFF); }
+            set { Eax = Eax & 0xFFFF0000 | value; }
+        }
+        public byte Al
+        {
+            get { return (byte)(Ax & 0xFF); }
+            set { Ax = (ushort)(Ax & 0xFF00 | value); }
+        }
+        public byte Ah
+        {
+            get { return (byte)(Ax >> 16); }
+            set { Ax = (ushort)(Ax & 0xFF | (value << 16)); }
+        }
+
+        // Ecx parts
+        public ushort Cx
+        {
+            get { return (ushort)(Ecx & 0xFFFF); }
+            set { Ecx = Ecx & 0xFFFF0000 | value; }
+        }
+        public byte Cl
+        {
+            get { return (byte)(Cx & 0xFF); }
+            set { Cx = (ushort)(Cx & 0xFF00 | value); }
+        }
+        public byte Ch
+        {
+            get { return (byte)(Cx >> 16); }
+            set { Cx = (ushort)(Cx & 0xFF | (value << 16)); }
+        }
+
+        // Edx parts
+        public ushort Dx
+        {
+            get { return (ushort)(Edx & 0xFFFF); }
+            set { Edx = Edx & 0xFFFF0000 | value; }
+        }
+        public byte Dl
+        {
+            get { return (byte)(Dx & 0xFF); }
+            set { Dx = (ushort)(Dx & 0xFF00 | value); }
+        }
+        public byte Dh
+        {
+            get { return (byte)(Dx >> 16); }
+            set { Dx = (ushort)(Dx & 0xFF | (value << 16)); }
+        }
+
+        // Ebx parts
+        public ushort Bx
+        {
+            get { return (ushort)(Ebx & 0xFFFF); }
+            set { Ebx = Ebx & 0xFFFF0000 | value; }
+        }
+        public byte Bl
+        {
+            get { return (byte)(Bx & 0xFF); }
+            set { Bx = (ushort)(Bx & 0xFF00 | value); }
+        }
+        public byte Bh
+        {
+            get { return (byte)(Bx >> 16); }
+            set { Bx = (ushort)(Bx & 0xFF | (value << 16)); }
+        }
+
+        // Esp parts
+        public ushort Sp
+        {
+            get { return (ushort)(Esp & 0xFFFF); }
+            set { Esp = Esp & 0xFFFF0000 | value; }
+        }
+
+        // Ebp parts
+        public ushort Bp
+        {
+            get { return (ushort)(Ebp & 0xFFFF); }
+            set { Ebp = Ebp & 0xFFFF0000 | value; }
+        }
+
+        // Esi parts
+        public ushort Si
+        {
+            get { return (ushort)(Esi & 0xFFFF); }
+            set { Esi = Esi & 0xFFFF0000 | value; }
+        }
+
+        // Edi parts
+        public ushort Di
+        {
+            get { return (ushort)(Edi & 0xFFFF); }
+            set { Edi = Edi & 0xFFFF0000 | value; }
+        }
+
         public uint ContextFlags; //set this to an appropriate value
         // Retrieved by CONTEXT_DEBUG_REGISTERS
         public uint Dr0;
