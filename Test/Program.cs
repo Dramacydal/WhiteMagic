@@ -411,7 +411,7 @@ namespace Test
                     Console.WriteLine("{0} - 0x{1:X}", module.ModuleName, (uint)module.BaseAddress);
 
                 pd = new ProcessDebugger(process.Id);
-                Thread th = ProcessDebugger.Run(ref pd);
+                pd.Run();
                 if (!pd.WaitForComeUp(500))
                 {
                     Console.WriteLine("Failed to start thread");
@@ -419,7 +419,7 @@ namespace Test
                 }
 
                 //var bp = new IncBreakPoint(0x4012B0 - 0x400000, 1, HardwareBreakPoint.Condition.Code);
-                //pd.AddBreakPoint("program.exe", bp);
+                //pd.AddBreakPoint(bp, pd.GetModuleAddress("program.exe"));
 
 
                 //Console.WriteLine("Module count: {0}", process.Modules.Count);
@@ -429,7 +429,7 @@ namespace Test
                 //process.Refresh();
                 //Console.WriteLine("Module count: {0}", process.Modules.Count);
 
-                th.Join();
+                pd.Join();
             }
             catch (BreakPointException e)
             {

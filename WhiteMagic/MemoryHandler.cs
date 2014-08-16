@@ -406,16 +406,6 @@ namespace WhiteMagic
             if (h == IntPtr.Zero)
                 throw new MemoryException("Failed to create remote thread");
 
-            /*IntPtr pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, threadId);
-            int val;
-            int lastError = 0;
-            if (pOpenThread != IntPtr.Zero)
-            {
-                val = WinApi.ResumeThread(pOpenThread);
-                lastError = Marshal.GetLastWin32Error();
-                WinApi.CloseHandle(pOpenThread);
-            }*/
-
             if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
                 throw new MemoryException("Failed to wait for remote thread");
 
@@ -426,7 +416,7 @@ namespace WhiteMagic
             return exitCode;
         }
 
-        public uint Call(uint addr, CallingConventionEx cv, params uint[] args)
+        public uint Call(uint addr, CallingConventionEx cv, params object[] args)
         {
             var asm = new ManagedFasm();
             asm.Clear();

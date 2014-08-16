@@ -20,20 +20,22 @@ namespace WhiteMagic
 
     public class ProcessDebugger : MemoryHandler
     {
-        protected bool isDebugging = false;
-        protected bool isDetached = false;
+        protected volatile bool isDebugging = false;
+        protected volatile bool isDetached = false;
+        protected volatile bool hasExited = false;
         protected BreakPointContainer breakPoints = new BreakPointContainer();
-        protected Thread debugThread;
-        protected int threadId = 0;
+        protected Thread debugThread = null;
+        protected int processThreadId = 0;
 
-        public int ThreadId { get { return threadId; } }
+        public int ThreadId { get { return processThreadId; } }
         public bool IsDebugging { get { return isDebugging; } }
         public bool IsDetached { get { return isDetached; } }
+        public bool HasExited { get { return hasExited; } }
         public BreakPointContainer Breakpoints { get { return breakPoints; } }
 
         public ProcessDebugger(int processId) : base(processId)
         {
-            threadId = process.Threads[0].Id;
+            processThreadId = process.Threads[0].Id;
         }
 
         public void Attach()
@@ -90,15 +92,11 @@ namespace WhiteMagic
             return ret;
         }
 
-        public void AddBreakPoint(string moduleName, HardwareBreakPoint bp)
+        public void AddBreakPoint(HardwareBreakPoint bp, uint baseAddress)
         {
-            var moduleBase = GetModuleAddress(moduleName);
-            if (moduleBase == 0)
-                throw new DebuggerException("Module " + moduleName + " is not loaded");
-
             int offs = (int)bp.Address;
             if (offs > 0)
-                bp.Shift(moduleBase);
+                bp.Shift(baseAddress);
             else
                 //bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
                 throw new DebuggerException("Function ordinals are not supported");
@@ -117,7 +115,7 @@ namespace WhiteMagic
 
         public void RemoveBreakPoint(uint address)
         {
-            HardwareBreakPoint bp = breakPoints.Find(b => b.Address == address);
+            var bp = breakPoints.Find(b => b.Address == address);
             if (bp == null)
                 return;
 
@@ -150,10 +148,13 @@ namespace WhiteMagic
 
         public void StopDebugging()
         {
-            if (!isDebugging)
-                return;
-
             isDebugging = false;
+        }
+
+        public void Join()
+        {
+            if (debugThread != null)
+                debugThread.Join();
         }
 
         protected void Detach()
@@ -193,6 +194,12 @@ namespace WhiteMagic
                     case DebugEventType.EXIT_PROCESS_DEBUG_EVENT:
                         //Console.WriteLine("Process has exited");
                         isDebugging = false;
+                        isDetached = true;
+
+                        if (!WinApi.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                            throw new DebuggerException("Failed to continue debug event");
+                        if (!WinApi.DebugActiveProcessStop(process.Id))
+                            throw new DebuggerException("Failed to stop process debugging");
                         return;
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
                         //Console.WriteLine("Exception Code: {0:X}", DebugEvent.Exception.ExceptionRecord.ExceptionCode);
@@ -248,11 +255,15 @@ namespace WhiteMagic
             Detach();
         }
 
-        public static Thread Run(ref ProcessDebugger pd)
+        public void Run()
         {
-            Thread th = new Thread(new ParameterizedThreadStart(RunnerThread));
-            th.Start(pd);
-            return th;
+            debugThread = new Thread(() =>
+                {
+                    Attach();
+                    StartListener();
+                    Detach();
+                });
+            debugThread.Start();
         }
 
         public bool WaitForComeUp(int delay)
@@ -261,15 +272,7 @@ namespace WhiteMagic
                 return true;
 
             Thread.Sleep(delay);
-            return true;
-        }
-
-        protected static void RunnerThread(object pd)
-        {
-            var _pd = (ProcessDebugger)pd;
-            _pd.Attach();
-            _pd.StartListener();
-            _pd.Detach();
+            return isDebugging;
         }
     }
 }
