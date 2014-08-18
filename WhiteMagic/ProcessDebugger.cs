@@ -205,6 +205,8 @@ namespace WhiteMagic
                         //Console.WriteLine("Exception Code: {0:X}", DebugEvent.Exception.ExceptionRecord.ExceptionCode);
                         if (DebugEvent.Exception.ExceptionRecord.ExceptionCode == (uint)ExceptonStatus.STATUS_SINGLE_STEP)
                         {
+                            okEvent = true;
+
                             /*if (DebugEvent.dwThreadId != threadId)
                             {
                                 Console.WriteLine("Debug event thread id does not match breakpoint thread");
@@ -226,8 +228,6 @@ namespace WhiteMagic
                                 break;
 
                             //Console.WriteLine("Triggered");
-                            okEvent = true;
-
                             if (bp.HandleException(ref Context, this) && !WinApi.SetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to set thread context");
                         }
