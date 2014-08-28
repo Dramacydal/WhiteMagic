@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Fasm;
 
 namespace WhiteMagic
@@ -30,6 +29,8 @@ namespace WhiteMagic
 
         protected IntPtr processHandle;
         protected Process process;
+
+        protected volatile int threadSuspendCount = 0;
 
         public MemoryHandler()
         {
@@ -75,6 +76,9 @@ namespace WhiteMagic
 
         public void SuspendAllThreads(params int[] except)
         {
+            if (++threadSuspendCount > 1)
+                return;
+
             process.Refresh();
 
             foreach (ProcessThread pT in process.Threads)
@@ -94,9 +98,12 @@ namespace WhiteMagic
 
         public void ResumeAllThreads()
         {
+            if (--threadSuspendCount > 0)
+                return;
+
             foreach (ProcessThread pT in process.Threads)
             {
-                IntPtr pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
+                var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
                 if (pOpenThread == IntPtr.Zero)
                     continue;
 
@@ -418,78 +425,80 @@ namespace WhiteMagic
 
         public uint Call(uint addr, CallingConventionEx cv, params object[] args)
         {
-            var asm = new ManagedFasm();
-            asm.Clear();
-
-            switch (cv)
+            using (var asm = new ManagedFasm())
             {
-                case CallingConventionEx.Cdecl:
-                {
-                    for (var i = args.Length - 1; i >= 0; --i)
-                        asm.AddLine("push {0}", args[i]);
-                    asm.AddLine("mov eax, {0}", addr);
-                    asm.AddLine("call eax");
-                    if (args.Length != 0)
-                        asm.AddLine("retn {0}", 4 * args.Length);
-                    else
-                        asm.AddLine("retn");
-                    break;
-                }
-                case CallingConventionEx.StdCall:
-                {
-                    for (var i = args.Length - 1; i >= 0; --i)
-                        asm.AddLine("push {0}", args[i]);
-                    asm.AddLine("mov eax, {0}", addr);
-                    asm.AddLine("call eax");
-                    asm.AddLine("retn");
-                    break;
-                }
-                case CallingConventionEx.FastCall:
-                {
-                    if (args.Length > 0)
-                        asm.AddLine("mov ecx, {0}", args[0]);
-                    if (args.Length > 1)
-                        asm.AddLine("mov edx, {0}", args[1]);
-                    for (var i = args.Length - 1; i >= 2; --i)
-                        asm.AddLine("push {0}", args[i]);
-                    asm.AddLine("mov eax, {0}", addr);
-                    asm.AddLine("call eax");
-                    asm.AddLine("retn");
-                    break;
-                }
-                case CallingConventionEx.Register:
-                {
-                    if (args.Length > 0)
-                        asm.AddLine("mov eax, {0}", args[0]);
-                    if (args.Length > 1)
-                        asm.AddLine("mov edx, {0}", args[1]);
-                    if (args.Length > 2)
-                        asm.AddLine("mov ecx, {0}", args[2]);
-                    for (var i = 3; i < args.Length; ++i)
-                        asm.AddLine("push {0}", args[i]);
-                    asm.AddLine("mov ebx, {0}", addr);
-                    asm.AddLine("call ebx");
-                    asm.AddLine("retn");
-                    break;
-                }
-                case CallingConventionEx.ThisCall:
-                {
-                    if (args.Length > 0)
-                        asm.AddLine("mov ecx, {0}", args[0]);
-                    for (var i = args.Length - 1; i >= 1; --i)
-                        asm.AddLine("push {0}", args[i]);
-                    asm.AddLine("mov eax, {0}", addr);
-                    asm.AddLine("call eax");
-                    asm.AddLine("retn");
-                    break;
-                }
-                default:
-                {
-                    throw new MemoryException("Unhandled calling convention " + cv.ToString());
-                }
-            }
+                asm.Clear();
 
-            return ExecuteRemoteCode(asm.Assemble());
+                switch (cv)
+                {
+                    case CallingConventionEx.Cdecl:
+                    {
+                        for (var i = args.Length - 1; i >= 0; --i)
+                            asm.AddLine("push {0}", args[i]);
+                        asm.AddLine("mov eax, {0}", addr);
+                        asm.AddLine("call eax");
+                        if (args.Length != 0)
+                            asm.AddLine("retn {0}", 4 * args.Length);
+                        else
+                            asm.AddLine("retn");
+                        break;
+                    }
+                    case CallingConventionEx.StdCall:
+                    {
+                        for (var i = args.Length - 1; i >= 0; --i)
+                            asm.AddLine("push {0}", args[i]);
+                        asm.AddLine("mov eax, {0}", addr);
+                        asm.AddLine("call eax");
+                        asm.AddLine("retn");
+                        break;
+                    }
+                    case CallingConventionEx.FastCall:
+                    {
+                        if (args.Length > 0)
+                            asm.AddLine("mov ecx, {0}", args[0]);
+                        if (args.Length > 1)
+                            asm.AddLine("mov edx, {0}", args[1]);
+                        for (var i = args.Length - 1; i >= 2; --i)
+                            asm.AddLine("push {0}", args[i]);
+                        asm.AddLine("mov eax, {0}", addr);
+                        asm.AddLine("call eax");
+                        asm.AddLine("retn");
+                        break;
+                    }
+                    case CallingConventionEx.Register:
+                    {
+                        if (args.Length > 0)
+                            asm.AddLine("mov eax, {0}", args[0]);
+                        if (args.Length > 1)
+                            asm.AddLine("mov edx, {0}", args[1]);
+                        if (args.Length > 2)
+                            asm.AddLine("mov ecx, {0}", args[2]);
+                        for (var i = 3; i < args.Length; ++i)
+                            asm.AddLine("push {0}", args[i]);
+                        asm.AddLine("mov ebx, {0}", addr);
+                        asm.AddLine("call ebx");
+                        asm.AddLine("retn");
+                        break;
+                    }
+                    case CallingConventionEx.ThisCall:
+                    {
+                        if (args.Length > 0)
+                            asm.AddLine("mov ecx, {0}", args[0]);
+                        for (var i = args.Length - 1; i >= 1; --i)
+                            asm.AddLine("push {0}", args[i]);
+                        asm.AddLine("mov eax, {0}", addr);
+                        asm.AddLine("call eax");
+                        asm.AddLine("retn");
+                        break;
+                    }
+                    default:
+                    {
+                        throw new MemoryException("Unhandled calling convention " + cv.ToString());
+                    }
+                }
+
+                return ExecuteRemoteCode(asm.Assemble());
+            }
         }
     }
 }

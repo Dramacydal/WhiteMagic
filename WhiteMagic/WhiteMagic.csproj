@@ -43,10 +43,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DebugApi.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MemoryApi.cs" />
     <Compile Include="MemoryHandler.cs" />
     <Compile Include="Misc.cs" />
+    <Compile Include="ModulePointer.cs" />
     <Compile Include="ProcessApi.cs" />
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
