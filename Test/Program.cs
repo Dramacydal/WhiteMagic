@@ -14,6 +14,14 @@ using CONTEXT = WhiteMagic.CONTEXT;
 
 namespace Test
 {
+    public static class Extensions
+    {
+        public static long MSecToNow(this DateTime date)
+        {
+            return (DateTime.Now.Ticks - date.Ticks) / TimeSpan.TicksPerMillisecond;
+        }
+    }
+
     class Program
     {
         protected static void myHandler(object sender, ConsoleCancelEventArgs args)
@@ -310,33 +318,14 @@ namespace Test
 
             var m = new MemoryHandler(proc);
 
-            m.SuspendAllThreads();
-
-            var w = new StreamWriter(@"d:\d2work\codes.txt");
-            try
+            var now = DateTime.Now;
+            for (var i = 0; i < 1000; ++i)
             {
-                uint pMaxItem = 0x6FDF4CB0;
-                uint pData = 0x6FDF4CB4;
-                uint getTxt = 0x62C70 + 0x6FD50000;
-
-                var maxItem = m.ReadUInt(pMaxItem);
-                Console.WriteLine("Max item: " + maxItem.ToString());
-                for (uint i = 0; i <= maxItem; ++i)
-                {
-                    var pText = m.Call(getTxt, CallingConventionEx.StdCall, i);
-                    
-                    var txt = m.Read<ItemTxt>(pText);
-                    w.WriteLine("{0}\t{1}", i, txt.GetCode());
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.GetType().ToString() + ": " + e.Message);
+                m.SuspendAllThreads();
+                m.ResumeAllThreads();
             }
 
-            w.Close();
-
-            m.ResumeAllThreads();
+            Console.WriteLine(now.MSecToNow());
 
             //Console.ReadKey();
         }

@@ -101,6 +101,9 @@ namespace WhiteMagic
             if (--threadSuspendCount > 0)
                 return;
 
+            if (threadSuspendCount < 0)
+                throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is " + threadSuspendCount.ToString());
+
             foreach (ProcessThread pT in process.Threads)
             {
                 var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
@@ -135,6 +138,16 @@ namespace WhiteMagic
                 throw new MemoryException("Failed to set page protection after read in remote process");
 
             return buf;
+        }
+
+        public T[] ReadArray<T>(uint addr, int count)
+        {
+            var bytes = ReadBytes(addr, count * Marshal.SizeOf(typeof(T)));
+            var dest = new T[count];
+
+            Buffer.BlockCopy(bytes, 0, dest, 0, bytes.Length);
+
+            return dest;
         }
 
         public T Read<T>(uint addr)
