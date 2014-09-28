@@ -31,6 +31,7 @@ namespace WhiteMagic
         protected Process process;
 
         protected volatile int threadSuspendCount = 0;
+        protected volatile List<int> remoteThreads = new List<int>();
 
         public MemoryHandler()
         {
@@ -86,39 +87,50 @@ namespace WhiteMagic
                 if (except.Contains(pT.Id))
                     continue;
 
-                var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
-                if (pOpenThread == IntPtr.Zero)
+                if (remoteThreads.Contains(pT.Id))
                     continue;
 
-                WinApi.SuspendThread(pOpenThread);
-
-                WinApi.CloseHandle(pOpenThread);
+                SuspendThread(pT.Id);
             }
         }
 
-        public void ResumeAllThreads()
+        public void SuspendThread(int id)
+        {
+            var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            if (pOpenThread == IntPtr.Zero)
+                return;
+
+            WinApi.SuspendThread(pOpenThread);
+
+            WinApi.CloseHandle(pOpenThread);
+        }
+
+        public void ResumeAllThreads(bool ignoreSuspendCount = false)
         {
             if (--threadSuspendCount > 0)
                 return;
 
-            if (threadSuspendCount < 0)
+            if (!ignoreSuspendCount && threadSuspendCount < 0)
                 throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is " + threadSuspendCount.ToString());
 
             foreach (ProcessThread pT in process.Threads)
+                ResumeThread(pT.Id);
+        }
+
+        public void ResumeThread(int id)
+        {
+            var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            if (pOpenThread == IntPtr.Zero)
+                return;
+
+            var suspendCount = 0;
+            do
             {
-                var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, pT.Id);
-                if (pOpenThread == IntPtr.Zero)
-                    continue;
-
-                var suspendCount = 0;
-                do
-                {
-                    suspendCount = WinApi.ResumeThread(pOpenThread);
-                }
-                while (suspendCount > 0);
-
-                WinApi.CloseHandle(pOpenThread);
+                suspendCount = WinApi.ResumeThread(pOpenThread);
             }
+            while (suspendCount > 0);
+
+            WinApi.CloseHandle(pOpenThread);
         }
 
         #region Memory reading
@@ -421,19 +433,26 @@ namespace WhiteMagic
 
         public uint ExecuteRemoteCode(uint addr)
         {
-            int threadId;
-            var h = WinApi.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
-            if (h == IntPtr.Zero)
-                throw new MemoryException("Failed to create remote thread");
+            lock ("codeExecution")
+            {
+                int threadId;
+                var h = WinApi.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
+                if (h == IntPtr.Zero)
+                    throw new MemoryException("Failed to create remote thread");
 
-            if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
-                throw new MemoryException("Failed to wait for remote thread");
+                remoteThreads.Add(threadId);
 
-            uint exitCode;
-            if (!WinApi.GetExitCodeThread(h, out exitCode))
-                throw new MemoryException("Failed to obtain exit code");
+                if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
+                    throw new MemoryException("Failed to wait for remote thread");
 
-            return exitCode;
+                remoteThreads.Remove(threadId);
+
+                uint exitCode;
+                if (!WinApi.GetExitCodeThread(h, out exitCode))
+                    throw new MemoryException("Failed to obtain exit code");
+
+                return exitCode;
+            }
         }
 
         public uint Call(uint addr, CallingConventionEx cv, params object[] args)
@@ -511,6 +530,27 @@ namespace WhiteMagic
                 }
 
                 return ExecuteRemoteCode(asm.Assemble());
+            }
+        }
+
+        public int GetThreadStartAddress(int threadId)
+        {
+            var hThread = WinApi.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
+            if (hThread == IntPtr.Zero)
+                throw new MemoryException("Failed to open thread");
+            var buf = new byte[4];
+            try
+            {
+                var result = WinApi.NtQueryInformationThread(hThread,
+                                 ThreadInfoClass.ThreadQuerySetWin32StartAddress,
+                                 buf, buf.Length, IntPtr.Zero);
+                if (result != 0)
+                    throw new MemoryException(string.Format("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result));
+                return BitConverter.ToInt32(buf, 0);
+            }
+            finally
+            {
+                WinApi.CloseHandle(hThread);
             }
         }
     }

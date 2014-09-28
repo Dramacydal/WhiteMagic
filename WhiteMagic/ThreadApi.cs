@@ -192,6 +192,17 @@ namespace WhiteMagic
         WAIT_FAILED = 0xFFFFFFFF,
     }
 
+    public enum ThreadInfoClass : int
+    {
+        ThreadQuerySetWin32StartAddress = 9
+    }
+
+    [Flags]
+    public enum WakeFlags : uint
+    {
+        QS_ALLEVENTS = 0x04BF,
+    }
+
     public static partial class WinApi
     {
         public static uint MAX_BREAKPOINTS = 4;
@@ -225,7 +236,19 @@ namespace WhiteMagic
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern WaitResult WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
 
+        [DllImport("user32.dll")]
+        public static extern WaitResult MsgWaitForMultipleObjects(uint nCount, IntPtr[] pHandles,
+            bool bWaitAll, uint dwMilliseconds, WakeFlags dwWakeMask);
+
         [DllImport("kernel32.dll")]
         public static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
+
+        [DllImport("ntdll.dll", SetLastError = true)]
+        public static extern int NtQueryInformationThread(
+            IntPtr threadHandle,
+            ThreadInfoClass threadInformationClass,
+            byte[] threadInformation,
+            int threadInformationLength,
+            IntPtr returnLengthPtr);
     }
 }

@@ -294,7 +294,11 @@ namespace Test
                 try
                 {
                     if (process.MainModule.FileVersionInfo.InternalName.ToLower().Contains("diablo ii"))
+                    //if (process.MainModule.ModuleName == "CppTest.exe")
+                    {
                         proc = process;
+                        break;
+                    }
                 }
                 catch (NullReferenceException)
                 {
@@ -316,18 +320,54 @@ namespace Test
                 return;
             }
 
-            var m = new MemoryHandler(proc);
 
-            var now = DateTime.Now;
-            for (var i = 0; i < 1000; ++i)
+            var m = new MemoryHandler(proc);
+            foreach (ProcessModule mod in proc.Modules)
             {
-                m.SuspendAllThreads();
-                m.ResumeAllThreads();
+                Console.WriteLine("{0} - {1:X}", mod.ModuleName, mod.BaseAddress.ToInt32(), mod.EntryPointAddress.ToInt32());
             }
 
-            Console.WriteLine(now.MSecToNow());
+            Console.WriteLine();
 
-            //Console.ReadKey();
+            foreach (ProcessThread pT in proc.Threads)
+            {
+                Console.WriteLine("{0} {1} {2} Start: {3:X}", pT.Id, pT.ThreadState, pT.ThreadState == System.Diagnostics.ThreadState.Wait ? pT.WaitReason.ToString() : "-", m.GetThreadStartAddress(pT.Id));
+            }
+
+            foreach (ProcessThread pT in proc.Threads)
+            {
+                Console.WriteLine("Resuming {0} Start: {1:X}", pT.Id, m.GetThreadStartAddress(pT.Id));
+                Console.ReadKey();
+                //m.ResumeThread(pT.Id);
+            }
+
+
+            // game.exe 
+            // 400000
+            // 401227
+            //
+            //foreach (ProcessThread pT in proc.Threads)
+            
+            //m.ResumeThread(9604);
+
+            /*
+             * 16916 Wait Suspended Start: 401227
+                16920 Wait Suspended Start: 777641F3
+                16924 Wait Suspended Start: 6FF62740
+                16928 Wait Suspended Start: 6FF66010
+                16932 Wait UserRequest Start: 6FC1DEF0
+                16652 Wait Suspended Start: 6784E4A1
+                16832 Wait Suspended Start: 678A27E1
+                16404 Wait Suspended Start: 6784E4A1
+                14804 Wait Suspended Start: 6F9B8A50
+                16984 Wait Suspended Start: 777814F1
+                16988 Wait Suspended Start: 67824F9D
+                16992 Wait Suspended Start: 77766679
+                16996 Wait Suspended Start: 72AD62EE
+                4412 Wait Suspended Start: 77766679
+                4088 Wait Suspended Start: 77766679
+                9604 Wait UserRequest Start: 7A60000
+             */
         }
 
         [StructLayout(LayoutKind.Explicit)]

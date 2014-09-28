@@ -69,21 +69,24 @@ namespace WhiteMagic
 
         public uint LoadModule(string name)
         {
-            var hModule = WinApi.GetModuleHandle("kernel32.dll");
-            if (hModule == 0)
-                hModule = WinApi.LoadLibraryA("kernel32.dll");
-            if (hModule == 0)
-                throw new DebuggerException("Failed to get kernel32.dll module");
+            lock ("moduleLoad")
+            {
+                var hModule = WinApi.GetModuleHandle("kernel32.dll");
+                if (hModule == 0)
+                    hModule = WinApi.LoadLibraryA("kernel32.dll");
+                if (hModule == 0)
+                    throw new DebuggerException("Failed to get kernel32.dll module");
 
-            var funcAddress = WinApi.GetProcAddress(hModule, "LoadLibraryA");
-            var arg = AllocateCString(name);
+                var funcAddress = WinApi.GetProcAddress(hModule, "LoadLibraryA");
+                var arg = AllocateCString(name);
 
-            var ret = Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
-            FreeMemory(arg);
-            if (ret == 0)
-                throw new DebuggerException("Failed to load module '" + name + "'");
+                var ret = Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
+                FreeMemory(arg);
+                if (ret == 0)
+                    throw new DebuggerException("Failed to load module '" + name + "'");
 
-            return ret;
+                return ret;
+            }
         }
 
         public void AddBreakPoint(HardwareBreakPoint bp, uint baseAddress)
