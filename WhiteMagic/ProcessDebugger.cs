@@ -100,7 +100,7 @@ namespace WhiteMagic
 
             try
             {
-                bp.Set(ThreadId);
+                bp.Set(process);
             }
             catch (BreakPointException e)
             {
@@ -219,8 +219,7 @@ namespace WhiteMagic
                             if (!WinApi.GetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            var bp = breakPoints.Find(b => b.Address == Context.Eip &&
-                                b.ThreadId == DebugEvent.dwThreadId);
+                            var bp = breakPoints.Find(b => b.Address == Context.Eip);
                             if (bp == null)
                                 break;
 

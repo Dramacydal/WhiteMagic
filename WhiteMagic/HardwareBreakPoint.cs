@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace WhiteMagic
 {
@@ -31,95 +33,116 @@ namespace WhiteMagic
             }
         }
 
-        public void Set(int threadId)
+        public void Set(Process p)
         {
-            // make sure this breakpoint isn't already set
-            if (m_index != -1)
-                throw new BreakPointException("Breakpoint is already set!");
+            process = p;
+            process.Refresh();
 
-            this.threadId = threadId;
-
-            var cxt = new CONTEXT();
-
-            // The only registers we care about are the debug registers
-            cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
-
-            var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, threadId);
-            if (hThread == IntPtr.Zero)
-                throw new BreakPointException("Can't open thread for access");
-
-            if (WinApi.SuspendThread(hThread) == -1)
-                throw new BreakPointException("Can't suspend thread");
-
-            // Read the register values
-            if (!WinApi.GetThreadContext(hThread, ref cxt))
-                throw new BreakPointException("Failed to get thread context");
-
-            // Find an available hardware register
-            for (m_index = 0; m_index < WinApi.MAX_BREAKPOINTS; ++m_index)
+            foreach (ProcessThread th in p.Threads)
             {
-                if ((cxt.Dr7 & (1 << (m_index * 2))) == 0)
-                    break;
+                if (affectedThreads.ContainsKey(th.Id))
+                    continue;
+
+                // make sure this breakpoint isn't already set
+                var cxt = new CONTEXT();
+
+                // The only registers we care about are the debug registers
+                cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+
+                var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
+                if (hThread == IntPtr.Zero)
+                    throw new BreakPointException("Can't open thread for access");
+
+                if (WinApi.SuspendThread(hThread) == -1)
+                    throw new BreakPointException("Can't suspend thread");
+
+                // Read the register values
+                if (!WinApi.GetThreadContext(hThread, ref cxt))
+                    throw new BreakPointException("Failed to get thread context");
+
+                // Find an available hardware register
+                var index = -1;
+                for (index = 0; index < WinApi.MAX_BREAKPOINTS; ++index)
+                {
+                    if ((cxt.Dr7 & (1 << (index * 2))) == 0)
+                        break;
+                }
+
+                if (index == WinApi.MAX_BREAKPOINTS)
+                    throw new BreakPointException("All hardware breakpoint registers are already being used");
+
+                switch (index)
+                {
+                    case 0: cxt.Dr0 = (uint)address; break;
+                    case 1: cxt.Dr1 = (uint)address; break;
+                    case 2: cxt.Dr2 = (uint)address; break;
+                    case 3: cxt.Dr3 = (uint)address; break;
+                    default: throw new BreakPointException("m_index has bogus value!");
+                }
+
+                SetBits(ref cxt.Dr7, 16 + (index * 4), 2, (uint)condition);
+                SetBits(ref cxt.Dr7, 18 + (index * 4), 2, len);
+                SetBits(ref cxt.Dr7, index * 2, 1, 1);
+
+                // Write out the new debug registers
+                if (!WinApi.SetThreadContext(hThread, ref cxt))
+                    throw new BreakPointException("Failed to set thread context");
+
+                if (WinApi.ResumeThread(hThread) == -1)
+                    throw new BreakPointException("Failed to resume thread");
+
+                if (!WinApi.CloseHandle(hThread))
+                    throw new BreakPointException("Failed to close thread handle");
+
+                affectedThreads[th.Id] = index;
             }
-
-            if (m_index == WinApi.MAX_BREAKPOINTS)
-                throw new BreakPointException("All hardware breakpoint registers are already being used");
-
-            switch (m_index)
-            {
-                case 0: cxt.Dr0 = (uint)address; break;
-                case 1: cxt.Dr1 = (uint)address; break;
-                case 2: cxt.Dr2 = (uint)address; break;
-                case 3: cxt.Dr3 = (uint)address; break;
-                default: throw new BreakPointException("m_index has bogus value!");
-            }
-
-            SetBits(ref cxt.Dr7, 16 + (m_index * 4), 2, (uint)condition);
-            SetBits(ref cxt.Dr7, 18 + (m_index * 4), 2, len);
-            SetBits(ref cxt.Dr7, m_index * 2, 1, 1);
-
-            // Write out the new debug registers
-            if (!WinApi.SetThreadContext(hThread, ref cxt))
-                throw new BreakPointException("Failed to set thread context");
-
-            if (WinApi.ResumeThread(hThread) == -1)
-                throw new BreakPointException("Failed to resume thread");
         }
 
         public void UnSet()
         {
-            if (m_index == -1 || threadId == 0)
+            if (process == null)
                 return;
 
-            // Zero out the debug register settings for this breakpoint
-            if (m_index >= WinApi.MAX_BREAKPOINTS)
-                throw new BreakPointException("Bogus breakpoints index");
+            process.Refresh();
+            foreach (ProcessThread th in process.Threads)
+            {
+                if (!affectedThreads.ContainsKey(th.Id))
+                    continue;
 
-            var cxt = new CONTEXT();
-            // The only registers we care about are the debug registers
-            cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+                var index = affectedThreads[th.Id];
+                // Zero out the debug register settings for this breakpoint
+                if (index >= WinApi.MAX_BREAKPOINTS)
+                    throw new BreakPointException("Bogus breakpoints index");
 
-            var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, threadId);
-            if (hThread == IntPtr.Zero)
-                throw new BreakPointException("Can't open thread for access");
+                var cxt = new CONTEXT();
+                // The only registers we care about are the debug registers
+                cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
-            if (WinApi.SuspendThread(hThread) == -1)
-                throw new BreakPointException("Can't suspend thread");
+                var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
+                if (hThread == IntPtr.Zero)
+                    throw new BreakPointException("Can't open thread for access");
 
-            // Read the register values
-            if (!WinApi.GetThreadContext(hThread, ref cxt))
-                throw new BreakPointException("Failed to get thread context");
+                if (WinApi.SuspendThread(hThread) == -1)
+                    throw new BreakPointException("Can't suspend thread");
 
-            SetBits(ref cxt.Dr7, m_index * 2, 1, 0);
+                // Read the register values
+                if (!WinApi.GetThreadContext(hThread, ref cxt))
+                    throw new BreakPointException("Failed to get thread context");
 
-            // Write out the new debug registers
-            if (!WinApi.SetThreadContext(hThread, ref cxt))
-                throw new BreakPointException("Failed to set thread context");
+                SetBits(ref cxt.Dr7, index * 2, 1, 0);
 
-            if (WinApi.ResumeThread(hThread) == -1)
-                throw new BreakPointException("Failed to resume thread");
+                // Write out the new debug registers
+                if (!WinApi.SetThreadContext(hThread, ref cxt))
+                    throw new BreakPointException("Failed to set thread context");
 
-            m_index = -1;
+                if (WinApi.ResumeThread(hThread) == -1)
+                    throw new BreakPointException("Failed to resume thread");
+
+                if (!WinApi.CloseHandle(hThread))
+                    throw new BreakPointException("Failed to close thread handle");
+            }
+
+            affectedThreads.Clear();
         }
 
         public virtual bool HandleException(ref CONTEXT ctx, ProcessDebugger pd) { return false; }
@@ -138,15 +161,14 @@ namespace WhiteMagic
                 address += (int)offset;
         }
 
-        public int Index { get { return m_index; } }
         public uint Address { get { return (uint)address; } }
-        public int ThreadId { get { return threadId; } }
 
-        protected int m_index = -1;
+        Dictionary<int, int> affectedThreads = new Dictionary<int, int>();
         protected int address;
 
         protected readonly uint len;
         protected readonly Condition condition;
-        protected int threadId = 0;
+
+        protected Process process = null;
     }
 }
