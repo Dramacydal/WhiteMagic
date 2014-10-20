@@ -100,11 +100,16 @@ namespace WhiteMagic
 
             try
             {
+                SuspendAllThreads();
                 bp.Set(process);
             }
             catch (BreakPointException e)
             {
                 throw new DebuggerException(e.Message);
+            }
+            finally
+            {
+                ResumeAllThreads();
             }
 
             breakPoints.Add(bp);
@@ -118,11 +123,16 @@ namespace WhiteMagic
 
             try
             {
+                SuspendAllThreads();
                 bp.UnSet();
             }
             catch (BreakPointException e)
             {
                 throw new DebuggerException(e.Message);
+            }
+            finally
+            {
+                ResumeAllThreads();
             }
 
             breakPoints.Remove(bp);

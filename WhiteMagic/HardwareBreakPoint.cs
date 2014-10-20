@@ -53,9 +53,6 @@ namespace WhiteMagic
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
-                if (WinApi.SuspendThread(hThread) == -1)
-                    throw new BreakPointException("Can't suspend thread");
-
                 // Read the register values
                 if (!WinApi.GetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to get thread context");
@@ -88,9 +85,6 @@ namespace WhiteMagic
                 if (!WinApi.SetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to set thread context");
 
-                if (WinApi.ResumeThread(hThread) == -1)
-                    throw new BreakPointException("Failed to resume thread");
-
                 if (!WinApi.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
 
@@ -122,9 +116,6 @@ namespace WhiteMagic
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
-                if (WinApi.SuspendThread(hThread) == -1)
-                    throw new BreakPointException("Can't suspend thread");
-
                 // Read the register values
                 if (!WinApi.GetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to get thread context");
@@ -135,9 +126,6 @@ namespace WhiteMagic
                 if (!WinApi.SetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to set thread context");
 
-                if (WinApi.ResumeThread(hThread) == -1)
-                    throw new BreakPointException("Failed to resume thread");
-
                 if (!WinApi.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
             }
@@ -147,7 +135,7 @@ namespace WhiteMagic
 
         public virtual bool HandleException(ref CONTEXT ctx, ProcessDebugger pd) { return false; }
 
-        public void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
+        protected void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
         {
             var mask = (1u << bits) - 1; // e.g. 1 becomes 0001, 2 becomes 0011, 3 becomes 0111
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
