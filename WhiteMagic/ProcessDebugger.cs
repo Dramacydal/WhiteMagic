@@ -265,9 +265,23 @@ namespace WhiteMagic
         {
             debugThread = new Thread(() =>
                 {
-                    Attach();
-                    StartListener();
-                    Detach();
+                    try
+                    {
+                        Attach();
+                        StartListener();
+                    }
+                    catch (DebuggerException e)
+                    {
+                        Console.WriteLine("Debugger exception occured: {0}", e.Message);
+                    }
+                    try
+                    {
+                        Detach();
+                    }
+                    catch (DebuggerException e)
+                    {
+                        Console.WriteLine("Debugger exception occured: {0}", e.Message);
+                    }
                 });
             debugThread.Start();
         }

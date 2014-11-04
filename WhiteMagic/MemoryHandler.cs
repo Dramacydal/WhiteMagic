@@ -22,8 +22,24 @@ namespace WhiteMagic
         Register = 5,   // borland fastcall
     }
 
-    public class MemoryHandler
+    public class MemoryHandler : IDisposable
     {
+        public class Suspender : IDisposable
+        {
+            private MemoryHandler m;
+
+            public Suspender(MemoryHandler m)
+            {
+                this.m = m;
+                m.SuspendAllThreads();
+            }
+
+            public void Dispose()
+            {
+                m.ResumeAllThreads();
+            }
+        }
+
         public Process Process { get { return process; } }
         public IntPtr ProcessHandle { get { return processHandle; } }
 
@@ -33,15 +49,7 @@ namespace WhiteMagic
         protected volatile int threadSuspendCount = 0;
         protected volatile List<int> remoteThreads = new List<int>();
 
-        public MemoryHandler()
-        {
-        }
-
-        ~MemoryHandler()
-        {
-            if (processHandle != IntPtr.Zero)
-                WinApi.CloseHandle(processHandle);
-        }
+        protected Dictionary<string, ModuleDump> moduleDump = new Dictionary<string, ModuleDump>();
 
         public MemoryHandler(Process process)
         {
@@ -54,6 +62,20 @@ namespace WhiteMagic
             if (process == null)
                 throw new MemoryException("Process " + processId + " not found");
             SetProcess(process);
+        }
+
+        public void Dispose()
+        {
+            if (processHandle != IntPtr.Zero)
+            {
+                WinApi.CloseHandle(processHandle);
+                processHandle = IntPtr.Zero;
+            }
+        }
+
+        ~MemoryHandler()
+        {
+            Dispose();
         }
 
         public void SetProcess(Process process)
@@ -552,6 +574,50 @@ namespace WhiteMagic
             {
                 WinApi.CloseHandle(hThread);
             }
+        }
+
+        protected ModuleDump DumpModule(string name, bool refresh = false)
+        {
+            using (var suspender = new Suspender(this))
+            {
+                if (refresh)
+                    process.Refresh();
+
+                var lowerName = name.ToLower();
+
+                foreach (ProcessModule mod in process.Modules)
+                {
+                    if (mod.ModuleName.ToLower() == lowerName)
+                    {
+                        var dump = new ModuleDump(mod, this);
+                        moduleDump[lowerName] = dump;
+                        return dump;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        protected ModuleDump GetModuleDump(string name, bool refresh)
+        {
+            var dumpColl = moduleDump.Where(d => d.Key == name.ToLower());
+            ModuleDump dump = null;
+            if (dumpColl.Count() == 0 || refresh)
+                dump = DumpModule(name, true);
+            else
+                dump = dumpColl.First().Value;
+
+            return dump;
+        }
+
+        public uint FindPattern(string moduleName, BytePattern pattern, uint startAddress = 0, bool refresh = false)
+        {
+            var dump = GetModuleDump(moduleName, refresh);
+            if (dump == null)
+                return uint.MaxValue;
+
+            return dump.FindPattern(pattern, startAddress);
         }
     }
 }
