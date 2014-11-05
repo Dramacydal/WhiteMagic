@@ -33,8 +33,17 @@ namespace WhiteMagic
             var list = new List<Process>();
             foreach (var process in Process.GetProcesses())
             {
-                if (process.MainModule.ModuleName.ToLower() == name.ToLower())
-                    list.Add(process);
+                try
+                {
+                    if (process.MainModule.ModuleName.ToLower() == name.ToLower())
+                        list.Add(process);
+                }
+                catch (NullReferenceException)
+                {
+                }
+                catch (Win32Exception)
+                {
+                }
             }
 
             return list;

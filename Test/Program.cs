@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using WhiteMagic;
 
 namespace Test
@@ -21,9 +22,25 @@ namespace Test
             //DelegateTest();
         }
 
+        static string[] bases = new string[]
+        {
+            "CGObjectData::m_guid",
+            "CGUnitData::charm",
+            "CGItemData::m_owner",
+
+        };
+
+        static string[] bases2 = new string[]
+        {
+            "CGObjectData::",
+            "CGUnitData::",
+            "CGItemData::",
+        };
+
         static void TestMemory()
         {
-            var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            //var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            var proc = Helpers.FindProcessByName("uwow.exe");
             if (proc == null)
             {
                 Console.WriteLine("Process not found");
@@ -36,25 +53,45 @@ namespace Test
                 return;
             }
 
+            // Console.WriteLine("{0:X}", addr - (int)proc.MainModule.BaseAddress + 0x400000);
             using (var m = new MemoryHandler(proc))
             {
-                var addr = 0u;
-                for (; addr != uint.MaxValue; )
+                var pattern = new MemoryPattern(Encoding.ASCII.GetBytes("CGObjectData::"));
+                pattern.Find(m, proc.MainModule.ModuleName);
+                while (pattern.Found)
                 {
-                    addr = m.FindPattern("wow.exe",
-                        new BytePattern("55 8b ec ff 05 ?? ?? ?? ?? 56 8b 75 10 57 8d 45 10 8b f9 50 8b ce e8"),
-                        addr + 1);
-                    Console.WriteLine("{0:X}", addr - (int)proc.MainModule.BaseAddress + 0x400000);
+                    Console.WriteLine("{0:X}", pattern.Address - (int)proc.MainModule.BaseAddress + 0x400000);
+                    pattern.FindNext();
                 }
 
-                addr = 0;
-                for (; addr != uint.MaxValue; )
+                Console.WriteLine();
+
+                pattern = new MemoryPattern(Encoding.ASCII.GetBytes("CGObjectData::"));
+                if (pattern.Find(m, proc.MainModule.ModuleName, new MemoryPattern.FindOptions() { Reverse = true }) != uint.MaxValue)
                 {
-                    addr = m.FindPattern("wow.exe",
-                        new BytePattern("55 8b ec 83 ec 10 53 56 8b f1 8d ?? ?? ?? ?? ?? 57 89 ?? ?? e8 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 05"),
-                        addr + 1);
-                    Console.WriteLine("{0:X}", addr - (int)proc.MainModule.BaseAddress + 0x400000);
+                    do
+                    {
+                        Console.WriteLine("{0:X}", pattern.Address - (int)proc.MainModule.BaseAddress + 0x400000);
+                    }
+                    while (pattern.FindNext() != uint.MaxValue);
                 }
+
+                /*foreach (var str in bases)
+                {
+                    Console.WriteLine(str);
+                    var addr = m.FindPattern("wow.exe", new BytePattern(Encoding.ASCII.GetBytes(str)));
+                    if (addr != uint.MaxValue)
+                    {
+                        addr = m.FindPattern("wow.exe", new BytePattern("C7 ?? ?? ?? ?? ?? " + BitConverter.GetBytes(addr).AsHexString()));
+                        if (addr != uint.MaxValue)
+                        {
+                            addr = m.ReadUInt(addr + 2);
+                            Console.WriteLine("{0:X}", addr - (int)proc.MainModule.BaseAddress + 0x400000);
+                            continue;
+                        }
+                    }
+                    Console.WriteLine("Fail");
+                }*/
             }
         }
     }

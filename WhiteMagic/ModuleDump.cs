@@ -5,8 +5,8 @@ namespace WhiteMagic
 {
     public class ModuleDump
     {
-        public uint BaseAddress { get; set; }
-        public uint ModuleSize { get { return (uint)MemoryDump.Length; } }
+        public int BaseAddress { get; set; }
+        public int ModuleSize { get { return MemoryDump.Length; } }
         public byte[] MemoryDump { get; set; }
 
         private static readonly int readCount = 256;
@@ -17,32 +17,68 @@ namespace WhiteMagic
             for (var i = 0; i < module.ModuleMemorySize; i += readCount)
                 bytes.AddRange(m.ReadBytes((uint)(module.BaseAddress + i), i + readCount >= module.ModuleMemorySize ? module.ModuleMemorySize - i - 1 : readCount));
 
-            BaseAddress = (uint)module.BaseAddress;
+            BaseAddress = (int)module.BaseAddress;
             MemoryDump = bytes.ToArray();
         }
 
-        public uint FindPattern(BytePattern pattern, uint startAddress = 0)
+        public uint FindPattern(MemoryPattern pattern, MemoryPattern.FindOptions options = null)
         {
-            if (startAddress >= BaseAddress)
-                startAddress -= BaseAddress;
+            if (pattern.Length == 0)
+                return uint.MaxValue;
 
-            for (uint i = startAddress; i < ModuleSize; ++i)
+            if (options == null)
+                options = new MemoryPattern.FindOptions();
+
+            if (options.StartAddress >= BaseAddress)
+                options.StartAddress -= BaseAddress;
+
+            if (options.StartAddress >= ModuleSize)
+                return uint.MaxValue;
+
+            if (!options.Reverse)
             {
-                var cont = false;
-                for (uint j = 0; j < pattern.Length; ++j)
+                for (var i = options.StartAddress; i < ModuleSize; ++i)
                 {
-                    if (i + j >= ModuleSize)
+                    if (i + pattern.Length > ModuleSize)
                         return uint.MaxValue;
 
-                    if (pattern[j].Type == BytePattern.ValueType.Exact && MemoryDump[i + j] != pattern[j].Value)
+                    var cont = false;
+                    for (var j = 0; j < pattern.Length; ++j)
                     {
-                        cont = true;
-                        break;
+                        if (pattern[j].Type == MemoryPattern.ValueType.Exact && MemoryDump[i + j] != pattern[j].Value)
+                        {
+                            cont = true;
+                            break;
+                        }
                     }
-                }
 
-                if (!cont)
-                    return i + BaseAddress;
+                    if (!cont)
+                        return (uint)(i + BaseAddress);
+                }
+            }
+            else
+            {
+                if (options.StartAddress == 0)
+                    options.StartAddress = (int)ModuleSize - 1;
+
+                for (var i = options.StartAddress; i >= 0; --i)
+                {
+                    if (i - pattern.Length < 0)
+                        return uint.MaxValue;
+
+                    var cont = false;
+                    for (var j = 0; j < pattern.Length; ++j)
+                    {
+                        if (pattern[j].Type == MemoryPattern.ValueType.Exact && MemoryDump[i + j - pattern.Length] != pattern[j].Value)
+                        {
+                            cont = true;
+                            break;
+                        }
+                    }
+
+                    if (!cont)
+                        return (uint)(i + BaseAddress - pattern.Length);
+                }
             }
 
             return uint.MaxValue;

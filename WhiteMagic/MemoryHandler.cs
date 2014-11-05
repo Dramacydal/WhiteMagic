@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using Fasm;
+using System.Runtime.CompilerServices;
 
 namespace WhiteMagic
 {
@@ -599,7 +600,7 @@ namespace WhiteMagic
             return null;
         }
 
-        protected ModuleDump GetModuleDump(string name, bool refresh)
+        public ModuleDump GetModuleDump(string name, bool refresh)
         {
             var dumpColl = moduleDump.Where(d => d.Key == name.ToLower());
             ModuleDump dump = null;
@@ -609,15 +610,6 @@ namespace WhiteMagic
                 dump = dumpColl.First().Value;
 
             return dump;
-        }
-
-        public uint FindPattern(string moduleName, BytePattern pattern, uint startAddress = 0, bool refresh = false)
-        {
-            var dump = GetModuleDump(moduleName, refresh);
-            if (dump == null)
-                return uint.MaxValue;
-
-            return dump.FindPattern(pattern, startAddress);
         }
     }
 }

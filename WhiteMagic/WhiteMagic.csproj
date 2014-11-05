@@ -42,7 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BytePattern.cs" />
+    <Compile Include="MemoryPattern.cs" />
     <Compile Include="DebugApi.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="HardwareBreakPoint.cs" />
