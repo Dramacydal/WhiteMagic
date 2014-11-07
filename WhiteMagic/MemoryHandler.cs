@@ -603,13 +603,28 @@ namespace WhiteMagic
         public ModuleDump GetModuleDump(string name, bool refresh = false)
         {
             var dumpColl = moduleDump.Where(d => d.Key == name.ToLower());
-            ModuleDump dump = null;
             if (dumpColl.Count() == 0 || refresh)
-                dump = DumpModule(name, true);
+                return DumpModule(name, true);
             else
-                dump = dumpColl.First().Value;
+                return dumpColl.First().Value;
+        }
 
-            return dump;
+        public uint Find(MemoryPattern pattern, string moduleName, int startAddress = 0, bool refresh = false)
+        {
+            var dump = GetModuleDump(moduleName, refresh);
+            if (dump == null)
+                return uint.MaxValue;
+
+            return dump.Find(pattern, startAddress);
+        }
+
+        public uint FindNext(MemoryPattern pattern, string moduleName)
+        {
+            var dump = GetModuleDump(moduleName, false);
+            if (dump == null)
+                return uint.MaxValue;
+
+            return dump.FindNext(pattern);
         }
     }
 }

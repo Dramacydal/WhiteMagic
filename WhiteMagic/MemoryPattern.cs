@@ -17,17 +17,15 @@ namespace WhiteMagic
         public bool Found { get { return address != uint.MaxValue; } }
 
         protected uint address = uint.MaxValue;
-        protected int startAddress = 0;
-        protected bool reverse = false;
-        protected MemoryHandler m = null;
-        protected string moduleName = null;
 
         public enum ValueType
         {
-            Exact = 0,
-            Any = 1,
-            Mask = 2,
-            AnySequence = 3
+            Equal = 0,
+            Greater = 1,
+            Less = 2,
+            Any = 3,
+            Mask = 4,
+            AnySequence = 5,
         }
 
         public class Element
@@ -42,8 +40,12 @@ namespace WhiteMagic
             {
                 switch (Type)
                 {
-                    case ValueType.Exact:
+                    case ValueType.Equal:
                         return Value == value;
+                    case ValueType.Greater:
+                        return value > Value;
+                    case ValueType.Less:
+                        return value < Value;
                     case ValueType.Any:
                         return true;
                     case ValueType.Mask:
@@ -70,7 +72,7 @@ namespace WhiteMagic
             var pat = new List<Element>();
 
             foreach (var b in pattern)
-                pat.Add(new Element() { Type = ValueType.Exact, Value = b });
+                pat.Add(new Element() { Type = ValueType.Equal, Value = b });
 
             Pattern = pat.ToArray();
         }
@@ -104,9 +106,25 @@ namespace WhiteMagic
                             Value = Convert.ToByte(tok.Replace("m", ""), 16),
                         };
                     }
+                    else if (tok.Contains('>'))
+                    {
+                        elem = new Element()
+                        {
+                            Type = ValueType.Greater,
+                            Value = Convert.ToByte(tok.Replace(">", ""), 16),
+                        };
+                    }
+                    else if (tok.Contains('<'))
+                    {
+                        elem = new Element()
+                        {
+                            Type = ValueType.Less,
+                            Value = Convert.ToByte(tok.Replace("<", ""), 16),
+                        };
+                    }
                     else if (tok.Contains("-"))
                     {
-                        var t = tok.Replace("L", "").Split('-');
+                        var t = tok.Split('-');
 
                         elem = new Element()
                         {
@@ -119,7 +137,7 @@ namespace WhiteMagic
                     {
                         elem = new Element()
                         {
-                            Type = ValueType.Exact,
+                            Type = ValueType.Equal,
                             Value = Convert.ToByte(tok, 16)
 
                         };
@@ -136,40 +154,80 @@ namespace WhiteMagic
             Pattern = pat.ToArray();
         }
 
-        public uint Find(MemoryHandler m, string moduleName, int startAddress = 0, bool reverse = false, bool refreshMemory = false)
+        public uint Find(byte[] bytes, int startAddress = 0)
         {
-            this.m = m;
-            this.moduleName = moduleName;
-            this.startAddress = startAddress;
-            this.reverse = reverse;
-
-            var dump = m.GetModuleDump(moduleName, refreshMemory);
-            if (dump == null)
-                address = uint.MaxValue;
-            else
-                address = dump.FindPattern(this, startAddress, reverse);
-
+            address = _Find(bytes, startAddress);
             return address;
         }
 
-        public uint FindNext()
+        protected uint _Find(byte[] bytes, int startAddress = 0)
         {
-            if (address == uint.MaxValue)
+            if (startAddress >= bytes.Length)
                 return address;
 
-            var dump = m.GetModuleDump(moduleName, false);
-            if (dump == null)
-                return uint.MaxValue;
+            if (Length == 0)
+                return (uint)startAddress;
 
-            startAddress = (int)address;
+            for (var curAddr = startAddress; curAddr < bytes.Length; ++curAddr)
+            {
+                if (curAddr + Length > bytes.Length)
+                    return uint.MaxValue;
 
-            if (reverse)
-                --startAddress;
-            else
-                ++startAddress;
+                var match = true;
+                var offs = 0;
+                for (var j = 0; j < Length; ++j)
+                {
+                    var e = Pattern[j];
+                    if (!e.Matches(bytes[curAddr + offs]))
+                    {
+                        match = false;
+                        break;
+                    }
 
-            address = dump.FindPattern(this, startAddress, reverse);
-            return address;
+                    if (e.Type == MemoryPattern.ValueType.AnySequence)
+                    {
+                        if (j == Pattern.Length - 1)
+                            return (uint)(curAddr);
+
+                        var seqMatches = false;
+                        var seqLength = 0;
+                        for (; seqLength <= e.MaxLength; ++seqLength)
+                        {
+                            if (curAddr + 1 + seqLength >= bytes.Length)
+                                return uint.MaxValue;
+
+                            if (Pattern[j + 1].Matches(bytes[curAddr + 1 + seqLength]))
+                            {
+                                if (seqLength >= e.MinLength)
+                                {
+                                    seqMatches = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!seqMatches)
+                        {
+                            match = false;
+                            break;
+                        }
+
+                        offs += seqLength;
+                    }
+                    else
+                        ++offs;
+                }
+
+                if (match)
+                    return (uint)(curAddr);
+            }
+
+            return uint.MaxValue;
+        }
+
+        public uint FindNext(byte[] bytes)
+        {
+            return Find(bytes, (int)Address + 1);
         }
 
         public Element this[int index]

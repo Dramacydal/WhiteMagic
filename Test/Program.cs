@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Linq;
 using WhiteMagic;
 
 namespace Test
@@ -22,25 +23,55 @@ namespace Test
             //DelegateTest();
         }
 
-        static string[] bases = new string[]
+        static string[] descriptorTypes = new string[]
         {
-            "CGObjectData::m_guid",
-            "CGUnitData::charm",
-            "CGItemData::m_owner",
-
-        };
-
-        static string[] bases2 = new string[]
-        {
+            "CGUnitDynamicData::",
             "CGObjectData::",
             "CGUnitData::",
+            "CGPlayerData::",
             "CGItemData::",
+            "CGContainerData::",
+            "CGGameObjectData::",
+            "CGDynamicObjectData::",
+            "CGCorpseData::",
+            "CGAreaTriggerData::",
+            "CGSceneObjectData::",
+            "CGConversationData::"
+        };
+
+        static string[] descriptorDynamicTypes = new string[]
+        {
+            "CGUnitDynamicData::",
+            "CGPlayerDynamicData::",
+            "CGItemDynamicData::",
+            "CGConversationDynamicData::"
         };
 
         static void TestMemory()
         {
-            //var proc = Helpers.FindProcessByInternalName("world of warcraft");
-            var proc = Helpers.FindProcessByName("uwow.exe");
+            var bytes = new byte[]
+                {
+                    0x11, 0x22,
+                    0x33,
+                    0x11, 0x00, 0x22,
+                    0x33,
+                    0x11, 0x00, 0x00, 0x22,
+                    0x33,
+                    0x11, 0x00, 0x00, 0x00, 0x22,
+                    0x44
+                };
+
+            var pat2 = new MemoryPattern("0x11 2-3 0x22");
+            pat2.Find(bytes);
+            while (pat2.Address != uint.MaxValue)
+            {
+                Console.WriteLine("{0}", pat2.Address);
+                pat2.FindNext(bytes);
+            }
+            return;
+
+            var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            //var proc = Helpers.FindProcessByName("wow.exe");
             if (proc == null)
             {
                 Console.WriteLine("Process not found");
@@ -56,25 +87,15 @@ namespace Test
             // Console.WriteLine("{0:X}", addr - (int)proc.MainModule.BaseAddress + 0x400000);
             using (var m = new MemoryHandler(proc))
             {
-                var pattern = new MemoryPattern(Encoding.ASCII.GetBytes("CGObjectData::"));
-                pattern.Find(m, proc.MainModule.ModuleName);
-                while (pattern.Found)
+                var pat = new MemoryPattern("0x11 0-3 0x22");
+                m.Find(pat, proc.MainModule.ModuleName);
+                while (pat.Address != uint.MaxValue)
                 {
-                    Console.WriteLine("{0:X}", pattern.Address - (int)proc.MainModule.BaseAddress + 0x400000);
-                    pattern.FindNext();
+                    Console.WriteLine("{0}", pat.Address);
+                    m.FindNext(pat, proc.MainModule.ModuleName);
                 }
 
-                Console.WriteLine();
-
-                pattern = new MemoryPattern(Encoding.ASCII.GetBytes("CGObjectData::"));
-                if (pattern.Find(m, proc.MainModule.ModuleName, new MemoryPattern.FindOptions() { Reverse = true }) != uint.MaxValue)
-                {
-                    do
-                    {
-                        Console.WriteLine("{0:X}", pattern.Address - (int)proc.MainModule.BaseAddress + 0x400000);
-                    }
-                    while (pattern.FindNext() != uint.MaxValue);
-                }
+                return;
 
                 /*foreach (var str in bases)
                 {
