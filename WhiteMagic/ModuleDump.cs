@@ -21,64 +21,73 @@ namespace WhiteMagic
             MemoryDump = bytes.ToArray();
         }
 
-        public uint FindPattern(MemoryPattern pattern, MemoryPattern.FindOptions options = null)
+        public uint FindPattern(MemoryPattern pattern, int startAddress = 0, bool reverse = false)
         {
+            if (startAddress >= BaseAddress)
+                startAddress -= BaseAddress;
+
+            if (startAddress >= ModuleSize)
+                return uint.MaxValue;
+
             if (pattern.Length == 0)
-                return uint.MaxValue;
+                return (uint)startAddress;
 
-            if (options == null)
-                options = new MemoryPattern.FindOptions();
-
-            if (options.StartAddress >= BaseAddress)
-                options.StartAddress -= BaseAddress;
-
-            if (options.StartAddress >= ModuleSize)
-                return uint.MaxValue;
-
-            if (!options.Reverse)
+            for (var curAddr = startAddress; curAddr < ModuleSize; ++curAddr)
             {
-                for (var i = options.StartAddress; i < ModuleSize; ++i)
-                {
-                    if (i + pattern.Length > ModuleSize)
-                        return uint.MaxValue;
+                if (curAddr + pattern.Length > ModuleSize)
+                    return uint.MaxValue;
 
-                    var cont = false;
-                    for (var j = 0; j < pattern.Length; ++j)
+                var match = true;
+                var offs = 0;
+                for (var j = 0; j < pattern.Length; ++j)
+                {
+                    ///
+                    if (j > 500)
+                        return uint.MaxValue;
+                    ///
+                    var e = pattern[j];
+                    if (!e.Matches(MemoryDump[curAddr + offs]))
                     {
-                        if (pattern[j].Type == MemoryPattern.ValueType.Exact && MemoryDump[i + j] != pattern[j].Value)
-                        {
-                            cont = true;
-                            break;
-                        }
+                        match = false;
+                        break;
                     }
 
-                    if (!cont)
-                        return (uint)(i + BaseAddress);
-                }
-            }
-            else
-            {
-                if (options.StartAddress == 0)
-                    options.StartAddress = (int)ModuleSize - 1;
-
-                for (var i = options.StartAddress; i >= 0; --i)
-                {
-                    if (i - pattern.Length < 0)
-                        return uint.MaxValue;
-
-                    var cont = false;
-                    for (var j = 0; j < pattern.Length; ++j)
+                    if (e.Type == MemoryPattern.ValueType.AnySequence)
                     {
-                        if (pattern[j].Type == MemoryPattern.ValueType.Exact && MemoryDump[i + j - pattern.Length] != pattern[j].Value)
+                        if (j == pattern.Length - 1)
+                            return (uint)(curAddr + BaseAddress);
+
+                        var seqMatches = false;
+                        var seqLength = 0;
+                        for (; seqLength <= e.MaxLength; ++seqLength)
                         {
-                            cont = true;
+                            if (curAddr + 1 + seqLength >= ModuleSize)
+                                return uint.MaxValue;
+
+                            if (pattern[j + 1].Matches(MemoryDump[curAddr + 1 + seqLength]))
+                            {
+                                if (seqLength >= e.MinLength)
+                                {
+                                    seqMatches = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!seqMatches)
+                        {
+                            match = false;
                             break;
                         }
-                    }
 
-                    if (!cont)
-                        return (uint)(i + BaseAddress - pattern.Length);
+                        offs += seqLength;
+                    }
+                    else
+                        ++offs;
                 }
+
+                if (match)
+                    return (uint)(curAddr + BaseAddress);
             }
 
             return uint.MaxValue;

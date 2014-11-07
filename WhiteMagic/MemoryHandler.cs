@@ -600,7 +600,7 @@ namespace WhiteMagic
             return null;
         }
 
-        public ModuleDump GetModuleDump(string name, bool refresh)
+        public ModuleDump GetModuleDump(string name, bool refresh = false)
         {
             var dumpColl = moduleDump.Where(d => d.Key == name.ToLower());
             ModuleDump dump = null;

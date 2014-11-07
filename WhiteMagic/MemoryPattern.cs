@@ -1,22 +1,24 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace WhiteMagic
 {
-    public class MemoryPattern
+    public class PatternException : Exception
     {
-        public class FindOptions
-        {
-            public int StartAddress = 0;
-            public bool Reverse = false;
-        }
+        public PatternException(string message)
+            : base(message) { }
+    }
 
+    public class MemoryPattern : IEnumerable
+    {
         public uint Address { get { return address; } }
         public bool Found { get { return address != uint.MaxValue; } }
 
         protected uint address = uint.MaxValue;
-        protected FindOptions findOptions = null;
+        protected int startAddress = 0;
+        protected bool reverse = false;
         protected MemoryHandler m = null;
         protected string moduleName = null;
 
@@ -24,15 +26,44 @@ namespace WhiteMagic
         {
             Exact = 0,
             Any = 1,
+            Mask = 2,
+            AnySequence = 3
         }
 
-        public struct Element
+        public class Element
         {
             public ValueType Type { get; set; }
+
             public byte Value { get; set; }
+            public byte MinLength { get; set; }
+            public byte MaxLength { get; set; }
+
+            public bool Matches(byte value)
+            {
+                switch (Type)
+                {
+                    case ValueType.Exact:
+                        return Value == value;
+                    case ValueType.Any:
+                        return true;
+                    case ValueType.Mask:
+                        return (Value & value) != 0;
+                    case ValueType.AnySequence:
+                        return true;
+                    default:
+                        break;
+                }
+
+                return false;
+            }
         }
 
         private Element[] Pattern;
+
+        private MemoryPattern(Element[] elements)
+        {
+            Pattern = elements;
+        }
 
         public MemoryPattern(byte[] pattern)
         {
@@ -49,45 +80,74 @@ namespace WhiteMagic
             var pat = new List<Element>();
 
             var tokens = pattern.Split(' ');
-            foreach (var tok in tokens)
+            try
             {
-                if (tok == string.Empty)
-                    continue;
+                foreach (var tok in tokens)
+                {
+                    if (tok == string.Empty)
+                        continue;
 
-                Element elem;
-                if (tok.Contains('?'))
-                    elem = new Element()
+                    Element elem;
+                    if (tok == "??")
                     {
-                        Type = ValueType.Any,
-                        Value = 0
-                    };
-                else
-                    elem = new Element()
+                        elem = new Element()
+                        {
+                            Type = ValueType.Any,
+                            Value = 0
+                        };
+                    }
+                    else if (tok.Contains('m'))
                     {
-                        Type = ValueType.Exact,
-                        Value = Convert.ToByte(tok, 16)
+                        elem = new Element()
+                        {
+                            Type = ValueType.Mask,
+                            Value = Convert.ToByte(tok.Replace("m", ""), 16),
+                        };
+                    }
+                    else if (tok.Contains("-"))
+                    {
+                        var t = tok.Replace("L", "").Split('-');
 
-                    };
+                        elem = new Element()
+                        {
+                            Type = ValueType.AnySequence,
+                            MinLength = Convert.ToByte(t[0]),
+                            MaxLength = Convert.ToByte(t[1]),
+                        };
+                    }
+                    else
+                    {
+                        elem = new Element()
+                        {
+                            Type = ValueType.Exact,
+                            Value = Convert.ToByte(tok, 16)
 
-                pat.Add(elem);
+                        };
+                    }
+
+                    pat.Add(elem);
+                }
+            }
+            catch(Exception e)
+            {
+                throw new PatternException("Wrong pattern format: " + e.Message);
             }
 
             Pattern = pat.ToArray();
         }
 
-        public uint Find(MemoryHandler m, string moduleName, FindOptions findOptions = null, bool refreshMemory = false)
+        public uint Find(MemoryHandler m, string moduleName, int startAddress = 0, bool reverse = false, bool refreshMemory = false)
         {
             this.m = m;
             this.moduleName = moduleName;
-            if (findOptions == null)
-                findOptions = new FindOptions();
-            this.findOptions = findOptions;
+            this.startAddress = startAddress;
+            this.reverse = reverse;
 
             var dump = m.GetModuleDump(moduleName, refreshMemory);
             if (dump == null)
                 address = uint.MaxValue;
             else
-                address = dump.FindPattern(this, findOptions);
+                address = dump.FindPattern(this, startAddress, reverse);
 
             return address;
         }
@@ -101,14 +161,14 @@ namespace WhiteMagic
             if (dump == null)
                 return uint.MaxValue;
 
-            findOptions.StartAddress = (int)address;
+            startAddress = (int)address;
 
-            if (findOptions.Reverse)
-                --findOptions.StartAddress;
+            if (reverse)
+                --startAddress;
             else
-                ++findOptions.StartAddress;
+                ++startAddress;
 
-            address = dump.FindPattern(this, findOptions);
+            address = dump.FindPattern(this, startAddress, reverse);
             return address;
         }
 
@@ -123,5 +183,16 @@ namespace WhiteMagic
         }
 
         public int Length { get { return Pattern.Length; } }
+
+        public IEnumerator GetEnumerator()
+        {
+            foreach (var e in Pattern)
+                yield return e;
+        }
+
+        public MemoryPattern Skip(int count)
+        {
+            return new MemoryPattern(Pattern.Skip(count).ToArray());
+        }
     }
 }
