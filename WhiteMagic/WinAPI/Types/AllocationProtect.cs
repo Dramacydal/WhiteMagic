@@ -3,8 +3,9 @@
 namespace WhiteMagic.WinAPI
 {
     [Flags]
-    public enum PageProtection : uint
+    public enum AllocationProtect : uint
     {
+        PAGE_NONE = 0x0,
         PAGE_EXECUTE = 0x00000010,
         PAGE_EXECUTE_READ = 0x00000020,
         PAGE_EXECUTE_READWRITE = 0x00000040,

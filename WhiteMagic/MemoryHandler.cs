@@ -162,8 +162,8 @@ namespace WhiteMagic
         {
             var buf = new byte[count];
 
-            PageProtection oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+            AllocationProtect oldProtect, oldProtect2;
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
@@ -305,8 +305,8 @@ namespace WhiteMagic
         #region Memory writing
         public void WriteBytes(uint addr, byte[] bytes)
         {
-            PageProtection oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+            AllocationProtect oldProtect, oldProtect2;
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
@@ -396,7 +396,7 @@ namespace WhiteMagic
         #region Memory allocators
         public uint AllocateMemory(int size)
         {
-            var addr = Kernel32.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, PageProtection.PAGE_EXECUTE_READWRITE);
+            var addr = Kernel32.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
             if (addr == 0)
                 throw new MemoryException("Failed to allocate memory in remote process");
 

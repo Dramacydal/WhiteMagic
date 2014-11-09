@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using WhiteMagic;
 using WhiteMagic.WinAPI;
+using System.Runtime.InteropServices;
 
 namespace Test
 {
@@ -49,22 +50,28 @@ namespace Test
 
         static void Test2()
         {
-            SystemInfo info;
-            Kernel32.GetSystemInfo(out info);
-            Console.WriteLine(info.ProcessorLevel);
-            return;
-
-
             var proc = Helpers.FindProcessByName("notepad++.exe");
             if (proc == null)
             {
-                Console.WriteLine("Can't find process");
+                Console.WriteLine("Failed to find process");
                 return;
             }
 
-            using (var m = new MemoryHandler(proc))
+            SystemInfo info;
+            Kernel32.GetSystemInfo(out info);
+            Console.WriteLine(info.ProcessorLevel);
+
+            long MaxAddress = (long)info.MaximumApplicationAddress;
+            long address = 0;
+            do
             {
-            }
+                MEMORY_BASIC_INFORMATION m;
+                int result = Kernel32.VirtualQueryEx(proc.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION)));
+                Console.WriteLine("0x{0:X}-0x{1:X} : 0x{2:X} bytes Flags: {3}", (uint)m.BaseAddress, (uint)m.BaseAddress + (uint)m.RegionSize - 1, (uint)m.RegionSize, m.AllocationProtect);
+                if (address == (long)m.BaseAddress + (long)m.RegionSize)
+                    break;
+                address = (long)m.BaseAddress + (long)m.RegionSize;
+            } while (address <= MaxAddress);
         }
 
         static void TestMemory()

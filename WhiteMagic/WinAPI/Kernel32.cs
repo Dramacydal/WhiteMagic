@@ -74,7 +74,14 @@ namespace WhiteMagic.WinAPI
 
         [DllImport("kernel32.dll")]
         public static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress,
-           int dwSize, PageProtection flNewProtect, out PageProtection lpflOldProtect);
+           int dwSize, AllocationProtect flNewProtect, out AllocationProtect lpflOldProtect);
+
+        [DllImport("kernel32.dll")]
+        public static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        public static extern uint VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
+           int dwSize, AllocationType flAllocationType, AllocationProtect flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ReadProcessMemory(
@@ -91,10 +98,6 @@ namespace WhiteMagic.WinAPI
             byte[] lpBuffer,
             int nSize,
             out int lpNumberOfBytesWritten);
-
-        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        public static extern uint VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
-           int dwSize, AllocationType flAllocationType, PageProtection flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         public static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
