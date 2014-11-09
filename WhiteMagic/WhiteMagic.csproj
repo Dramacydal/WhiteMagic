@@ -43,19 +43,33 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MemoryPattern.cs" />
-    <Compile Include="DebugApi.cs" />
+    <Compile Include="WinAPI\Advapi32.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="MemoryApi.cs" />
+    <Compile Include="WinAPI\Types\AllocationType.cs" />
+    <Compile Include="WinAPI\Types\Context.cs" />
+    <Compile Include="WinAPI\Types\DebugEvent.cs" />
+    <Compile Include="WinAPI\Types\FreeType.cs" />
+    <Compile Include="WinAPI\Types\Luid.cs" />
+    <Compile Include="WinAPI\Types\PageProtection.cs" />
+    <Compile Include="WinAPI\Types\ProcessAccess.cs" />
+    <Compile Include="WinAPI\Types\ProcessArchitecture.cs" />
+    <Compile Include="WinAPI\Types\ThreadAccess.cs" />
+    <Compile Include="WinAPI\Types\ThreadInfoClass.cs" />
+    <Compile Include="WinAPI\Types\TokenObject.cs" />
+    <Compile Include="WinAPI\Types\TokenPrivileges.cs" />
+    <Compile Include="WinAPI\Kernel32.cs" />
     <Compile Include="MemoryHandler.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="ModuleDump.cs" />
     <Compile Include="ModulePointer.cs" />
-    <Compile Include="ProcessApi.cs" />
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ThreadApi.cs" />
+    <Compile Include="WinAPI\Ntdll.cs" />
+    <Compile Include="WinAPI\Types\WaitResult.cs" />
+    <Compile Include="WinAPI\Types\WakeFlags.cs" />
+    <Compile Include="WinAPI\User32.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

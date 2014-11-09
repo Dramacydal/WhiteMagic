@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Text;
 using System.Linq;
+using System.Collections.Generic;
 using WhiteMagic;
+using WhiteMagic.WinAPI;
 
 namespace Test
 {
@@ -17,10 +19,8 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            //TestBreakPoints();
-            TestMemory();
-            //TestThreads();
-            //DelegateTest();
+            Test2();
+            //TestMemory();
         }
 
         static string[] descriptorTypes = new string[]
@@ -46,6 +46,26 @@ namespace Test
             "CGItemDynamicData::",
             "CGConversationDynamicData::"
         };
+
+        static void Test2()
+        {
+            SystemInfo info;
+            Kernel32.GetSystemInfo(out info);
+            Console.WriteLine(info.ProcessorLevel);
+            return;
+
+
+            var proc = Helpers.FindProcessByName("notepad++.exe");
+            if (proc == null)
+            {
+                Console.WriteLine("Can't find process");
+                return;
+            }
+
+            using (var m = new MemoryHandler(proc))
+            {
+            }
+        }
 
         static void TestMemory()
         {
@@ -78,7 +98,7 @@ namespace Test
                 return;
             }
 
-            if (!WinApi.SetDebugPrivileges())
+            if (!Helpers.SetDebugPrivileges())
             {
                 Console.WriteLine("Failed to set debug privileges");
                 return;

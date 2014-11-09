@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
@@ -60,6 +61,37 @@ namespace WhiteMagic
         {
             var processes = FindProcessesByInternalName(name);
             return processes.Count == 0 ? null : processes[0];
+        }
+
+        public static string SE_DEBUG_NAME = "SeDebugPrivilege";
+
+        public static bool SetDebugPrivileges()
+        {
+            IntPtr hToken;
+            LUID luidSEDebugNameValue;
+            TOKEN_PRIVILEGES tkpPrivileges;
+
+            if (!Advapi32.OpenProcessToken(Kernel32.GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out hToken))
+                return false;
+
+            if (!Advapi32.LookupPrivilegeValue(null, SE_DEBUG_NAME, out luidSEDebugNameValue))
+            {
+                Kernel32.CloseHandle(hToken);
+                return false;
+            }
+
+            tkpPrivileges.PrivilegeCount = 1;
+            tkpPrivileges.Luid = luidSEDebugNameValue;
+            tkpPrivileges.Attributes = PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
+
+            if (!Advapi32.AdjustTokenPrivileges(hToken, false, ref tkpPrivileges, 0, IntPtr.Zero, IntPtr.Zero))
+            {
+                Kernel32.CloseHandle(hToken);
+                return false;
+            }
+
+            Kernel32.CloseHandle(hToken);
+            return true;
         }
     }
 }

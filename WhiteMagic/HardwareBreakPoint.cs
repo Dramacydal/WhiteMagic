@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
@@ -49,23 +50,23 @@ namespace WhiteMagic
                 // The only registers we care about are the debug registers
                 cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
-                var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
+                var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
                 // Read the register values
-                if (!WinApi.GetThreadContext(hThread, ref cxt))
+                if (!Kernel32.GetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to get thread context");
 
                 // Find an available hardware register
                 var index = -1;
-                for (index = 0; index < WinApi.MAX_BREAKPOINTS; ++index)
+                for (index = 0; index < Kernel32.MaxHardwareBreakpoints; ++index)
                 {
                     if ((cxt.Dr7 & (1 << (index * 2))) == 0)
                         break;
                 }
 
-                if (index == WinApi.MAX_BREAKPOINTS)
+                if (index == Kernel32.MaxHardwareBreakpoints)
                     throw new BreakPointException("All hardware breakpoint registers are already being used");
 
                 switch (index)
@@ -82,10 +83,10 @@ namespace WhiteMagic
                 SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
                 // Write out the new debug registers
-                if (!WinApi.SetThreadContext(hThread, ref cxt))
+                if (!Kernel32.SetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to set thread context");
 
-                if (!WinApi.CloseHandle(hThread))
+                if (!Kernel32.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
 
                 affectedThreads[th.Id] = index;
@@ -105,28 +106,28 @@ namespace WhiteMagic
 
                 var index = affectedThreads[th.Id];
                 // Zero out the debug register settings for this breakpoint
-                if (index >= WinApi.MAX_BREAKPOINTS)
+                if (index >= Kernel32.MaxHardwareBreakpoints)
                     throw new BreakPointException("Bogus breakpoints index");
 
                 var cxt = new CONTEXT();
                 // The only registers we care about are the debug registers
                 cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
-                var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
+                var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
                 // Read the register values
-                if (!WinApi.GetThreadContext(hThread, ref cxt))
+                if (!Kernel32.GetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to get thread context");
 
                 SetBits(ref cxt.Dr7, index * 2, 1, 0);
 
                 // Write out the new debug registers
-                if (!WinApi.SetThreadContext(hThread, ref cxt))
+                if (!Kernel32.SetThreadContext(hThread, ref cxt))
                     throw new BreakPointException("Failed to set thread context");
 
-                if (!WinApi.CloseHandle(hThread))
+                if (!Kernel32.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
             }
 

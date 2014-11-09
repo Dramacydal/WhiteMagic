@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
-namespace WhiteMagic
+namespace WhiteMagic.WinAPI
 {
     [Flags]
     public enum ProcessAccess
@@ -99,11 +98,5 @@ namespace WhiteMagic
         /// All possible access rights for a process object.
         /// </summary>
         AllAccess = StandardRightsRequired | Synchronize | 0xFFFF
-    }
-
-    public static partial class WinApi
-    {
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenProcess(ProcessAccess dwDesiredAccess, bool bInheritHandle, int dwProcessId);
     }
 }

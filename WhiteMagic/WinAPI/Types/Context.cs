@@ -1,7 +1,6 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
-namespace WhiteMagic
+namespace WhiteMagic.WinAPI
 {
     public enum CONTEXT_FLAGS : uint
     {
@@ -20,18 +19,17 @@ namespace WhiteMagic
     [StructLayout(LayoutKind.Sequential)]
     public struct FLOATING_SAVE_AREA
     {
-         public uint ControlWord;
-         public uint StatusWord;
-         public uint TagWord;
-         public uint ErrorOffset;
-         public uint ErrorSelector;
-         public uint DataOffset;
-         public uint DataSelector;
-         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
-         public byte[] RegisterArea;
-         public uint Cr0NpxState;
+        public uint ControlWord;
+        public uint StatusWord;
+        public uint TagWord;
+        public uint ErrorOffset;
+        public uint ErrorSelector;
+        public uint DataOffset;
+        public uint DataSelector;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
+        public byte[] RegisterArea;
+        public uint Cr0NpxState;
     }
-
 
     [StructLayout(LayoutKind.Sequential)]
     public struct CONTEXT
@@ -164,91 +162,5 @@ namespace WhiteMagic
         // Retrieved by CONTEXT_EXTENDED_REGISTERS
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
         public byte[] ExtendedRegisters;
-    }
-
-    [Flags]
-    public enum ThreadAccess : int
-    {
-        TERMINATE = (0x0001),
-        SUSPEND_RESUME = (0x0002),
-        GET_CONTEXT = (0x0008),
-        SET_CONTEXT = (0x0010),
-        SET_INFORMATION = (0x0020),
-        QUERY_INFORMATION = (0x0040),
-        SET_THREAD_TOKEN = (0x0080),
-        IMPERSONATE = (0x0100),
-        DIRECT_IMPERSONATION = (0x0200),
-        STANDARD_RIGHTS_REQUIRED = (0x000F0000),
-        SYNCHRONIZE = (0x00100000),
-        // vista and later
-        THREAD_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF)
-    }
-
-    public enum WaitResult : uint
-    {
-        WAIT_OBJECT_0 = 0x00000000,
-        WAIT_ABANDONED = 0x00000080,
-        WAIT_TIMEOUT = 0x00000102,
-        WAIT_FAILED = 0xFFFFFFFF,
-    }
-
-    public enum ThreadInfoClass : int
-    {
-        ThreadQuerySetWin32StartAddress = 9
-    }
-
-    [Flags]
-    public enum WakeFlags : uint
-    {
-        QS_ALLEVENTS = 0x04BF,
-    }
-
-    public static partial class WinApi
-    {
-        public static uint MAX_BREAKPOINTS = 4;
-        public static uint INFINITE = 0xFFFFFFFF;
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle,
-           int dwThreadId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern int SuspendThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool SetThreadContext(IntPtr hThread, [In] ref CONTEXT lpContext);
-
-        [DllImport("kernel32.dll")]
-        public static extern int ResumeThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll", EntryPoint = "WaitForDebugEvent")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
-
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr CreateRemoteThread(IntPtr hProcess,
-            IntPtr lpThreadAttributes, uint dwStackSize, uint lpStartAddress,
-            IntPtr lpParameter, uint dwCreationFlags, out int lpThreadId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern WaitResult WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
-
-        [DllImport("user32.dll")]
-        public static extern WaitResult MsgWaitForMultipleObjects(uint nCount, IntPtr[] pHandles,
-            bool bWaitAll, uint dwMilliseconds, WakeFlags dwWakeMask);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
-
-        [DllImport("ntdll.dll", SetLastError = true)]
-        public static extern int NtQueryInformationThread(
-            IntPtr threadHandle,
-            ThreadInfoClass threadInformationClass,
-            byte[] threadInformation,
-            int threadInformationLength,
-            IntPtr returnLengthPtr);
     }
 }

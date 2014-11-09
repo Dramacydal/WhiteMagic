@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
@@ -35,16 +36,16 @@ namespace WhiteMagic
         public void Attach()
         {
             bool res = false;
-            if (!WinApi.CheckRemoteDebuggerPresent(process.Handle, ref res))
+            if (!Kernel32.CheckRemoteDebuggerPresent(process.Handle, ref res))
                 throw new DebuggerException("Failed to check if remote process is already being debugged");
 
             if (res)
                 throw new DebuggerException("Process is already being debugged by another debugger");
 
-            if (!WinApi.DebugActiveProcess(process.Id))
+            if (!Kernel32.DebugActiveProcess(process.Id))
                 throw new DebuggerException("Failed to start debugging");
 
-            if (!WinApi.DebugSetProcessKillOnExit(false))
+            if (!Kernel32.DebugSetProcessKillOnExit(false))
                 throw new DebuggerException("Failed to set kill on exit");
 
             isDebugging = true;
@@ -71,13 +72,13 @@ namespace WhiteMagic
         {
             lock ("moduleLoad")
             {
-                var hModule = WinApi.GetModuleHandle("kernel32.dll");
+                var hModule = Kernel32.GetModuleHandle("kernel32.dll");
                 if (hModule == 0)
-                    hModule = WinApi.LoadLibraryA("kernel32.dll");
+                    hModule = Kernel32.LoadLibraryA("kernel32.dll");
                 if (hModule == 0)
                     throw new DebuggerException("Failed to get kernel32.dll module");
 
-                var funcAddress = WinApi.GetProcAddress(hModule, "LoadLibraryA");
+                var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
                 var arg = AllocateCString(name);
 
                 var ret = Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
@@ -172,7 +173,7 @@ namespace WhiteMagic
 
             RemoveBreakPoints();
 
-            if (!WinApi.DebugActiveProcessStop(process.Id))
+            if (!Kernel32.DebugActiveProcessStop(process.Id))
                 throw new DebuggerException("Failed to stop process debugging");
         }
 
@@ -181,7 +182,7 @@ namespace WhiteMagic
             var DebugEvent = new DEBUG_EVENT();
             for (; isDebugging; )
             {
-                if (!WinApi.WaitForDebugEvent(ref DebugEvent, waitInterval))
+                if (!Kernel32.WaitForDebugEvent(ref DebugEvent, waitInterval))
                 {
                     if (!isDebugging)
                         break;
@@ -199,9 +200,9 @@ namespace WhiteMagic
                         isDebugging = false;
                         isDetached = true;
 
-                        if (!WinApi.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                        if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                             throw new DebuggerException("Failed to continue debug event");
-                        if (!WinApi.DebugActiveProcessStop(process.Id))
+                        if (!Kernel32.DebugActiveProcessStop(process.Id))
                             throw new DebuggerException("Failed to stop process debugging");
                         return;
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
@@ -216,13 +217,13 @@ namespace WhiteMagic
                                 break;
                             }*/
 
-                            var hThread = WinApi.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, DebugEvent.dwThreadId);
+                            var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, DebugEvent.dwThreadId);
                             if (hThread == IntPtr.Zero)
                                 throw new DebuggerException("Failed to open thread");
 
                             var Context = new CONTEXT();
                             Context.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_FULL;
-                            if (!WinApi.GetThreadContext(hThread, ref Context))
+                            if (!Kernel32.GetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to get thread context");
 
                             var bp = breakPoints.Find(b => b.Address == Context.Eip);
@@ -230,7 +231,7 @@ namespace WhiteMagic
                                 break;
 
                             //Console.WriteLine("Triggered");
-                            if (bp.HandleException(ref Context, this) && !WinApi.SetThreadContext(hThread, ref Context))
+                            if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to set thread context");
                         }
                         break;
@@ -243,14 +244,14 @@ namespace WhiteMagic
                     isDetached = true;
 
                     RemoveBreakPoints();
-                    if (!WinApi.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                    if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                         throw new DebuggerException("Failed to continue debug event");
-                    if (!WinApi.DebugActiveProcessStop(process.Id))
+                    if (!Kernel32.DebugActiveProcessStop(process.Id))
                         throw new DebuggerException("Failed to stop process debugging");
                     return;
                 }
 
-                if (!WinApi.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                     throw new DebuggerException("Failed to continue debug event");
             }
 

@@ -1,15 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace WhiteMagic
+namespace WhiteMagic.WinAPI
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LUID
-    {
-        public UInt32 LowPart;
-        public Int32 HighPart;
-    }
-
     public enum DebugEventType : uint
     {
         EXCEPTION_DEBUG_EVENT = 1,
@@ -57,6 +50,12 @@ namespace WhiteMagic
         STATUS_FLOAT_MULTIPLE_FAULTS = 0xC00002B4,
         STATUS_FLOAT_MULTIPLE_TRAPS = 0xC00002B5,
         STATUS_ILLEGAL_VLM_REFERENCE = 0xC00002C0,
+    }
+
+    public enum DebugContinueStatus : uint
+    {
+        DBG_CONTINUE = 0x00010002,
+        DBG_EXCEPTION_NOT_HANDLED = 0x80010001,
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -212,122 +211,6 @@ namespace WhiteMagic
             var result = Marshal.PtrToStructure(pointer, typeof(T));
             Marshal.FreeHGlobal(pointer);
             return (T)result;
-        }
-    }
-
-    public enum DebugContinueStatus : uint
-    {
-        DBG_CONTINUE = 0x00010002,
-        DBG_EXCEPTION_NOT_HANDLED = 0x80010001,
-    }
-
-    public static partial class WinApi
-    {
-        public enum TokenObject : uint
-        {
-            TOKEN_QUERY = 0x0008,
-            TOKEN_QUERY_SOURCE = 0x0010,
-            TOKEN_ADJUST_PRIVILEGES = 0x0020,
-        }
-
-        public enum PrivilegeAttributes : uint
-        {
-            SE_PRIVILEGE_ENABLED = 0x00000002,
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct TOKEN_PRIVILEGES
-        {
-            public UInt32 PrivilegeCount;
-            public LUID Luid;
-            public PrivilegeAttributes Attributes;
-        }
-
-        public static string SE_DEBUG_NAME = "SeDebugPrivilege";
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetCurrentProcess();
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool OpenProcessToken(IntPtr ProcessHandle,
-            TokenObject DesiredAccess, out IntPtr TokenHandle);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool CloseHandle(IntPtr hHandle);
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool LookupPrivilegeValue(string lpSystemName, string lpName,
-            out LUID lpLuid);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool AdjustTokenPrivileges(IntPtr TokenHandle,
-           [MarshalAs(UnmanagedType.Bool)]bool DisableAllPrivileges,
-           ref TOKEN_PRIVILEGES NewState,
-           UInt32 Zero,
-           IntPtr Null1,
-           IntPtr Null2);
-
-        [DllImport("kernel32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        public static extern uint GetProcAddress(uint hModule, string procName);
-
-        [DllImport("kernel32", SetLastError = true, EntryPoint = "GetProcAddress")]
-        public static extern uint GetProcAddressOrdinal(uint hModule, uint procName);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-        public static extern uint GetModuleHandle(string lpModuleName);
-
-        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern uint LoadLibraryA(string lpFileName);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool DebugActiveProcess(int dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool DebugActiveProcessStop(int dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool DebugSetProcessKillOnExit(bool KillOnExit);
-
-        [DllImport("kernel32.dll")]
-        public static extern bool ContinueDebugEvent(int dwProcessId, int dwThreadId, uint dwContinueStatus);
-
-        [DllImport("Kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, [MarshalAs(UnmanagedType.Bool)]ref bool isDebuggerPresent);
-
-        public static bool SetDebugPrivileges()
-        {
-            IntPtr hToken;
-            LUID luidSEDebugNameValue;
-            TOKEN_PRIVILEGES tkpPrivileges;
-
-            if (!OpenProcessToken(GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out hToken))
-                return false;
-
-            if (!LookupPrivilegeValue(null, SE_DEBUG_NAME, out luidSEDebugNameValue))
-            {
-                WinApi.CloseHandle(hToken);
-                return false;
-            }
-
-            tkpPrivileges.PrivilegeCount = 1;
-            tkpPrivileges.Luid = luidSEDebugNameValue;
-            tkpPrivileges.Attributes = WinApi.PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
-
-            if (!AdjustTokenPrivileges(hToken, false, ref tkpPrivileges, 0, IntPtr.Zero, IntPtr.Zero))
-            {
-                CloseHandle(hToken);
-                return false;
-            }
-
-            CloseHandle(hToken);
-            return true;
         }
     }
 }

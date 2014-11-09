@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Fasm;
 using System.Runtime.CompilerServices;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
@@ -69,7 +70,7 @@ namespace WhiteMagic
         {
             if (processHandle != IntPtr.Zero)
             {
-                WinApi.CloseHandle(processHandle);
+                Kernel32.CloseHandle(processHandle);
                 processHandle = IntPtr.Zero;
             }
         }
@@ -83,9 +84,9 @@ namespace WhiteMagic
         {
             this.process = process;
             if (processHandle != IntPtr.Zero)
-                WinApi.CloseHandle(processHandle);
+                Kernel32.CloseHandle(processHandle);
 
-            processHandle = WinApi.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
+            processHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
         }
 
         public bool IsValid()
@@ -119,13 +120,13 @@ namespace WhiteMagic
 
         public void SuspendThread(int id)
         {
-            var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
                 return;
 
-            WinApi.SuspendThread(pOpenThread);
+            Kernel32.SuspendThread(pOpenThread);
 
-            WinApi.CloseHandle(pOpenThread);
+            Kernel32.CloseHandle(pOpenThread);
         }
 
         public void ResumeAllThreads(bool ignoreSuspendCount = false)
@@ -142,18 +143,18 @@ namespace WhiteMagic
 
         public void ResumeThread(int id)
         {
-            var pOpenThread = WinApi.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
                 return;
 
             var suspendCount = 0;
             do
             {
-                suspendCount = WinApi.ResumeThread(pOpenThread);
+                suspendCount = Kernel32.ResumeThread(pOpenThread);
             }
             while (suspendCount > 0);
 
-            WinApi.CloseHandle(pOpenThread);
+            Kernel32.CloseHandle(pOpenThread);
         }
 
         #region Memory reading
@@ -162,14 +163,14 @@ namespace WhiteMagic
             var buf = new byte[count];
 
             PageProtection oldProtect, oldProtect2;
-            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, count, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
-            if (!WinApi.ReadProcessMemory(processHandle, (IntPtr)addr, buf, count, out numBytes) || numBytes != count)
+            if (!Kernel32.ReadProcessMemory(processHandle, (IntPtr)addr, buf, count, out numBytes) || numBytes != count)
                 throw new MemoryException("Failed to read memory in remote process");
 
-            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, count, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after read in remote process");
 
             return buf;
@@ -305,14 +306,14 @@ namespace WhiteMagic
         public void WriteBytes(uint addr, byte[] bytes)
         {
             PageProtection oldProtect, oldProtect2;
-            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, PageProtection.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
-            if (!WinApi.WriteProcessMemory(processHandle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+            if (!Kernel32.WriteProcessMemory(processHandle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
                 throw new MemoryException("Failed to write memory in remote process");
 
-            if (!WinApi.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
@@ -395,7 +396,7 @@ namespace WhiteMagic
         #region Memory allocators
         public uint AllocateMemory(int size)
         {
-            var addr = WinApi.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, PageProtection.PAGE_EXECUTE_READWRITE);
+            var addr = Kernel32.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, PageProtection.PAGE_EXECUTE_READWRITE);
             if (addr == 0)
                 throw new MemoryException("Failed to allocate memory in remote process");
 
@@ -404,7 +405,7 @@ namespace WhiteMagic
 
         public void FreeMemory(uint addr)
         {
-            if (!WinApi.VirtualFreeEx(processHandle, (IntPtr)addr, 0, FreeType.Release))
+            if (!Kernel32.VirtualFreeEx(processHandle, (IntPtr)addr, 0, FreeType.Release))
                 throw new MemoryException("Failed to free memory in remote process");
         }
 
@@ -459,19 +460,19 @@ namespace WhiteMagic
             lock ("codeExecution")
             {
                 int threadId;
-                var h = WinApi.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
+                var h = Kernel32.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
                 if (h == IntPtr.Zero)
                     throw new MemoryException("Failed to create remote thread");
 
                 remoteThreads.Add(threadId);
 
-                if (WinApi.WaitForSingleObject(h, WinApi.INFINITE) != WaitResult.WAIT_OBJECT_0)
+                if (Kernel32.WaitForSingleObject(h, (uint)WaitResult.INFINITE) != WaitResult.WAIT_OBJECT_0)
                     throw new MemoryException("Failed to wait for remote thread");
 
                 remoteThreads.Remove(threadId);
 
                 uint exitCode;
-                if (!WinApi.GetExitCodeThread(h, out exitCode))
+                if (!Kernel32.GetExitCodeThread(h, out exitCode))
                     throw new MemoryException("Failed to obtain exit code");
 
                 return exitCode;
@@ -558,13 +559,13 @@ namespace WhiteMagic
 
         public int GetThreadStartAddress(int threadId)
         {
-            var hThread = WinApi.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
+            var hThread = Kernel32.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
             if (hThread == IntPtr.Zero)
                 throw new MemoryException("Failed to open thread");
             var buf = new byte[4];
             try
             {
-                var result = WinApi.NtQueryInformationThread(hThread,
+                var result = Ntdll.NtQueryInformationThread(hThread,
                                  ThreadInfoClass.ThreadQuerySetWin32StartAddress,
                                  buf, buf.Length, IntPtr.Zero);
                 if (result != 0)
@@ -573,7 +574,7 @@ namespace WhiteMagic
             }
             finally
             {
-                WinApi.CloseHandle(hThread);
+                Kernel32.CloseHandle(hThread);
             }
         }
 
