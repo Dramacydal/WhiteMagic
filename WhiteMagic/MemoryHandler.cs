@@ -489,14 +489,16 @@ namespace WhiteMagic
                 {
                     case CallingConventionEx.Cdecl:
                     {
+                        asm.AddLine("push ebp");
                         for (var i = args.Length - 1; i >= 0; --i)
                             asm.AddLine("push {0}", args[i]);
                         asm.AddLine("mov eax, {0}", addr);
                         asm.AddLine("call eax");
-                        if (args.Length != 0)
-                            asm.AddLine("retn {0}", 4 * args.Length);
-                        else
-                            asm.AddLine("retn");
+                        for (var i = 0; i < args.Length; ++i)
+                            asm.AddLine("pop ebp");
+                        asm.AddLine("pop ebp");
+
+                        asm.AddLine("retn");
                         break;
                     }
                     case CallingConventionEx.StdCall:
