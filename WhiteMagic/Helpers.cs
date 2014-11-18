@@ -8,6 +8,11 @@ namespace WhiteMagic
 {
     public static class Helpers
     {
+        /// <summary>
+        /// Generates list of processes by internal name specified
+        /// </summary>
+        /// <param name="name">Internal name of a process</param>
+        /// <returns></returns>
         public static List<Process> FindProcessesByInternalName(string name)
         {
             var list = new List<Process>();
@@ -29,6 +34,11 @@ namespace WhiteMagic
             return list;
         }
 
+        /// <summary>
+        /// Generates list of processes by name specified
+        /// </summary>
+        /// <param name="name">Name of process executable</param>
+        /// <returns>List of matching processes</returns>
         public static List<Process> FindProcessesByName(string name)
         {
             var list = new List<Process>();
@@ -50,6 +60,11 @@ namespace WhiteMagic
             return list;
         }
 
+        /// <summary>
+        /// Returns first found process with name
+        /// </summary>
+        /// <param name="name">Name of process executable</param>
+        /// <returns></returns>
         public static Process FindProcessByName(string name)
         {
             var processes = FindProcessesByName(name);
@@ -57,14 +72,23 @@ namespace WhiteMagic
             return processes.Count == 0 ? null : processes[0];
         }
 
+        /// <summary>
+        /// Returns first found process with internal name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static Process FindProcessByInternalName(string name)
         {
             var processes = FindProcessesByInternalName(name);
             return processes.Count == 0 ? null : processes[0];
         }
 
-        public static string SE_DEBUG_NAME = "SeDebugPrivilege";
+        private static string SE_DEBUG_NAME = "SeDebugPrivilege";
 
+        /// <summary>
+        /// Sets debug privileges for running program.
+        /// </summary>
+        /// <returns>Internal name of a process</returns>
         public static bool SetDebugPrivileges()
         {
             IntPtr hToken;
@@ -90,8 +114,7 @@ namespace WhiteMagic
                 return false;
             }
 
-            Kernel32.CloseHandle(hToken);
-            return true;
+            return Kernel32.CloseHandle(hToken);
         }
     }
 }

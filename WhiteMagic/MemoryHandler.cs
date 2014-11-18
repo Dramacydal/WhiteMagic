@@ -26,22 +26,6 @@ namespace WhiteMagic
 
     public class MemoryHandler : IDisposable
     {
-        public class Suspender : IDisposable
-        {
-            private MemoryHandler m;
-
-            public Suspender(MemoryHandler m)
-            {
-                this.m = m;
-                m.SuspendAllThreads();
-            }
-
-            public void Dispose()
-            {
-                m.ResumeAllThreads();
-            }
-        }
-
         public Process Process { get { return process; } }
         public IntPtr ProcessHandle { get { return processHandle; } }
 
@@ -582,7 +566,7 @@ namespace WhiteMagic
 
         protected ModuleDump DumpModule(string name, bool refresh = false)
         {
-            using (var suspender = new Suspender(this))
+            using (var suspender = Suspend())
             {
                 if (refresh)
                     process.Refresh();
@@ -628,6 +612,11 @@ namespace WhiteMagic
                 return uint.MaxValue;
 
             return dump.FindNext(pattern);
+        }
+
+        public Suspender Suspend()
+        {
+            return new Suspender(this);
         }
     }
 }

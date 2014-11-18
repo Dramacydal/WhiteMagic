@@ -20,7 +20,9 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            Test2();
+
+            TestWOW();
+            //Test2();
             //TestMemory();
         }
 
@@ -47,6 +49,55 @@ namespace Test
             "CGItemDynamicData::",
             "CGConversationDynamicData::"
         };
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct SMSGHandler
+        {
+            public uint pName;             // 0x0
+            public uint checker;           // 0x4
+            public uint _2;                // 0x8
+            public uint _3;                // 0xC
+            public uint _4;                // 0x10
+            public uint dataHandler;       // 0x14
+            public uint connectionChecker; // 0x18
+        }
+
+        static void TestWOW()
+        {
+            var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            if (proc == null)
+            {
+                Console.WriteLine("Process not found");
+                return;
+            }
+
+            using (var m = new MemoryHandler(proc))
+            {
+                var v8 = 0x109A344 - 0x400000 + (uint)proc.MainModule.BaseAddress;
+                var cnt = m.ReadUInt(v8 + 4);
+                var start = m.ReadUInt(v8);
+                var end = m.ReadUInt(v8) + cnt * 4;
+
+                Console.WriteLine("cnt {0:X}", cnt);
+                Console.WriteLine("start {0:X}", start - (int)proc.MainModule.BaseAddress + 0x400000);
+                Console.WriteLine("end {0:X}", end - (int)proc.MainModule.BaseAddress + 0x400000);
+
+                Console.WriteLine();
+
+                for (var i = start; i < end; i += 4)
+                {
+                    var pHandler = m.Read<SMSGHandler>(m.ReadUInt(i));
+                    Console.WriteLine("'{0}'", m.ReadASCIIString(pHandler.pName));
+                    Console.WriteLine("Checker: {0:X}", pHandler.checker - (int)proc.MainModule.BaseAddress + 0x400000);
+                    Console.WriteLine("Connection Checker: {0:X}", pHandler.connectionChecker - (int)proc.MainModule.BaseAddress + 0x400000);
+                    Console.WriteLine("DataHandler: {0:X}", pHandler.dataHandler - (int)proc.MainModule.BaseAddress + 0x400000);
+                    Console.WriteLine("_2: {0:X}", pHandler._2);
+                    Console.WriteLine("_3: {0:X}", pHandler._3);
+                    Console.WriteLine("_4: {0:X}", pHandler._4 - (int)proc.MainModule.BaseAddress + 0x400000);
+                    Console.WriteLine();
+                }
+            }
+        }
 
         static void Test2()
         {

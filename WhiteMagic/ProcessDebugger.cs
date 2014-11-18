@@ -101,7 +101,7 @@ namespace WhiteMagic
 
             try
             {
-                using (var suspender = new Suspender(this))
+                using (var suspender = Suspend())
                 {
                     bp.Set(process);
                 }
@@ -122,7 +122,7 @@ namespace WhiteMagic
 
             try
             {
-                using (var suspender = new Suspender(this))
+                using (var suspender = Suspend())
                 {
                     bp.UnSet();
                 }

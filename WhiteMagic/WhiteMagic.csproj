@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MemoryPattern.cs" />
+    <Compile Include="Suspender.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="HardwareBreakPoint.cs" />
@@ -53,7 +54,7 @@
     <Compile Include="WinAPI\Types\FreeType.cs" />
     <Compile Include="WinAPI\Types\Luid.cs" />
     <Compile Include="WinAPI\Types\MemoryBasicInformation.cs" />
-    <Compile Include="WinAPI\Types\PageProtection.cs" />
+    <Compile Include="WinAPI\Types\AllocationProtect.cs" />
     <Compile Include="WinAPI\Types\ProcessAccess.cs" />
     <Compile Include="WinAPI\Types\ProcessArchitecture.cs" />
     <Compile Include="WinAPI\Types\ThreadAccess.cs" />

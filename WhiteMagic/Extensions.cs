@@ -19,6 +19,12 @@ namespace WhiteMagic
             return pd.GetModuleAddress(offs.ModuleName) + offs.Offset;
         }
 
+        /// <summary>
+        /// Converts byte array into space-separated hex string
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="reverse"></param>
+        /// <returns></returns>
         public static string AsHexString(this byte[] array, bool reverse = false)
         {
             var ret = string.Empty;
