@@ -51,57 +51,57 @@ namespace WhiteMagic
             isDebugging = true;
         }
 
-        public uint GetModuleAddress(string moduleName)
+        public IntPtr GetModuleAddress(string moduleName)
         {
             foreach (ProcessModule module in process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return (uint)module.BaseAddress;
+                    return module.BaseAddress;
 
             process.Refresh();
             if (process.HasExited)
-                return 0;
+                return IntPtr.Zero;
 
             foreach (ProcessModule module in process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return (uint)module.BaseAddress;
+                    return module.BaseAddress;
 
             return LoadModule(moduleName);
         }
 
-        public uint LoadModule(string name)
+        public IntPtr LoadModule(string name)
         {
             lock ("moduleLoad")
             {
                 var hModule = Kernel32.GetModuleHandle("kernel32.dll");
-                if (hModule == 0)
+                if (hModule == IntPtr.Zero)
                     hModule = Kernel32.LoadLibraryA("kernel32.dll");
-                if (hModule == 0)
+                if (hModule == IntPtr.Zero)
                     throw new DebuggerException("Failed to get kernel32.dll module");
 
                 var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
                 var arg = AllocateCString(name);
 
-                var ret = Call(GetModuleAddress("kernel32.dll") + funcAddress - hModule, CallingConventionEx.StdCall, arg);
+                var ret = (int)Call(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
                 FreeMemory(arg);
-                if (ret == 0)
+                if (ret <= 0)
                     throw new DebuggerException("Failed to load module '" + name + "'");
 
-                return ret;
+                return new IntPtr(ret);
             }
         }
 
-        public void AddBreakPoint(HardwareBreakPoint bp, uint baseAddress)
+        public void AddBreakPoint(HardwareBreakPoint bp, IntPtr baseAddress)
         {
-            int offs = (int)bp.Address;
-            if (offs > 0)
-                bp.Shift(baseAddress);
+            var offs = bp.Address;
+            if (offs.ToInt32() > 0)
+                bp.Shift(baseAddress.ToInt32());
             else
                 //bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
                 throw new DebuggerException("Function ordinals are not supported");
 
             try
             {
-                using (var suspender = Suspend())
+                using (var suspender = MakeSuspender())
                 {
                     bp.Set(process);
                 }
@@ -114,7 +114,7 @@ namespace WhiteMagic
             breakPoints.Add(bp);
         }
 
-        public void RemoveBreakPoint(uint address)
+        public void RemoveBreakPoint(IntPtr address)
         {
             var bp = breakPoints.Find(b => b.Address == address);
             if (bp == null)
@@ -122,7 +122,7 @@ namespace WhiteMagic
 
             try
             {
-                using (var suspender = Suspend())
+                using (var suspender = MakeSuspender())
                 {
                     bp.UnSet();
                 }
@@ -226,7 +226,7 @@ namespace WhiteMagic
                             if (!Kernel32.GetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            var bp = breakPoints.Find(b => b.Address == Context.Eip);
+                            var bp = breakPoints.Find(b => b.Address.ToInt32() == (int)Context.Eip);
                             if (bp == null)
                                 break;
 

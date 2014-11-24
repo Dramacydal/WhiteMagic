@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using WhiteMagic;
 using WhiteMagic.WinAPI;
 using System.Runtime.InteropServices;
+using WhiteMagic.Patterns;
 
 namespace Test
 {
@@ -20,7 +21,14 @@ namespace Test
     {
         static void Main(string[] args)
         {
-
+            var proc = MagicHelpers.FindProcessByName("udk.exe");
+            if (proc != null)
+            {
+                using (var m = new MemoryHandler(proc))
+                {
+                    m.SuspendAllThreads();
+                }
+            }
             TestWOW();
             //Test2();
             //TestMemory();
@@ -53,18 +61,18 @@ namespace Test
         [StructLayout(LayoutKind.Sequential)]
         struct SMSGHandler
         {
-            public uint pName;             // 0x0
-            public uint checker;           // 0x4
-            public uint _2;                // 0x8
-            public uint _3;                // 0xC
-            public uint _4;                // 0x10
-            public uint dataHandler;       // 0x14
-            public uint connectionChecker; // 0x18
+            public IntPtr pName;            // 0x0
+            public uint checker;            // 0x4
+            public uint _2;                 // 0x8
+            public uint _3;                 // 0xC
+            public uint _4;                 // 0x10
+            public uint dataHandler;        // 0x14
+            public uint connectionChecker;  // 0x18
         }
 
         static void TestWOW()
         {
-            var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            var proc = MagicHelpers.FindProcessByInternalName("world of warcraft");
             if (proc == null)
             {
                 Console.WriteLine("Process not found");
@@ -73,8 +81,8 @@ namespace Test
 
             using (var m = new MemoryHandler(proc))
             {
-                var v8 = 0x109A344 - 0x400000 + (uint)proc.MainModule.BaseAddress;
-                var cnt = m.ReadUInt(v8 + 4);
+                var v8 = IntPtr.Add(proc.MainModule.BaseAddress, 0x109A344 - 0x400000);
+                var cnt = m.ReadUInt(IntPtr.Add(v8, 4));
                 var start = m.ReadUInt(v8);
                 var end = m.ReadUInt(v8) + cnt * 4;
 
@@ -86,7 +94,8 @@ namespace Test
 
                 for (var i = start; i < end; i += 4)
                 {
-                    var pHandler = m.Read<SMSGHandler>(m.ReadUInt(i));
+                    var addr = new IntPtr(i);
+                    var pHandler = m.Read<SMSGHandler>(m.ReadPointer(addr));
                     Console.WriteLine("'{0}'", m.ReadASCIIString(pHandler.pName));
                     Console.WriteLine("Checker: {0:X}", pHandler.checker - (int)proc.MainModule.BaseAddress + 0x400000);
                     Console.WriteLine("Connection Checker: {0:X}", pHandler.connectionChecker - (int)proc.MainModule.BaseAddress + 0x400000);
@@ -101,7 +110,7 @@ namespace Test
 
         static void Test2()
         {
-            var proc = Helpers.FindProcessByName("notepad++.exe");
+            var proc = MagicHelpers.FindProcessByName("notepad++.exe");
             if (proc == null)
             {
                 Console.WriteLine("Failed to find process");
@@ -141,14 +150,14 @@ namespace Test
 
             var pat2 = new MemoryPattern("0x11 2-3 0x22");
             pat2.Find(bytes);
-            while (pat2.Address != uint.MaxValue)
+            while (pat2.Offset != int.MaxValue)
             {
-                Console.WriteLine("{0}", pat2.Address);
+                Console.WriteLine("{0}", pat2.Offset);
                 pat2.FindNext(bytes);
             }
             return;
 
-            var proc = Helpers.FindProcessByInternalName("world of warcraft");
+            var proc = MagicHelpers.FindProcessByInternalName("world of warcraft");
             //var proc = Helpers.FindProcessByName("wow.exe");
             if (proc == null)
             {
@@ -156,7 +165,7 @@ namespace Test
                 return;
             }
 
-            if (!Helpers.SetDebugPrivileges())
+            if (!MagicHelpers.SetDebugPrivileges())
             {
                 Console.WriteLine("Failed to set debug privileges");
                 return;
@@ -167,9 +176,9 @@ namespace Test
             {
                 var pat = new MemoryPattern("0x11 0-3 0x22");
                 m.Find(pat, proc.MainModule.ModuleName);
-                while (pat.Address != uint.MaxValue)
+                while (pat.Offset != int.MaxValue)
                 {
-                    Console.WriteLine("{0}", pat.Address);
+                    Console.WriteLine("{0}", pat.Offset);
                     m.FindNext(pat, proc.MainModule.ModuleName);
                 }
 

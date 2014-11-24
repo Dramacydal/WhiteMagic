@@ -19,7 +19,7 @@ namespace WhiteMagic
             ReadWrite = 2,
         }
 
-        public HardwareBreakPoint(int address, uint len, Condition condition)
+        public HardwareBreakPoint(IntPtr address, uint len, Condition condition)
         {
             this.address = address;
             this.condition = condition;
@@ -79,7 +79,7 @@ namespace WhiteMagic
                 }
 
                 SetBits(ref cxt.Dr7, 16 + (index * 4), 2, (uint)condition);
-                SetBits(ref cxt.Dr7, 18 + (index * 4), 2, len);
+                SetBits(ref cxt.Dr7, 18 + (index * 4), 2, (uint)len);
                 SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
                 // Write out the new debug registers
@@ -142,20 +142,20 @@ namespace WhiteMagic
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
         }
 
-        public void Shift(uint offset, bool set = false)
+        public void Shift(int offset, bool set = false)
         {
             if (set)
-                address = (int)offset;
+                address = new IntPtr(offset);
             else
-                address += (int)offset;
+                address = IntPtr.Add(address, offset);
         }
 
-        public uint Address { get { return (uint)address; } }
+        public IntPtr Address { get { return address; } }
 
         Dictionary<int, int> affectedThreads = new Dictionary<int, int>();
-        protected int address;
+        protected IntPtr address;
 
-        protected readonly uint len;
+        protected readonly int len;
         protected readonly Condition condition;
 
         protected Process process = null;

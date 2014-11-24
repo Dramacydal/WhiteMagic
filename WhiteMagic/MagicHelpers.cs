@@ -6,7 +6,7 @@ using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
-    public static class Helpers
+    public static class MagicHelpers
     {
         /// <summary>
         /// Generates list of processes by internal name specified

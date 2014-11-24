@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using WhiteMagic.Modules;
 
 namespace WhiteMagic
 {
@@ -14,7 +15,7 @@ namespace WhiteMagic
             return pd.Read<T>(pd.GetAddress(offs));
         }
 
-        public static uint GetAddress(this ProcessDebugger pd, ModulePointer offs)
+        public static IntPtr GetAddress(this ProcessDebugger pd, ModulePointer offs)
         {
             return pd.GetModuleAddress(offs.ModuleName) + offs.Offset;
         }
@@ -39,6 +40,11 @@ namespace WhiteMagic
                     ret += string.Format("{0:X} ", array[i]);
 
             return ret;
+        }
+
+        public static bool IsValid(this IntPtr p)
+        {
+            return p != new IntPtr(int.MaxValue);
         }
     }
 }

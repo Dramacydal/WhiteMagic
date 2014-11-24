@@ -12,16 +12,16 @@ namespace WhiteMagic.WinAPI
         public static extern bool CloseHandle(IntPtr hHandle);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
-        public static extern uint GetProcAddress(uint hModule, string procName);
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
         [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "GetProcAddress")]
-        public static extern uint GetProcAddressOrdinal(uint hModule, uint procName);
+        public static extern IntPtr GetProcAddressOrdinal(uint hModule, uint procName);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-        public static extern uint GetModuleHandle(string lpModuleName);
+        public static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern uint LoadLibraryA(string lpFileName);
+        public static extern IntPtr LoadLibraryA(string lpFileName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -66,7 +66,7 @@ namespace WhiteMagic.WinAPI
 
         [DllImport("kernel32.dll")]
         public static extern IntPtr CreateRemoteThread(IntPtr hProcess,
-            IntPtr lpThreadAttributes, uint dwStackSize, uint lpStartAddress,
+            IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress,
             IntPtr lpParameter, uint dwCreationFlags, out int lpThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]

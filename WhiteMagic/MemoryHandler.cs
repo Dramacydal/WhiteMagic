@@ -5,8 +5,9 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using Fasm;
-using System.Runtime.CompilerServices;
+using WhiteMagic.Patterns;
 using WhiteMagic.WinAPI;
+using WhiteMagic.Modules;
 
 namespace WhiteMagic
 {
@@ -142,25 +143,25 @@ namespace WhiteMagic
         }
 
         #region Memory reading
-        public byte[] ReadBytes(uint addr, int count)
+        public byte[] ReadBytes(IntPtr addr, int count)
         {
             var buf = new byte[count];
 
             AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(processHandle, addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
-            if (!Kernel32.ReadProcessMemory(processHandle, (IntPtr)addr, buf, count, out numBytes) || numBytes != count)
+            if (!Kernel32.ReadProcessMemory(processHandle, addr, buf, count, out numBytes) || numBytes != count)
                 throw new MemoryException("Failed to read memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, count, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(processHandle, addr, count, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after read in remote process");
 
             return buf;
         }
 
-        public T[] ReadArray<T>(uint addr, int count)
+        public T[] ReadArray<T>(IntPtr addr, int count)
         {
             var bytes = ReadBytes(addr, count * Marshal.SizeOf(typeof(T)));
             var dest = new T[count];
@@ -170,7 +171,7 @@ namespace WhiteMagic
             return dest;
         }
 
-        public T Read<T>(uint addr)
+        public T Read<T>(IntPtr addr)
         {
             T t;
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(T)));
@@ -182,7 +183,7 @@ namespace WhiteMagic
             return t;
         }
 
-        protected byte[] ReadNullTerminatedBytes(uint addr, int step = 1)
+        protected byte[] ReadNullTerminatedBytes(IntPtr addr, int step = 1)
         {
             if (step == 0)
                 throw new MemoryException("Wrong step specified for ReadNullTerminatedBytes");
@@ -193,9 +194,11 @@ namespace WhiteMagic
                 bool notNull = false;
                 for (var i = 0; i < step; ++i)
                 {
-                    var b = ReadByte(addr++);
+                    var b = ReadByte(addr);
                     bytes.Add(b);
                     notNull |= b != 0;
+
+                    addr = IntPtr.Add(addr, 1);
                 }
                 if (!notNull)
                 {
@@ -207,101 +210,107 @@ namespace WhiteMagic
             return bytes.ToArray();
         }
 
-        public string ReadASCIIString(uint addr, int len = 0)
+        public string ReadASCIIString(IntPtr addr, int len = 0)
         {
             return Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
 
-        public string ReadUTF8String(uint addr, int len = 0)
+        public string ReadUTF8String(IntPtr addr, int len = 0)
         {
             return Encoding.UTF8.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
         }
 
-        public string ReadUTF16String(uint addr, int len = 0)
+        public string ReadUTF16String(IntPtr addr, int len = 0)
         {
             return Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 2) : ReadBytes(addr, len));
         }
 
-        public string ReadUTF32String(uint addr, int len = 0)
+        public string ReadUTF32String(IntPtr addr, int len = 0)
         {
             return Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
         }
 
         #region Faster Read functions for basic types
-        public uint ReadUInt(uint addr)
+        public uint ReadUInt(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(uint)));
 
             return BitConverter.ToUInt32(buf, 0);
         }
 
-        public int ReadInt(uint addr)
+        public int ReadInt(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(int)));
 
             return BitConverter.ToInt32(buf, 0);
         }
 
-        public ushort ReadUShort(uint addr)
+        public ushort ReadUShort(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(ushort)));
 
             return BitConverter.ToUInt16(buf, 0);
         }
 
-        public short ReadShort(uint addr)
+        public short ReadShort(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(short)));
 
             return BitConverter.ToInt16(buf, 0);
         }
 
-        public ulong ReadULong(uint addr)
+        public ulong ReadULong(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(ulong)));
 
             return BitConverter.ToUInt64(buf, 0);
         }
 
-        public long ReadLong(uint addr)
+        public long ReadLong(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(long)));
 
             return BitConverter.ToInt64(buf, 0);
         }
 
-        public byte ReadByte(uint addr)
+        public byte ReadByte(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(byte)));
 
             return buf[0];
         }
 
-        public sbyte ReadSByte(uint addr)
+        public sbyte ReadSByte(IntPtr addr)
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(sbyte)));
 
             return (sbyte)buf[0];
         }
+
+        public IntPtr ReadPointer(IntPtr addr)
+        {
+            return new IntPtr(ReadInt(addr));
+        }
+
         #endregion
         #endregion
 
         #region Memory writing
-        public void WriteBytes(uint addr, byte[] bytes)
+        public void WriteBytes(IntPtr addr, byte[] bytes)
         {
             AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(processHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
-            if (!Kernel32.WriteProcessMemory(processHandle, (IntPtr)addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+            if (!Kernel32.WriteProcessMemory(processHandle, addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
                 throw new MemoryException("Failed to write memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(processHandle, (IntPtr)addr, bytes.Length, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(processHandle, addr, bytes.Length, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
-        public void Write<T>(uint addr, T value)
+        public void Write<T>(IntPtr addr, T value)
         {
             var size = Marshal.SizeOf(typeof(T));
             var bytes = new byte[size];
@@ -314,63 +323,63 @@ namespace WhiteMagic
             WriteBytes(addr, bytes);
         }
 
-        public void WriteCString(uint addr, string str)
+        public void WriteCString(IntPtr addr, string str, bool nullTerminated = true)
         {
-            WriteBytes(addr, Encoding.ASCII.GetBytes(str + "\0"));
+            WriteBytes(addr, Encoding.ASCII.GetBytes(nullTerminated ? str + '\0' : str));
         }
 
-        public void WriteUTF8String(uint addr, string str)
+        public void WriteUTF8String(IntPtr addr, string str, bool nullTerminated = true)
         {
-            WriteBytes(addr, Encoding.UTF8.GetBytes(str + "\0"));
+            WriteBytes(addr, Encoding.UTF8.GetBytes(nullTerminated ? str + '\0' : str));
         }
 
-        public void WriteUTF16String(uint addr, string str)
+        public void WriteUTF16String(IntPtr addr, string str, bool nullTerminated = true)
         {
-            WriteBytes(addr, Encoding.Unicode.GetBytes(str + "\0"));
+            WriteBytes(addr, Encoding.Unicode.GetBytes(nullTerminated ? str + '\0' : str));
         }
 
-        public void WriteUTF32String(uint addr, string str)
+        public void WriteUTF32String(IntPtr addr, string str, bool nullTerminated = true)
         {
-            WriteBytes(addr, Encoding.UTF32.GetBytes(str + "\0"));
+            WriteBytes(addr, Encoding.UTF32.GetBytes(nullTerminated ? str + '\0' : str));
         }
 
         #region Faster Write functions for basic types
-        public void WriteUInt(uint addr, uint value)
+        public void WriteUInt(IntPtr addr, uint value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteInt(uint addr, int value)
+        public void WriteInt(IntPtr addr, int value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteUShort(uint addr, ushort value)
+        public void WriteUShort(IntPtr addr, ushort value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteShort(uint addr, short value)
+        public void WriteShort(IntPtr addr, short value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteULong(uint addr, ulong value)
+        public void WriteULong(IntPtr addr, ulong value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteLong(uint addr, long value)
+        public void WriteLong(IntPtr addr, long value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteByte(uint addr, byte value)
+        public void WriteByte(IntPtr addr, byte value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
 
-        public void WriteSByte(uint addr, sbyte value)
+        public void WriteSByte(IntPtr addr, sbyte value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
@@ -378,49 +387,49 @@ namespace WhiteMagic
         #endregion
 
         #region Memory allocators
-        public uint AllocateMemory(int size)
+        public IntPtr AllocateMemory(int size)
         {
             var addr = Kernel32.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
             if (addr == 0)
                 throw new MemoryException("Failed to allocate memory in remote process");
 
-            return addr;
+            return new IntPtr(addr);
         }
 
-        public void FreeMemory(uint addr)
+        public void FreeMemory(IntPtr addr)
         {
-            if (!Kernel32.VirtualFreeEx(processHandle, (IntPtr)addr, 0, FreeType.Release))
+            if (!Kernel32.VirtualFreeEx(processHandle, addr, 0, FreeType.Release))
                 throw new MemoryException("Failed to free memory in remote process");
         }
 
-        public uint AllocateCString(string str)
+        public IntPtr AllocateCString(string str)
         {
             return AllocateBytes(Encoding.ASCII.GetBytes(str));
         }
 
-        public uint AllocateUTF8String(string str)
+        public IntPtr AllocateUTF8String(string str)
         {
             return AllocateBytes(Encoding.UTF8.GetBytes(str));
         }
 
-        public uint AllocateUTF16String(string str)
+        public IntPtr AllocateUTF16String(string str)
         {
             return AllocateBytes(Encoding.Unicode.GetBytes(str));
         }
 
-        public uint AllocateUTF32String(string str)
+        public IntPtr AllocateUTF32String(string str)
         {
             return AllocateBytes(Encoding.UTF32.GetBytes(str));
         }
 
-        public uint AllocateBytes(byte[] bytes)
+        public IntPtr AllocateBytes(byte[] bytes)
         {
             var addr = AllocateMemory(bytes.Length);
             WriteBytes(addr, bytes);
             return addr;
         }
 
-        public uint Allocate<T>(T obj)
+        public IntPtr Allocate<T>(T obj)
         {
             var size = Marshal.SizeOf(typeof(T));
             var addr = AllocateMemory(size);
@@ -439,7 +448,7 @@ namespace WhiteMagic
             return exitCode;
         }
 
-        public uint ExecuteRemoteCode(uint addr)
+        public uint ExecuteRemoteCode(IntPtr addr)
         {
             lock ("codeExecution")
             {
@@ -463,7 +472,7 @@ namespace WhiteMagic
             }
         }
 
-        public uint Call(uint addr, CallingConventionEx cv, params object[] args)
+        public uint Call(IntPtr addr, CallingConventionEx cv, params object[] args)
         {
             using (var asm = new ManagedFasm())
             {
@@ -543,7 +552,7 @@ namespace WhiteMagic
             }
         }
 
-        public int GetThreadStartAddress(int threadId)
+        public IntPtr GetThreadStartAddress(int threadId)
         {
             var hThread = Kernel32.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
             if (hThread == IntPtr.Zero)
@@ -556,7 +565,7 @@ namespace WhiteMagic
                                  buf, buf.Length, IntPtr.Zero);
                 if (result != 0)
                     throw new MemoryException(string.Format("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result));
-                return BitConverter.ToInt32(buf, 0);
+                return new IntPtr(BitConverter.ToInt32(buf, 0));
             }
             finally
             {
@@ -566,7 +575,7 @@ namespace WhiteMagic
 
         protected ModuleDump DumpModule(string name, bool refresh = false)
         {
-            using (var suspender = Suspend())
+            using (var suspender = MakeSuspender())
             {
                 if (refresh)
                     process.Refresh();
@@ -596,27 +605,27 @@ namespace WhiteMagic
                 return dumpColl.First().Value;
         }
 
-        public uint Find(MemoryPattern pattern, string moduleName, int startAddress = 0, bool refresh = false)
+        public IntPtr Find(MemoryPattern pattern, string moduleName, int startOffset = 0, bool refresh = false)
         {
             var dump = GetModuleDump(moduleName, refresh);
             if (dump == null)
-                return uint.MaxValue;
+                return new IntPtr(int.MaxValue);
 
-            return dump.Find(pattern, startAddress);
+            return dump.Find(pattern, startOffset);
         }
 
-        public uint FindNext(MemoryPattern pattern, string moduleName)
+        public IntPtr FindNext(MemoryPattern pattern, string moduleName)
         {
             var dump = GetModuleDump(moduleName, false);
             if (dump == null)
-                return uint.MaxValue;
+                return new IntPtr(int.MaxValue);
 
             return dump.FindNext(pattern);
         }
 
-        public Suspender Suspend()
+        public ProcessSuspender MakeSuspender()
         {
-            return new Suspender(this);
+            return new ProcessSuspender(this);
         }
     }
 }

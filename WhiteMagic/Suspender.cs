@@ -2,11 +2,11 @@
 
 namespace WhiteMagic
 {
-    public class Suspender : IDisposable
+    public class ProcessSuspender : IDisposable
     {
         private MemoryHandler m;
 
-        public Suspender(MemoryHandler m)
+        public ProcessSuspender(MemoryHandler m)
         {
             this.m = m;
             m.SuspendAllThreads();
