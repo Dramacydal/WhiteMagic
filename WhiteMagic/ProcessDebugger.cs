@@ -139,8 +139,11 @@ namespace WhiteMagic
         {
             try
             {
-                foreach (var bp in breakPoints)
-                    bp.UnSet();
+                using (var suspender = MakeSuspender())
+                {
+                    foreach (var bp in breakPoints)
+                        bp.UnSet();
+                }
 
                 breakPoints.Clear();
             }
