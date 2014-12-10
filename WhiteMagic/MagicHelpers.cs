@@ -6,6 +6,11 @@ using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
+    public class ProcessSelectorException : Exception
+    {
+        public ProcessSelectorException(string message) : base(message) { }
+    }
+
     public static class MagicHelpers
     {
         /// <summary>
@@ -81,6 +86,57 @@ namespace WhiteMagic
         {
             var processes = FindProcessesByInternalName(name);
             return processes.Count == 0 ? null : processes[0];
+        }
+
+        public static Process SelectProcess(string internalName)
+        {
+            for (; ; )
+            {
+                var processList = FindProcessesByInternalName(internalName);
+                if (processList.Count == 0)
+                    throw new ProcessSelectorException(string.Format("No '{0}' processes found", internalName));
+
+                try
+                {
+                    int index = 0;
+                    if (processList.Count != 1)
+                    {
+                        Console.WriteLine("Select process:");
+                        for (var i = 0; i < processList.Count; ++i)
+                        {
+                            var debugging = false;
+                            Kernel32.CheckRemoteDebuggerPresent(processList[i].Handle, ref debugging);
+
+                            Console.WriteLine("[{0}] {1} PID: {2} {3}",
+                                i,
+                                processList[i].GetVersionInfo(),
+                                processList[i].Id,
+                                debugging ? "(Already debugging)" : "");
+                        }
+
+                        Console.WriteLine();
+                        Console.Write("> ");
+                        index = Convert.ToInt32(Console.ReadLine());
+
+                        return processList[index];
+                    }
+                    else
+                    {
+                        var debugging = false;
+                        Kernel32.CheckRemoteDebuggerPresent(processList[0].Handle, ref debugging);
+                        if (debugging)
+                            throw new ProcessSelectorException(string.Format("Failed to select process, {0} is already being debugged!", processList[index].GetVersionInfo()));
+
+                        return processList[0];
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (processList.Count == 1)
+                        throw new ProcessSelectorException(ex.Message);
+                    continue;
+                }
+            }
         }
 
         private static string SE_DEBUG_NAME = "SeDebugPrivilege";

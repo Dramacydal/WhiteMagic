@@ -21,14 +21,6 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            var proc = MagicHelpers.FindProcessByName("udk.exe");
-            if (proc != null)
-            {
-                using (var m = new MemoryHandler(proc))
-                {
-                    m.SuspendAllThreads();
-                }
-            }
             TestWOW();
             //Test2();
             //TestMemory();

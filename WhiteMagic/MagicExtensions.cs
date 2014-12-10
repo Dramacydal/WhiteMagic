@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using WhiteMagic.Modules;
 
@@ -68,6 +69,16 @@ namespace WhiteMagic
         public static IntPtr Subtract(this IntPtr pointer, IntPtr pointer2)
         {
             return IntPtr.Subtract(pointer, pointer2.ToInt32());
+        }
+
+        public static string GetVersionInfo(this Process process)
+        {
+            return string.Format("{0} {1}.{2}.{3} {4}",
+                    process.MainModule.FileVersionInfo.FileDescription,
+                    process.MainModule.FileVersionInfo.FileMajorPart,
+                    process.MainModule.FileVersionInfo.FileMinorPart,
+                    process.MainModule.FileVersionInfo.FileBuildPart,
+                    process.MainModule.FileVersionInfo.FilePrivatePart);
         }
     }
 }
