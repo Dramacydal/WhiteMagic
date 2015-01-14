@@ -121,14 +121,7 @@ namespace WhiteMagic
                         return processList[index];
                     }
                     else
-                    {
-                        var debugging = false;
-                        Kernel32.CheckRemoteDebuggerPresent(processList[0].Handle, ref debugging);
-                        if (debugging)
-                            throw new ProcessSelectorException(string.Format("Failed to select process, {0} is already being debugged!", processList[index].GetVersionInfo()));
-
                         return processList[0];
-                    }
                 }
                 catch (Exception ex)
                 {
