@@ -107,9 +107,11 @@ namespace WhiteMagic
         {
             var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
-                return;
+                throw new MemoryException("Failed to open thread to suspend.");
 
-            Kernel32.SuspendThread(pOpenThread);
+            var res = Kernel32.SuspendThread(pOpenThread);
+            if (res == -1)
+                throw new MemoryException("Failed to suspend thread.");
 
             Kernel32.CloseHandle(pOpenThread);
         }
@@ -130,12 +132,14 @@ namespace WhiteMagic
         {
             var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
-                return;
+                throw new MemoryException("Failed to open thread to resume.");
 
             var suspendCount = 0;
             do
             {
                 suspendCount = Kernel32.ResumeThread(pOpenThread);
+                if (suspendCount == -1)
+                    throw new MemoryException("Failed to resume thread.");
             }
             while (suspendCount > 0);
 

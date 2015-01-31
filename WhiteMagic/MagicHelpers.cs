@@ -39,6 +39,27 @@ namespace WhiteMagic
             return list;
         }
 
+        public static List<Process> FindProcessesByProductName(string name)
+        {
+            var list = new List<Process>();
+            foreach (var process in Process.GetProcesses())
+            {
+                try
+                {
+                    if (process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower())
+                        list.Add(process);
+                }
+                catch (NullReferenceException)
+                {
+                }
+                catch (Win32Exception)
+                {
+                }
+            }
+
+            return list;
+        }
+
         /// <summary>
         /// Generates list of processes by name specified
         /// </summary>
@@ -85,6 +106,12 @@ namespace WhiteMagic
         public static Process FindProcessByInternalName(string name)
         {
             var processes = FindProcessesByInternalName(name);
+            return processes.Count == 0 ? null : processes[0];
+        }
+
+        public static Process FindProcessByProductName(string name)
+        {
+            var processes = FindProcessesByProductName(name);
             return processes.Count == 0 ? null : processes[0];
         }
 
