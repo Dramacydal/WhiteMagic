@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
@@ -13,96 +14,44 @@ namespace WhiteMagic
 
     public static class MagicHelpers
     {
-        /// <summary>
-        /// Generates list of processes by internal name specified
-        /// </summary>
-        /// <param name="name">Internal name of a process</param>
-        /// <returns></returns>
         public static List<Process> FindProcessesByInternalName(string name)
         {
-            var list = new List<Process>();
-            foreach (var process in Process.GetProcesses())
+            var processes = new List<Process>(Process.GetProcesses());
+            return processes.Where(process =>
             {
-                try
-                {
-                    if (process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower())
-                        list.Add(process);
-                }
-                catch (NullReferenceException)
-                {
-                }
-                catch (Win32Exception)
-                {
-                }
-            }
-
-            return list;
+                bool isWow64;
+                return Kernel32.IsWow64Process(process.Handle, out isWow64) && isWow64 &&
+                    process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
+            }).ToList();
         }
 
         public static List<Process> FindProcessesByProductName(string name)
         {
-            var list = new List<Process>();
-            foreach (var process in Process.GetProcesses())
+            var processes = new List<Process>(Process.GetProcesses());
+            return processes.Where(process =>
             {
-                try
-                {
-                    if (process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower())
-                        list.Add(process);
-                }
-                catch (NullReferenceException)
-                {
-                }
-                catch (Win32Exception)
-                {
-                }
-            }
-
-            return list;
+                bool isWow64;
+                return Kernel32.IsWow64Process(process.Handle, out isWow64) && isWow64 &&
+                    process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower();
+            }).ToList();
         }
 
-        /// <summary>
-        /// Generates list of processes by name specified
-        /// </summary>
-        /// <param name="name">Name of process executable</param>
-        /// <returns>List of matching processes</returns>
         public static List<Process> FindProcessesByName(string name)
         {
-            var list = new List<Process>();
-            foreach (var process in Process.GetProcesses())
-            {
-                try
+            var processes = new List<Process>(Process.GetProcessesByName(name));
+            return processes.Where(it =>
                 {
-                    if (process.MainModule.ModuleName.ToLower() == name.ToLower())
-                        list.Add(process);
-                }
-                catch (NullReferenceException)
-                {
-                }
-                catch (Win32Exception)
-                {
-                }
-            }
-
-            return list;
+                    bool isWow64;
+                    return Kernel32.IsWow64Process(it.Handle, out isWow64) && isWow64;
+                }).ToList();
         }
 
-        /// <summary>
-        /// Returns first found process with name
-        /// </summary>
-        /// <param name="name">Name of process executable</param>
-        /// <returns></returns>
         public static Process FindProcessByName(string name)
         {
             var processes = FindProcessesByName(name);
-
             return processes.Count == 0 ? null : processes[0];
         }
 
-        /// <summary>
-        /// Returns first found process with internal name
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
         public static Process FindProcessByInternalName(string name)
         {
             var processes = FindProcessesByInternalName(name);
