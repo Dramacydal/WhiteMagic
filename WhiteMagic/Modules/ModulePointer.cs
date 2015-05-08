@@ -19,5 +19,10 @@ namespace WhiteMagic.Modules
         {
             return new ModulePointer(pointer.ModuleName, pointer.Offset + modOffs);
         }
+
+        public static ModulePointer operator +(ModulePointer pointer, uint modOffs)
+        {
+            return new ModulePointer(pointer.ModuleName, pointer.Offset + (int)modOffs);
+        }
     }
 }

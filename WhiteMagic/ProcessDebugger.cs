@@ -6,8 +6,6 @@ using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
-    using BreakPointContainer = List<HardwareBreakPoint>;
-
     public class DebuggerException : Exception
     {
         public DebuggerException(string message) : base(message) { }
@@ -18,7 +16,7 @@ namespace WhiteMagic
         protected volatile bool isDebugging = false;
         protected volatile bool isDetached = false;
         protected volatile bool hasExited = false;
-        protected BreakPointContainer breakPoints = new BreakPointContainer();
+        protected HardwareBreakPoint[] breakPoints = new HardwareBreakPoint[4];
         protected Thread debugThread = null;
         protected int processThreadId = 0;
 
@@ -26,7 +24,7 @@ namespace WhiteMagic
         public bool IsDebugging { get { return isDebugging; } }
         public bool IsDetached { get { return isDetached; } }
         public bool HasExited { get { return hasExited; } }
-        public BreakPointContainer Breakpoints { get { return breakPoints; } }
+        public HardwareBreakPoint[] Breakpoints { get { return breakPoints; } }
 
         public ProcessDebugger(int processId) : base(processId)
         {
@@ -92,6 +90,17 @@ namespace WhiteMagic
 
         public void AddBreakPoint(HardwareBreakPoint bp, IntPtr baseAddress)
         {
+            var idx = -1;
+            for (var i = 0; i < breakPoints.Length; ++i)
+                if (breakPoints[i] == null)
+                {
+                    idx = i;
+                    break;
+                }
+
+            if (idx == -1)
+                throw new DebuggerException("Can't set any more breakpoints");
+
             var offs = bp.Address;
             if (offs.ToInt32() > 0)
                 bp.Shift(baseAddress.ToInt32());
@@ -111,20 +120,28 @@ namespace WhiteMagic
                 throw new DebuggerException(e.Message);
             }
 
-            breakPoints.Add(bp);
+            breakPoints[idx] = bp;
         }
 
         public void RemoveBreakPoint(IntPtr address)
         {
-            var bp = breakPoints.Find(b => b.Address == address);
-            if (bp == null)
+            var idx = -1;
+
+            for (int i = 0; i < breakPoints.Length; ++i)
+                if (breakPoints[i] != null && breakPoints[i].Address == address)
+                {
+                    idx = i;
+                    break;
+                }
+
+            if (idx == -1)
                 return;
 
             try
             {
                 using (var suspender = MakeSuspender())
                 {
-                    bp.UnSet();
+                    breakPoints[idx].UnSet();
                 }
             }
             catch (BreakPointException e)
@@ -132,7 +149,7 @@ namespace WhiteMagic
                 throw new DebuggerException(e.Message);
             }
 
-            breakPoints.Remove(bp);
+            breakPoints[idx] = null;
         }
 
         public void RemoveBreakPoints()
@@ -142,10 +159,12 @@ namespace WhiteMagic
                 using (var suspender = MakeSuspender())
                 {
                     foreach (var bp in breakPoints)
-                        bp.UnSet();
+                        if (bp != null)
+                            bp.UnSet();
                 }
 
-                breakPoints.Clear();
+                for (var i = 0; i < breakPoints.Length; ++i)
+                    breakPoints[i] = null;
             }
             catch (BreakPointException e)
             {
@@ -229,7 +248,14 @@ namespace WhiteMagic
                             if (!Kernel32.GetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            var bp = breakPoints.Find(b => b.Address.ToInt32() == (int)Context.Eip);
+                            HardwareBreakPoint bp = null;
+                            foreach (var b in breakPoints)
+                                if (b != null && b.Address.ToInt32() == (int)Context.Eip)
+                                {
+                                    bp = b;
+                                    break;
+                                }
+
                             if (bp == null)
                                 break;
 
