@@ -52,6 +52,7 @@
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MagicHelpers.cs" />
     <Compile Include="WinAPI\Types\AllocationType.cs" />
+    <Compile Include="WinAPI\Types\BreakpointCondition.cs" />
     <Compile Include="WinAPI\Types\Context.cs" />
     <Compile Include="WinAPI\Types\DebugEvent.cs" />
     <Compile Include="WinAPI\Types\FreeType.cs" />

@@ -40,31 +40,31 @@ namespace WhiteMagic.Patterns
             Value = val;
         }
 
-        public Element(string tok)
+        public Element(string token)
         {
-            if (tok == "??")
+            if (token == "??")
             {
                 Type = ValueType.Any;
                 Value = 0;
             }
-            else if (tok.Contains('m'))
+            else if (token.Contains('m'))
             {
                 Type = ValueType.Mask;
-                Value = Convert.ToByte(tok.Replace("m", ""), 16);
+                Value = Convert.ToByte(token.Replace("m", ""), 16);
             }
-            else if (tok.Contains('>'))
+            else if (token.Contains('>'))
             {
                 Type = ValueType.Greater;
-                Value = Convert.ToByte(tok.Replace(">", ""), 16);
+                Value = Convert.ToByte(token.Replace(">", ""), 16);
             }
-            else if (tok.Contains('<'))
+            else if (token.Contains('<'))
             {
                 Type = ValueType.Less;
-                Value = Convert.ToByte(tok.Replace("<", ""), 16);
+                Value = Convert.ToByte(token.Replace("<", ""), 16);
             }
-            else if (tok.Contains("-"))
+            else if (token.Contains("-"))
             {
-                var t = tok.Split('-');
+                var t = token.Split('-');
 
                 Type = ValueType.AnySequence;
                 MinLength = Convert.ToByte(t[0]);
@@ -73,7 +73,7 @@ namespace WhiteMagic.Patterns
             else
             {
                 Type = ValueType.Equal;
-                Value = Convert.ToByte(tok, 16);
+                Value = Convert.ToByte(token, 16);
             }
         }
     }

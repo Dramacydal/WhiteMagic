@@ -2,19 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using WhiteMagic.WinAPI;
+using WhiteMagic.WinAPI.Types;
 
 namespace WhiteMagic
 {
     public class BreakPointException : Exception
     {
         public BreakPointException(string message) : base(message) { }
-    }
-
-    public enum BreakpointCondition
-    {
-        Code = 0,
-        Write = 1,
-        ReadWrite = 2,
     }
 
     public class HardwareBreakPoint

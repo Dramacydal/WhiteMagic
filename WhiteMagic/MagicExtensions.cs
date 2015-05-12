@@ -7,9 +7,9 @@ namespace WhiteMagic
 {
     public static class MagicExtensions
     {
-        public static uint Call(this ProcessDebugger pd, ModulePointer offs, CallingConventionEx cv, params object[] args)
+        public static T Call<T>(this ProcessDebugger pd, ModulePointer offs, CallingConventionEx cv, params object[] args) where T : struct
         {
-            return pd.Call(pd.GetAddress(offs), cv, args);
+            return pd.Call<T>(pd.GetAddress(offs), cv, args);
         }
 
         public static T Read<T>(this ProcessDebugger pd, ModulePointer offs)

@@ -27,11 +27,8 @@ namespace WhiteMagic
 
     public class MemoryHandler : IDisposable
     {
-        public Process Process { get { return process; } }
-        public IntPtr ProcessHandle { get { return processHandle; } }
-
-        protected IntPtr processHandle;
-        protected Process process;
+        public Process Process { get; protected set; }
+        public IntPtr ProcessHandle { get; protected set; }
 
         protected volatile int threadSuspendCount = 0;
         protected volatile List<int> remoteThreads = new List<int>();
@@ -53,10 +50,10 @@ namespace WhiteMagic
 
         public void Dispose()
         {
-            if (processHandle != IntPtr.Zero)
+            if (ProcessHandle != IntPtr.Zero)
             {
-                Kernel32.CloseHandle(processHandle);
-                processHandle = IntPtr.Zero;
+                Kernel32.CloseHandle(ProcessHandle);
+                ProcessHandle = IntPtr.Zero;
             }
         }
 
@@ -67,21 +64,21 @@ namespace WhiteMagic
 
         public void SetProcess(Process process)
         {
-            this.process = process;
-            if (processHandle != IntPtr.Zero)
-                Kernel32.CloseHandle(processHandle);
+            this.Process = process;
+            if (ProcessHandle != IntPtr.Zero)
+                Kernel32.CloseHandle(ProcessHandle);
 
-            processHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
+            ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
         }
 
         public bool IsValid()
         {
-            if (process == null)
+            if (Process == null)
                 return false;
 
-            process.Refresh();
+            Process.Refresh();
 
-            return !process.HasExited;
+            return !Process.HasExited;
         }
 
         public void SuspendAllThreads(params int[] except)
@@ -89,9 +86,9 @@ namespace WhiteMagic
             if (++threadSuspendCount > 1)
                 return;
 
-            process.Refresh();
+            Process.Refresh();
 
-            foreach (ProcessThread pT in process.Threads)
+            foreach (ProcessThread pT in Process.Threads)
             {
                 if (except.Contains(pT.Id))
                     continue;
@@ -124,7 +121,7 @@ namespace WhiteMagic
             if (!ignoreSuspendCount && threadSuspendCount < 0)
                 throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is " + threadSuspendCount.ToString());
 
-            foreach (ProcessThread pT in process.Threads)
+            foreach (ProcessThread pT in Process.Threads)
                 ResumeThread(pT.Id);
         }
 
@@ -152,14 +149,14 @@ namespace WhiteMagic
             var buf = new byte[count];
 
             AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
-            if (!Kernel32.ReadProcessMemory(processHandle, addr, buf, count, out numBytes) || numBytes != count)
+            if (!Kernel32.ReadProcessMemory(ProcessHandle, addr, buf, count, out numBytes) || numBytes != count)
                 throw new MemoryException("Failed to read memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(processHandle, addr, count, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, count, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after read in remote process");
 
             return buf;
@@ -303,14 +300,14 @@ namespace WhiteMagic
         public void WriteBytes(IntPtr addr, byte[] bytes)
         {
             AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(processHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
-            if (!Kernel32.WriteProcessMemory(processHandle, addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+            if (!Kernel32.WriteProcessMemory(ProcessHandle, addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
                 throw new MemoryException("Failed to write memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(processHandle, addr, bytes.Length, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
@@ -393,7 +390,7 @@ namespace WhiteMagic
         #region Memory allocators
         public IntPtr AllocateMemory(int size)
         {
-            var addr = Kernel32.VirtualAllocEx(processHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
+            var addr = Kernel32.VirtualAllocEx(ProcessHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
             if (addr == 0)
                 throw new MemoryException("Failed to allocate memory in remote process");
 
@@ -402,7 +399,7 @@ namespace WhiteMagic
 
         public void FreeMemory(IntPtr addr)
         {
-            if (!Kernel32.VirtualFreeEx(processHandle, addr, 0, FreeType.Release))
+            if (!Kernel32.VirtualFreeEx(ProcessHandle, addr, 0, FreeType.Release))
                 throw new MemoryException("Failed to free memory in remote process");
         }
 
@@ -442,22 +439,22 @@ namespace WhiteMagic
         }
         #endregion
 
-        public uint ExecuteRemoteCode(byte[] bytes)
+        public T ExecuteRemoteCode<T>(byte[] bytes) where T : struct
         {
             var addr = AllocateBytes(bytes);
-            var exitCode = ExecuteRemoteCode(addr);
+            var exitCode = ExecuteRemoteCode<T>(addr);
 
             FreeMemory(addr);
 
             return exitCode;
         }
 
-        public uint ExecuteRemoteCode(IntPtr addr)
+        public T ExecuteRemoteCode<T>(IntPtr addr) where T : struct
         {
             lock ("codeExecution")
             {
                 int threadId;
-                var h = Kernel32.CreateRemoteThread(processHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
+                var h = Kernel32.CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
                 if (h == IntPtr.Zero)
                     throw new MemoryException("Failed to create remote thread");
 
@@ -472,11 +469,11 @@ namespace WhiteMagic
                 if (!Kernel32.GetExitCodeThread(h, out exitCode))
                     throw new MemoryException("Failed to obtain exit code");
 
-                return exitCode;
+                return (T)(object)exitCode;
             }
         }
 
-        public uint Call(IntPtr addr, CallingConventionEx cv, params object[] args)
+        public T Call<T>(IntPtr addr, CallingConventionEx cv, params object[] args) where T : struct
         {
             using (var asm = new ManagedFasm())
             {
@@ -552,7 +549,7 @@ namespace WhiteMagic
                     }
                 }
 
-                return ExecuteRemoteCode(asm.Assemble());
+                return ExecuteRemoteCode<T>(asm.Assemble());
             }
         }
 
@@ -582,11 +579,11 @@ namespace WhiteMagic
             using (var suspender = MakeSuspender())
             {
                 if (refresh)
-                    process.Refresh();
+                    Process.Refresh();
 
                 var lowerName = name.ToLower();
 
-                foreach (ProcessModule mod in process.Modules)
+                foreach (ProcessModule mod in Process.Modules)
                 {
                     if (mod.ModuleName.ToLower() == lowerName)
                     {

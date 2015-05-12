@@ -13,53 +13,49 @@ namespace WhiteMagic
 
     public class ProcessDebugger : MemoryHandler
     {
-        protected volatile bool isDebugging = false;
-        protected volatile bool isDetached = false;
-        protected volatile bool hasExited = false;
         protected HardwareBreakPoint[] breakPoints = new HardwareBreakPoint[4];
         protected Thread debugThread = null;
-        protected int processThreadId = 0;
 
-        public int ThreadId { get { return processThreadId; } }
-        public bool IsDebugging { get { return isDebugging; } }
-        public bool IsDetached { get { return isDetached; } }
-        public bool HasExited { get { return hasExited; } }
+        public int ThreadId { get; protected set; }
+        public bool IsDebugging { get; protected set; }
+        public bool IsDetached { get; protected set; }
+        public bool HasExited { get; protected set; }
         public HardwareBreakPoint[] Breakpoints { get { return breakPoints; } }
 
         public ProcessDebugger(int processId) : base(processId)
         {
-            processThreadId = process.Threads[0].Id;
+            ThreadId = Process.Threads[0].Id;
         }
 
         public void Attach()
         {
             bool res = false;
-            if (!Kernel32.CheckRemoteDebuggerPresent(process.Handle, ref res))
+            if (!Kernel32.CheckRemoteDebuggerPresent(Process.Handle, ref res))
                 throw new DebuggerException("Failed to check if remote process is already being debugged");
 
             if (res)
                 throw new DebuggerException("Process is already being debugged by another debugger");
 
-            if (!Kernel32.DebugActiveProcess(process.Id))
+            if (!Kernel32.DebugActiveProcess(Process.Id))
                 throw new DebuggerException("Failed to start debugging");
 
             if (!Kernel32.DebugSetProcessKillOnExit(false))
                 throw new DebuggerException("Failed to set kill on exit");
 
-            isDebugging = true;
+            IsDebugging = true;
         }
 
         public IntPtr GetModuleAddress(string moduleName)
         {
-            foreach (ProcessModule module in process.Modules)
+            foreach (ProcessModule module in Process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
                     return module.BaseAddress;
 
-            process.Refresh();
-            if (process.HasExited)
+            Process.Refresh();
+            if (Process.HasExited)
                 return IntPtr.Zero;
 
-            foreach (ProcessModule module in process.Modules)
+            foreach (ProcessModule module in Process.Modules)
                 if (module.ModuleName.ToLower() == moduleName.ToLower())
                     return module.BaseAddress;
 
@@ -79,7 +75,7 @@ namespace WhiteMagic
                 var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
                 var arg = AllocateCString(name);
 
-                var ret = (int)Call(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
+                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
                 FreeMemory(arg);
                 if (ret <= 0)
                     throw new DebuggerException("Failed to load module '" + name + "'");
@@ -107,7 +103,7 @@ namespace WhiteMagic
             {
                 using (var suspender = MakeSuspender())
                 {
-                    bp.Set(process);
+                    bp.Set(Process);
                 }
             }
             catch (BreakPointException e)
@@ -169,7 +165,7 @@ namespace WhiteMagic
 
         public void StopDebugging()
         {
-            isDebugging = false;
+            IsDebugging = false;
         }
 
         public void Join()
@@ -180,28 +176,28 @@ namespace WhiteMagic
 
         protected void Detach()
         {
-            if (isDetached)
+            if (IsDetached)
                 return;
-            isDetached = true;
+            IsDetached = true;
 
-            process.Refresh();
-            if (process.HasExited)
+            Process.Refresh();
+            if (Process.HasExited)
                 return;
 
             RemoveBreakPoints();
 
-            if (!Kernel32.DebugActiveProcessStop(process.Id))
+            if (!Kernel32.DebugActiveProcessStop(Process.Id))
                 throw new DebuggerException("Failed to stop process debugging");
         }
 
         public void StartListener(uint waitInterval = 200)
         {
             var DebugEvent = new DEBUG_EVENT();
-            for (; isDebugging; )
+            for (; IsDebugging; )
             {
                 if (!Kernel32.WaitForDebugEvent(ref DebugEvent, waitInterval))
                 {
-                    if (!isDebugging)
+                    if (!IsDebugging)
                         break;
                     continue;
                 }
@@ -214,12 +210,12 @@ namespace WhiteMagic
                     case DebugEventType.RIP_EVENT:
                     case DebugEventType.EXIT_PROCESS_DEBUG_EVENT:
                         //Console.WriteLine("Process has exited");
-                        isDebugging = false;
-                        isDetached = true;
+                        IsDebugging = false;
+                        IsDetached = true;
 
                         if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                             throw new DebuggerException("Failed to continue debug event");
-                        if (!Kernel32.DebugActiveProcessStop(process.Id))
+                        if (!Kernel32.DebugActiveProcessStop(Process.Id))
                             throw new DebuggerException("Failed to stop process debugging");
                         return;
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
@@ -263,14 +259,14 @@ namespace WhiteMagic
                         break;
                 }
 
-                if (!isDebugging)
+                if (!IsDebugging)
                 {
-                    isDetached = true;
+                    IsDetached = true;
 
                     RemoveBreakPoints();
                     if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                         throw new DebuggerException("Failed to continue debug event");
-                    if (!Kernel32.DebugActiveProcessStop(process.Id))
+                    if (!Kernel32.DebugActiveProcessStop(Process.Id))
                         throw new DebuggerException("Failed to stop process debugging");
                     return;
                 }
@@ -309,11 +305,11 @@ namespace WhiteMagic
 
         public bool WaitForComeUp(int delay)
         {
-            if (isDebugging)
+            if (IsDebugging)
                 return true;
 
             Thread.Sleep(delay);
-            return isDebugging;
+            return IsDebugging;
         }
     }
 }
