@@ -101,12 +101,7 @@ namespace WhiteMagic
             if (idx == -1)
                 throw new DebuggerException("Can't set any more breakpoints");
 
-            var offs = bp.Address;
-            if (offs.ToInt32() > 0)
-                bp.Shift(baseAddress.ToInt32());
-            else
-                //bp.Shift(WinApi.GetProcAddressOrdinal(moduleBase, (uint)Math.Abs(offs)), true);
-                throw new DebuggerException("Function ordinals are not supported");
+            bp.SetModuleBase(baseAddress);
 
             try
             {
@@ -123,12 +118,12 @@ namespace WhiteMagic
             breakPoints[idx] = bp;
         }
 
-        public void RemoveBreakPoint(IntPtr address)
+        public void RemoveBreakPoint(IntPtr offset, IntPtr moduleBase)
         {
             var idx = -1;
 
             for (int i = 0; i < breakPoints.Length; ++i)
-                if (breakPoints[i] != null && breakPoints[i].Address == address)
+                if (breakPoints[i] != null && breakPoints[i].Offset == offset && breakPoints[i].ModuleBase == moduleBase)
                 {
                     idx = i;
                     break;
@@ -250,7 +245,7 @@ namespace WhiteMagic
 
                             HardwareBreakPoint bp = null;
                             foreach (var b in breakPoints)
-                                if (b != null && b.Address.ToInt32() == (int)Context.Eip)
+                                if (b != null && b.Address.ToUInt32() == Context.Eip)
                                 {
                                     bp = b;
                                     break;

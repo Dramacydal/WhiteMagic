@@ -10,19 +10,19 @@ namespace WhiteMagic
         public BreakPointException(string message) : base(message) { }
     }
 
+    public enum BreakpointCondition
+    {
+        Code = 0,
+        Write = 1,
+        ReadWrite = 2,
+    }
+
     public class HardwareBreakPoint
     {
-        public enum Condition
+        public HardwareBreakPoint(IntPtr offset, int len, BreakpointCondition condition)
         {
-            Code = 0,
-            Write = 1,
-            ReadWrite = 2,
-        }
-
-        public HardwareBreakPoint(IntPtr address, uint len, Condition condition)
-        {
-            this.address = address;
-            this.condition = condition;
+            Offset = offset;
+            Condition = condition;
 
             switch (len)
             {
@@ -71,15 +71,15 @@ namespace WhiteMagic
 
                 switch (index)
                 {
-                    case 0: cxt.Dr0 = (uint)address; break;
-                    case 1: cxt.Dr1 = (uint)address; break;
-                    case 2: cxt.Dr2 = (uint)address; break;
-                    case 3: cxt.Dr3 = (uint)address; break;
+                    case 0: cxt.Dr0 = Address.ToUInt32(); break;
+                    case 1: cxt.Dr1 = Address.ToUInt32(); break;
+                    case 2: cxt.Dr2 = Address.ToUInt32(); break;
+                    case 3: cxt.Dr3 = Address.ToUInt32(); break;
                     default: throw new BreakPointException("m_index has bogus value!");
                 }
 
-                SetBits(ref cxt.Dr7, 16 + (index * 4), 2, (uint)condition);
-                SetBits(ref cxt.Dr7, 18 + (index * 4), 2, (uint)len);
+                SetBits(ref cxt.Dr7, 16 + index * 4, 2, (uint)Condition);
+                SetBits(ref cxt.Dr7, 18 + index * 4, 2, (uint)len);
                 SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
                 // Write out the new debug registers
@@ -142,22 +142,19 @@ namespace WhiteMagic
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
         }
 
-        public void Shift(int offset, bool set = false)
+        public void SetModuleBase(IntPtr moduleBase)
         {
-            if (set)
-                address = new IntPtr(offset);
-            else
-                address = IntPtr.Add(address, offset);
+            ModuleBase = moduleBase;
         }
 
-        public IntPtr Address { get { return address; } }
+        public IntPtr ModuleBase { get; protected set; }
+        public IntPtr Offset { get; protected set; }
+        public IntPtr Address { get { return ModuleBase.Add(Offset); } }
+        public BreakpointCondition Condition { get; protected set; }
 
         Dictionary<int, int> affectedThreads = new Dictionary<int, int>();
-        protected IntPtr address;
 
         protected readonly int len;
-        protected readonly Condition condition;
-
         protected Process process = null;
     }
 }
