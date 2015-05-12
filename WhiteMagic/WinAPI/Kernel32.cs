@@ -115,5 +115,26 @@ namespace WhiteMagic.WinAPI
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process([In] IntPtr process, [Out] out bool wow64Process);
+
+        public static bool Is32BitSystem { get; private set; }
+
+        static Kernel32()
+        {
+            var pKernel32 = GetModuleHandle("kernel32.dll");
+            if (pKernel32 == IntPtr.Zero)
+                throw new Exception("Failed to get kernel32.dll module handle");
+
+            var procAddress = Kernel32.GetProcAddress(pKernel32, "IsWow64Process");
+            Is32BitSystem = procAddress == IntPtr.Zero;
+        }
+
+        public static bool Is32BitProcess(IntPtr hProcess)
+        {
+            if (Is32BitSystem)
+                return true;
+
+            bool isWow64;
+            return IsWow64Process(hProcess, out isWow64) && isWow64;
+        }
     }
 }

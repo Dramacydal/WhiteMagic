@@ -19,8 +19,7 @@ namespace WhiteMagic
             var processes = new List<Process>(Process.GetProcesses());
             return processes.Where(process =>
             {
-                bool isWow64;
-                return Kernel32.IsWow64Process(process.Handle, out isWow64) && isWow64 &&
+                return Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
             }).ToList();
         }
@@ -30,8 +29,7 @@ namespace WhiteMagic
             var processes = new List<Process>(Process.GetProcesses());
             return processes.Where(process =>
             {
-                bool isWow64;
-                return Kernel32.IsWow64Process(process.Handle, out isWow64) && isWow64 &&
+                return Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower();
             }).ToList();
         }
@@ -39,11 +37,7 @@ namespace WhiteMagic
         public static List<Process> FindProcessesByName(string name)
         {
             var processes = new List<Process>(Process.GetProcessesByName(name));
-            return processes.Where(it =>
-                {
-                    bool isWow64;
-                    return Kernel32.IsWow64Process(it.Handle, out isWow64) && isWow64;
-                }).ToList();
+            return processes.Where(process => Kernel32.Is32BitProcess(process.Handle)).ToList();
         }
 
         public static Process FindProcessByName(string name)
