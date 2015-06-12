@@ -19,8 +19,16 @@ namespace WhiteMagic
             var processes = new List<Process>(Process.GetProcesses());
             return processes.Where(process =>
             {
-                return Kernel32.Is32BitProcess(process.Handle) &&
-                    process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
+                try
+                {
+                    return Kernel32.Is32BitProcess(process.Handle) &&
+                        process.MainModule.FileVersionInfo.InternalName != null &&
+                        process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
+                }
+                catch (Win32Exception)
+                {
+                    return false;
+                }
             }).ToList();
         }
 
@@ -30,6 +38,7 @@ namespace WhiteMagic
             return processes.Where(process =>
             {
                 return Kernel32.Is32BitProcess(process.Handle) &&
+                    process.MainModule.FileVersionInfo.ProductName != null &&
                     process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower();
             }).ToList();
         }

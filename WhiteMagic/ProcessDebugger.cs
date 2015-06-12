@@ -19,7 +19,16 @@ namespace WhiteMagic
         public int ThreadId { get; protected set; }
         public bool IsDebugging { get; protected set; }
         public bool IsDetached { get; protected set; }
-        public bool HasExited { get; protected set; }
+        public bool HasExited { get { return Process.HasExited; } }
+
+        public void Refresh()
+        {
+            if (Process == null)
+                return;
+
+            Process.Refresh();
+        }
+
         public HardwareBreakPoint[] Breakpoints { get { return breakPoints; } }
 
         public ProcessDebugger(int processId) : base(processId)
@@ -43,45 +52,6 @@ namespace WhiteMagic
                 throw new DebuggerException("Failed to set kill on exit");
 
             IsDebugging = true;
-        }
-
-        public IntPtr GetModuleAddress(string moduleName)
-        {
-            foreach (ProcessModule module in Process.Modules)
-                if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return module.BaseAddress;
-
-            Process.Refresh();
-            if (Process.HasExited)
-                return IntPtr.Zero;
-
-            foreach (ProcessModule module in Process.Modules)
-                if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return module.BaseAddress;
-
-            return LoadModule(moduleName);
-        }
-
-        public IntPtr LoadModule(string name)
-        {
-            lock ("moduleLoad")
-            {
-                var hModule = Kernel32.GetModuleHandle("kernel32.dll");
-                if (hModule == IntPtr.Zero)
-                    hModule = Kernel32.LoadLibraryA("kernel32.dll");
-                if (hModule == IntPtr.Zero)
-                    throw new DebuggerException("Failed to get kernel32.dll module");
-
-                var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
-                var arg = AllocateCString(name);
-
-                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
-                FreeMemory(arg);
-                if (ret <= 0)
-                    throw new DebuggerException("Failed to load module '" + name + "'");
-
-                return new IntPtr(ret);
-            }
         }
 
         public void AddBreakPoint(HardwareBreakPoint bp, IntPtr baseAddress)

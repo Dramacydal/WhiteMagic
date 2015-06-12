@@ -172,13 +172,16 @@ namespace WhiteMagic
             return dest;
         }
 
-        public T Read<T>(IntPtr addr)
+        public T Read<T>(IntPtr addr) where T : struct
         {
-            T t;
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(T)));
+            return ConvertToType<T>(buf);
+        }
 
-            var h = GCHandle.Alloc(buf, GCHandleType.Pinned);
-            t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
+        protected static T ConvertToType<T>(object val) where T : struct
+        {
+            var h = GCHandle.Alloc(val, GCHandleType.Pinned);
+            var t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
             h.Free();
 
             return t;
@@ -469,8 +472,13 @@ namespace WhiteMagic
                 if (!Kernel32.GetExitCodeThread(h, out exitCode))
                     throw new MemoryException("Failed to obtain exit code");
 
-                return (T)(object)exitCode;
+                return ConvertToType<T>(exitCode);
             }
+        }
+
+        public void Call(IntPtr addr, CallingConventionEx cv, params object[] args)
+        {
+            Call<int>(addr, cv, args);
         }
 
         public T Call<T>(IntPtr addr, CallingConventionEx cv, params object[] args) where T : struct
@@ -627,6 +635,45 @@ namespace WhiteMagic
         public ProcessSuspender MakeSuspender()
         {
             return new ProcessSuspender(this);
+        }
+
+        public IntPtr GetModuleAddress(string moduleName)
+        {
+            foreach (ProcessModule module in Process.Modules)
+                if (module.ModuleName.ToLower() == moduleName.ToLower())
+                    return module.BaseAddress;
+
+            Process.Refresh();
+            if (Process.HasExited)
+                return IntPtr.Zero;
+
+            foreach (ProcessModule module in Process.Modules)
+                if (module.ModuleName.ToLower() == moduleName.ToLower())
+                    return module.BaseAddress;
+
+            return LoadModule(moduleName);
+        }
+
+        public IntPtr LoadModule(string name)
+        {
+            lock ("moduleLoad")
+            {
+                var hModule = Kernel32.GetModuleHandle("kernel32.dll");
+                if (hModule == IntPtr.Zero)
+                    hModule = Kernel32.LoadLibraryA("kernel32.dll");
+                if (hModule == IntPtr.Zero)
+                    throw new DebuggerException("Failed to get kernel32.dll module");
+
+                var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
+                var arg = AllocateCString(name);
+
+                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
+                FreeMemory(arg);
+                if (ret <= 0)
+                    throw new DebuggerException("Failed to load module '" + name + "'");
+
+                return new IntPtr(ret);
+            }
         }
     }
 }

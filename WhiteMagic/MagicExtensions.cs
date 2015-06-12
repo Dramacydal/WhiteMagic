@@ -7,19 +7,24 @@ namespace WhiteMagic
 {
     public static class MagicExtensions
     {
-        public static T Call<T>(this ProcessDebugger pd, ModulePointer offs, CallingConventionEx cv, params object[] args) where T : struct
+        public static T Call<T>(this MemoryHandler m, ModulePointer offs, CallingConventionEx cv, params object[] args) where T : struct
         {
-            return pd.Call<T>(pd.GetAddress(offs), cv, args);
+            return m.Call<T>(m.GetAddress(offs), cv, args);
         }
 
-        public static T Read<T>(this ProcessDebugger pd, ModulePointer offs)
+        public static void Call(this MemoryHandler m, ModulePointer offs, CallingConventionEx cv, params object[] args)
         {
-            return pd.Read<T>(pd.GetAddress(offs));
+            m.Call(m.GetAddress(offs), cv, args);
         }
 
-        public static IntPtr GetAddress(this ProcessDebugger pd, ModulePointer offs)
+        public static T Read<T>(this MemoryHandler m, ModulePointer offs) where T : struct
         {
-            return pd.GetModuleAddress(offs.ModuleName) + offs.Offset;
+            return m.Read<T>(m.GetAddress(offs));
+        }
+
+        public static IntPtr GetAddress(this MemoryHandler m, ModulePointer offs)
+        {
+            return m.GetModuleAddress(offs.ModuleName) + offs.Offset;
         }
 
         /// <summary>
