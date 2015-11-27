@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using WhiteMagic.Modules;
 using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
@@ -13,7 +14,7 @@ namespace WhiteMagic
 
     public class ProcessDebugger : MemoryHandler
     {
-        protected HardwareBreakPoint[] breakPoints = new HardwareBreakPoint[4];
+        protected HardwareBreakPoint[] breakPoints = new HardwareBreakPoint[Kernel32.MaxHardwareBreakpoints];
         protected Thread debugThread = null;
 
         public int ThreadId { get; protected set; }
@@ -52,6 +53,16 @@ namespace WhiteMagic
                 throw new DebuggerException("Failed to set kill on exit");
 
             IsDebugging = true;
+        }
+
+        public int GetFreeBreakpointSlots()
+        {
+            var cnt = 0;
+            for (var i = 0; i < breakPoints.Length; ++i)
+                if (breakPoints[i] == null)
+                    ++i;
+
+            return cnt;
         }
 
         public void AddBreakPoint(HardwareBreakPoint bp, IntPtr baseAddress)
@@ -261,6 +272,10 @@ namespace WhiteMagic
                     {
                         Console.WriteLine("Debugger exception occured: {0}", e.Message);
                     }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Exception occured: {0}", e.Message);
+                    }
                     try
                     {
                         Detach();
@@ -268,6 +283,10 @@ namespace WhiteMagic
                     catch (DebuggerException e)
                     {
                         Console.WriteLine("Debugger exception occured: {0}", e.Message);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Exception occured: {0}", e.Message);
                     }
                 });
             debugThread.Start();

@@ -16,7 +16,7 @@ namespace WhiteMagic
         public MemoryException(string message) : base(message) { }
     }
 
-    public enum CallingConventionEx
+    public enum MagicConvention
     {
         Cdecl = 1,
         StdCall = 2,
@@ -476,12 +476,12 @@ namespace WhiteMagic
             }
         }
 
-        public void Call(IntPtr addr, CallingConventionEx cv, params object[] args)
+        public void Call(IntPtr addr, MagicConvention cv, params object[] args)
         {
             Call<int>(addr, cv, args);
         }
 
-        public T Call<T>(IntPtr addr, CallingConventionEx cv, params object[] args) where T : struct
+        public T Call<T>(IntPtr addr, MagicConvention cv, params object[] args) where T : struct
         {
             using (var asm = new ManagedFasm())
             {
@@ -489,7 +489,7 @@ namespace WhiteMagic
 
                 switch (cv)
                 {
-                    case CallingConventionEx.Cdecl:
+                    case MagicConvention.Cdecl:
                     {
                         asm.AddLine("push ebp");
                         for (var i = args.Length - 1; i >= 0; --i)
@@ -503,7 +503,7 @@ namespace WhiteMagic
                         asm.AddLine("retn");
                         break;
                     }
-                    case CallingConventionEx.StdCall:
+                    case MagicConvention.StdCall:
                     {
                         for (var i = args.Length - 1; i >= 0; --i)
                             asm.AddLine("push {0}", args[i]);
@@ -512,7 +512,7 @@ namespace WhiteMagic
                         asm.AddLine("retn");
                         break;
                     }
-                    case CallingConventionEx.FastCall:
+                    case MagicConvention.FastCall:
                     {
                         if (args.Length > 0)
                             asm.AddLine("mov ecx, {0}", args[0]);
@@ -525,7 +525,7 @@ namespace WhiteMagic
                         asm.AddLine("retn");
                         break;
                     }
-                    case CallingConventionEx.Register:
+                    case MagicConvention.Register:
                     {
                         if (args.Length > 0)
                             asm.AddLine("mov eax, {0}", args[0]);
@@ -540,7 +540,7 @@ namespace WhiteMagic
                         asm.AddLine("retn");
                         break;
                     }
-                    case CallingConventionEx.ThisCall:
+                    case MagicConvention.ThisCall:
                     {
                         if (args.Length > 0)
                             asm.AddLine("mov ecx, {0}", args[0]);
@@ -667,13 +667,23 @@ namespace WhiteMagic
                 var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
                 var arg = AllocateCString(name);
 
-                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), CallingConventionEx.StdCall, arg);
+                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), MagicConvention.StdCall, arg);
                 FreeMemory(arg);
                 if (ret <= 0)
                     throw new DebuggerException("Failed to load module '" + name + "'");
 
                 return new IntPtr(ret);
             }
+        }
+
+        public T Read<T>(ModulePointer offs) where T : struct
+        {
+            return Read<T>(this.GetAddress(offs));
+        }
+
+        public void Write<T>(ModulePointer offs, T value) where T : struct
+        {
+            Write<T>(this.GetAddress(offs), value);
         }
     }
 }

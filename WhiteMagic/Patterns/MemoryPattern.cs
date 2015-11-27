@@ -11,7 +11,7 @@ namespace WhiteMagic.Patterns
 
         protected int offset = int.MaxValue;
 
-        private Element[] Pattern;
+        public Element[] Pattern { get; private set; }
 
         private MemoryPattern(Element[] elements)
         {
@@ -133,6 +133,23 @@ namespace WhiteMagic.Patterns
         public MemoryPattern Skip(int count)
         {
             return new MemoryPattern(Pattern.Skip(count).ToArray());
+        }
+
+        public override string ToString()
+        {
+            return string.Join(" ", Pattern.Select(it =>
+            {
+                switch (it.Type)
+                {
+                    case ValueType.Equal:
+                        return string.Format("{0:X2}", it.Value);
+                    case ValueType.Any:
+                        return "??";
+                    default:
+                        break;
+                }
+                return "XX";
+            }));
         }
     }
 }

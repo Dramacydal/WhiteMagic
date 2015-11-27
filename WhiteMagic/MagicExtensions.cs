@@ -7,12 +7,12 @@ namespace WhiteMagic
 {
     public static class MagicExtensions
     {
-        public static T Call<T>(this MemoryHandler m, ModulePointer offs, CallingConventionEx cv, params object[] args) where T : struct
+        public static T Call<T>(this MemoryHandler m, ModulePointer offs, MagicConvention cv, params object[] args) where T : struct
         {
             return m.Call<T>(m.GetAddress(offs), cv, args);
         }
 
-        public static void Call(this MemoryHandler m, ModulePointer offs, CallingConventionEx cv, params object[] args)
+        public static void Call(this MemoryHandler m, ModulePointer offs, MagicConvention cv, params object[] args)
         {
             m.Call(m.GetAddress(offs), cv, args);
         }
