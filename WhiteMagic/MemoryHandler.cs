@@ -8,10 +8,16 @@ using Fasm;
 using WhiteMagic.Patterns;
 using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
+using WhiteMagic.WinAPI.Types;
 
 namespace WhiteMagic
 {
-    public class MemoryException : Exception
+    public class MagicException : Exception
+    {
+        public ErrorCodes LastError { get; private set; }
+        public MagicException(string message) : base(message) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
+    }
+    public class MemoryException : MagicException
     {
         public MemoryException(string message) : base(message) { }
     }
@@ -104,7 +110,12 @@ namespace WhiteMagic
         {
             var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
+            {
+                // thread does not exist
+                if (Marshal.GetLastWin32Error() == (int)ErrorCodes.ERROR_INVALID_PARAMETER)
+                    return;
                 throw new MemoryException("Failed to open thread to suspend.");
+            }
 
             var res = Kernel32.SuspendThread(pOpenThread);
             if (res == -1)
@@ -129,7 +140,12 @@ namespace WhiteMagic
         {
             var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
             if (pOpenThread == IntPtr.Zero)
+            {
+                // thread does not exist
+                if (Marshal.GetLastWin32Error() == (int)ErrorCodes.ERROR_INVALID_PARAMETER)
+                    return;
                 throw new MemoryException("Failed to open thread to resume.");
+            }
 
             var suspendCount = 0;
             do

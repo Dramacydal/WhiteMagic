@@ -55,6 +55,7 @@
     <Compile Include="WinAPI\Types\BreakpointCondition.cs" />
     <Compile Include="WinAPI\Types\Context.cs" />
     <Compile Include="WinAPI\Types\DebugEvent.cs" />
+    <Compile Include="WinAPI\Types\ErrorCodes.cs" />
     <Compile Include="WinAPI\Types\FreeType.cs" />
     <Compile Include="WinAPI\Types\Luid.cs" />
     <Compile Include="WinAPI\Types\MemoryBasicInformation.cs" />

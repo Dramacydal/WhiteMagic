@@ -7,7 +7,7 @@ using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
-    public class DebuggerException : Exception
+    public class DebuggerException : MagicException
     {
         public DebuggerException(string message) : base(message) { }
     }

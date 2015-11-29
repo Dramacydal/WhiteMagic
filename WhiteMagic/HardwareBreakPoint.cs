@@ -6,7 +6,7 @@ using WhiteMagic.WinAPI.Types;
 
 namespace WhiteMagic
 {
-    public class BreakPointException : Exception
+    public class BreakPointException : MagicException
     {
         public BreakPointException(string message) : base(message) { }
     }

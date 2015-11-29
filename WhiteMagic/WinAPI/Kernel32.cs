@@ -42,7 +42,7 @@ namespace WhiteMagic.WinAPI
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, [MarshalAs(UnmanagedType.Bool)]ref bool isDebuggerPresent);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle,
            int dwThreadId);
 
@@ -55,7 +55,7 @@ namespace WhiteMagic.WinAPI
         [DllImport("kernel32.dll")]
         public static extern bool SetThreadContext(IntPtr hThread, [In] ref CONTEXT lpContext);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int ResumeThread(IntPtr hThread);
 
         public static uint MaxHardwareBreakpoints = 4;
@@ -122,7 +122,7 @@ namespace WhiteMagic.WinAPI
         {
             var pKernel32 = GetModuleHandle("kernel32.dll");
             if (pKernel32 == IntPtr.Zero)
-                throw new Exception("Failed to get kernel32.dll module handle");
+                throw new MemoryException("Failed to get kernel32.dll module handle");
 
             var procAddress = Kernel32.GetProcAddress(pKernel32, "IsWow64Process");
             Is32BitSystem = procAddress == IntPtr.Zero;
