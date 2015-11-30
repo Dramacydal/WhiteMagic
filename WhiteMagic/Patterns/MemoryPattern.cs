@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace WhiteMagic.Patterns
 {
@@ -25,7 +26,7 @@ namespace WhiteMagic.Patterns
 
         public MemoryPattern(string pattern)
         {
-            var tokens = pattern.Split(' ');
+            var tokens = Regex.Replace(pattern, @"\s+", " ").Trim(' ').Split(' ');
             try
             {
                 Pattern = tokens.Select(e => new Element(e)).ToArray();
