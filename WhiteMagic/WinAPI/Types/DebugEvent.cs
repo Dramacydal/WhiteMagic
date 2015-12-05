@@ -84,7 +84,8 @@ namespace WhiteMagic.WinAPI
     {
         public IntPtr hThread;
         public IntPtr lpThreadLocalBase;
-        public PTHREAD_START_ROUTINE lpStartAddress;
+        // bad delegates cause crashes
+        //public PTHREAD_START_ROUTINE lpStartAddress;
     }
 
     [StructLayout(LayoutKind.Sequential)]

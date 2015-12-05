@@ -162,5 +162,14 @@ namespace WhiteMagic.WinAPI
         // Retrieved by CONTEXT_EXTENDED_REGISTERS
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
         public byte[] ExtendedRegisters;
+
+        public int GetFreeBreakpointSlot()
+        {
+            for (var index = 0; index < Kernel32.MaxHardwareBreakpoints; ++index)
+                if ((Dr7 & (1 << (index * 2))) == 0)
+                    return index;
+
+            return -1;
+        }
     }
 }
