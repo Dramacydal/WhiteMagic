@@ -307,6 +307,20 @@ namespace WhiteMagic
             return (sbyte)buf[0];
         }
 
+        public float ReadSingle(IntPtr addr)
+        {
+            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(float)));
+
+            return BitConverter.ToSingle(buf, 0);
+        }
+
+        public double ReadDouble(IntPtr addr)
+        {
+            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(float)));
+
+            return BitConverter.ToDouble(buf, 0);
+        }
+
         public IntPtr ReadPointer(IntPtr addr)
         {
             return new IntPtr(ReadInt(addr));
@@ -400,6 +414,16 @@ namespace WhiteMagic
         }
 
         public void WriteSByte(IntPtr addr, sbyte value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteSingle(IntPtr addr, float value)
+        {
+            WriteBytes(addr, BitConverter.GetBytes(value));
+        }
+
+        public void WriteDouble(IntPtr addr, double value)
         {
             WriteBytes(addr, BitConverter.GetBytes(value));
         }
