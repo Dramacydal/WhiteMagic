@@ -38,6 +38,11 @@ namespace WhiteMagic
             ThreadId = Process.Threads[0].Id;
         }
 
+        public ProcessDebugger(Process process) : base(process)
+        {
+            ThreadId = Process.Threads[0].Id;
+        }
+
         public void Attach()
         {
             bool res = false;
