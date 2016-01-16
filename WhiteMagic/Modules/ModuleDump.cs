@@ -1,44 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
 using WhiteMagic.Patterns;
 
 namespace WhiteMagic.Modules
 {
     public class ModuleDump
     {
-        public IntPtr BaseAddress { get; private set; }
-        public int ModuleSize { get { return MemoryDump.Length; } }
-        public byte[] MemoryDump { get; private set; }
+        private static readonly Encoding ConversionEncoding = Encoding.GetEncoding(28591);
+
+        protected ProcessModule Module { get; private set; }
+
+        public string ModuleName { get { return Module.FileName; } }
+        public IntPtr BaseAddress { get { return Module.BaseAddress; } }
+
+        public int ModuleSize { get { return Raw.Length; } }
+        public byte[] Raw { get; private set; }
+        protected string StringDump { get; private set; }
 
         private static readonly int readCount = 256;
 
         public ModuleDump(ProcessModule module, MemoryHandler m)
         {
+            this.Module = module;
             var bytes = new List<byte>();
             for (var i = 0; i < module.ModuleMemorySize; i += readCount)
-                bytes.AddRange(m.ReadBytes(IntPtr.Add(module.BaseAddress, i), i + readCount >= module.ModuleMemorySize ? module.ModuleMemorySize - i - 1 : readCount));
+                bytes.AddRange(m.ReadBytes(IntPtr.Add(module.BaseAddress, i), i + readCount >= module.ModuleMemorySize ? module.ModuleMemorySize - i : readCount));
 
-            BaseAddress = module.BaseAddress;
-            MemoryDump = bytes.ToArray();
+            Raw = bytes.ToArray();
+            StringDump = ConversionEncoding.GetString(Raw, 0, Raw.Length);
         }
 
-        public IntPtr Find(MemoryPattern pattern, int startOffset)
+        public Match Match(MemoryPattern Pattern)
         {
-            var offs = pattern.Find(MemoryDump, startOffset);
-            if (offs == int.MaxValue)
-                return new IntPtr(offs);
-
-            return IntPtr.Add(BaseAddress, offs);
+            return Pattern.Match(StringDump);
         }
 
-        public IntPtr FindNext(MemoryPattern pattern)
+        public MatchCollection Matches(MemoryPattern Pattern)
         {
-            var offs = pattern.FindNext(MemoryDump);
-            if (offs == int.MaxValue)
-                return new IntPtr(offs);
-
-            return IntPtr.Add(BaseAddress, offs);
+            return Pattern.Matches(StringDump);
         }
     }
 }

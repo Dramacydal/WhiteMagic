@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Linq;
-using WhiteMagic.Modules;
 using WhiteMagic.WinAPI;
 
 namespace WhiteMagic

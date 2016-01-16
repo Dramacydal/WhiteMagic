@@ -38,7 +38,7 @@ namespace WhiteMagic
             if (array.Length == 0)
                 return string.Empty;
 
-            return string.Concat((reverse ? array.Reverse() : array).Select(e => string.Format("{0:X2} ", e)));
+            return string.Join(" ", (reverse ? array.Reverse() : array).Select(_ => string.Format("{0:X2}", _)));
         }
 
         public static bool IsValid(this IntPtr p)

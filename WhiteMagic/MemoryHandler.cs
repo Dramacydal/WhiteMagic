@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
 using Fasm;
-using WhiteMagic.Patterns;
 using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
 using WhiteMagic.WinAPI.Types;
@@ -40,7 +39,6 @@ namespace WhiteMagic
         protected volatile List<int> remoteThreads = new List<int>();
 
         protected Dictionary<string, ModuleDump> moduleDump = new Dictionary<string, ModuleDump>();
-
         public MemoryHandler(Process process)
         {
             SetProcess(process);
@@ -622,11 +620,11 @@ namespace WhiteMagic
             }
         }
 
-        protected ModuleDump DumpModule(string name, bool refresh = false)
+        protected ModuleDump DumpModule(string name, bool refreshModuleList = false)
         {
             using (var suspender = MakeSuspender())
             {
-                if (refresh)
+                if (refreshModuleList)
                     Process.Refresh();
 
                 var lowerName = name.ToLower();
@@ -645,31 +643,13 @@ namespace WhiteMagic
             return null;
         }
 
-        public ModuleDump GetModuleDump(string name, bool refresh = false)
+        public ModuleDump GetModuleDump(string name, bool refreshData = false)
         {
-            var dumpColl = moduleDump.Where(d => d.Key == name.ToLower());
-            if (dumpColl.Count() == 0 || refresh)
+            var dumpColl = moduleDump.Where(d => d.Key.ToLower() == name.ToLower());
+            if (dumpColl.Count() == 0 || refreshData)
                 return DumpModule(name, true);
             else
                 return dumpColl.First().Value;
-        }
-
-        public IntPtr Find(MemoryPattern pattern, string moduleName, int startOffset = 0, bool refresh = false)
-        {
-            var dump = GetModuleDump(moduleName, refresh);
-            if (dump == null)
-                return new IntPtr(int.MaxValue);
-
-            return dump.Find(pattern, startOffset);
-        }
-
-        public IntPtr FindNext(MemoryPattern pattern, string moduleName)
-        {
-            var dump = GetModuleDump(moduleName, false);
-            if (dump == null)
-                return new IntPtr(int.MaxValue);
-
-            return dump.FindNext(pattern);
         }
 
         public ProcessSuspender MakeSuspender()

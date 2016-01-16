@@ -42,10 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Patterns\Element.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
-    <Compile Include="Patterns\PatternException.cs" />
-    <Compile Include="Patterns\ValueType.cs" />
     <Compile Include="Suspender.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
     <Compile Include="MagicExtensions.cs" />
@@ -68,7 +65,7 @@
     <Compile Include="WinAPI\Types\TokenPrivileges.cs" />
     <Compile Include="WinAPI\Kernel32.cs" />
     <Compile Include="MemoryHandler.cs" />
-    <Compile Include="Misc.cs" />
+    <Compile Include="WinAPI\Misc.cs" />
     <Compile Include="Modules\ModuleDump.cs" />
     <Compile Include="Modules\ModulePointer.cs" />
     <Compile Include="ProcessDebugger.cs" />
