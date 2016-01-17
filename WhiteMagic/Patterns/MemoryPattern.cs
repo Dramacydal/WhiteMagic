@@ -18,19 +18,20 @@ namespace WhiteMagic.Patterns
 
         public static MemoryPattern FromBinary(string Pattern)
         {
-            return FromBinary(
+            return new MemoryPattern(
+                string.Concat(
                 Pattern.Split(new char[] { '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(_ =>
                     {
                         if (_.Contains('?'))
-                            return (byte)0x90;
+                            return ".";
 
-                        return Convert.ToByte(_, 16);
-                    }).ToArray());
+                        return @"\x" + string.Format("{0:X2}", Convert.ToByte(_, 16));
+                    })));
         }
 
         public static MemoryPattern FromBinary(byte[] Pattern)
         {
-            return new MemoryPattern(string.Concat(Pattern.Select(_ => _ == 0x90 ? "." : @"\x" + string.Format("{0:X2}", _))));
+            return new MemoryPattern(string.Concat(Pattern.Select(_ =>  @"\x" + string.Format("{0:X2}", _))));
         }
     }
 }
