@@ -7,10 +7,18 @@ using WhiteMagic.Patterns;
 
 namespace WhiteMagic.Modules
 {
-    public class ModuleDump
+    public static class PatternHelper
     {
         private static readonly Encoding ConversionEncoding = Encoding.GetEncoding(28591);
 
+        public static string BytesToString(byte[] Data)
+        {
+            return ConversionEncoding.GetString(Data, 0, Data.Length);
+        }
+    }
+
+    public class ModuleDump
+    {
         protected ProcessModule Module { get; private set; }
 
         public string ModuleName { get { return Module.FileName; } }
@@ -30,7 +38,7 @@ namespace WhiteMagic.Modules
                 bytes.AddRange(m.ReadBytes(IntPtr.Add(module.BaseAddress, i), i + readCount >= module.ModuleMemorySize ? module.ModuleMemorySize - i : readCount));
 
             Raw = bytes.ToArray();
-            StringDump = ConversionEncoding.GetString(Raw, 0, Raw.Length);
+            StringDump = PatternHelper.BytesToString(Raw);
         }
 
         public Match Match(MemoryPattern Pattern)
