@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MemoryContainer.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
     <Compile Include="Suspender.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
