@@ -36,17 +36,12 @@ namespace WhiteMagic
         /// <param name="array"></param>
         /// <param name="reverse"></param>
         /// <returns></returns>
-        public static string AsHexString(this byte[] array, bool reverse = false)
+        public static string AsHexString(this byte[] array, bool reverse = false, string separator = " ")
         {
             if (array.Length == 0)
                 return string.Empty;
 
-            return string.Join(" ", (reverse ? array.Reverse() : array).Select(_ => string.Format("{0:X2}", _)));
-        }
-
-        public static bool IsValid(this IntPtr p)
-        {
-            return p != new IntPtr(int.MaxValue);
+            return string.Join(separator, (reverse ? array.Reverse() : array).Select(_ => string.Format("{0:X2}", _)));
         }
 
         public static uint ToUInt32(this IntPtr p)
