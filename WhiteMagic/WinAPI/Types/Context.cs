@@ -16,6 +16,24 @@ namespace WhiteMagic.WinAPI
         CONTEXT_ALL = CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | CONTEXT_DEBUG_REGISTERS | CONTEXT_EXTENDED_REGISTERS
     }
 
+
+    public enum CONTEXT_FLAGS_x64 : uint
+    {
+        CONTEXT_AMD64 = 0x00100000,
+        CONTEXT_CONTROL = (CONTEXT_AMD64 | 0x00000001),
+        CONTEXT_INTEGER = (CONTEXT_AMD64 | 0x00000002),
+        CONTEXT_SEGMENTS = (CONTEXT_AMD64 | 0x00000004),
+        CONTEXT_FLOATING_POINT = (CONTEXT_AMD64 | 0x00000008),
+        CONTEXT_DEBUG_REGISTERS = (CONTEXT_AMD64 | 0x00000010),
+        CONTEXT_FULL = (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT),
+        CONTEXT_ALL = (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | CONTEXT_DEBUG_REGISTERS),
+        CONTEXT_XSTATE = (CONTEXT_AMD64 | 0x00000040),
+        CONTEXT_EXCEPTION_ACTIVE = 0x08000000,
+        CONTEXT_SERVICE_ACTIVE = 0x10000000,
+        CONTEXT_EXCEPTION_REQUEST = 0x40000000,
+        CONTEXT_EXCEPTION_REPORTING = 0x80000000,
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct FLOATING_SAVE_AREA
     {
@@ -29,6 +47,38 @@ namespace WhiteMagic.WinAPI
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
         public byte[] RegisterArea;
         public uint Cr0NpxState;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct M128A
+    {
+        public ulong Low;
+        public ulong High;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FLOATING_SAVE_AREA_x64
+    {
+        public short ControlWord;
+        public short StatusWord;
+        public byte TagWord;
+        public byte Reserved1;
+        public short ErrorOpcode;
+        public uint ErrorOffset;
+        public short ErrorSelector;
+        public short Reserved2;
+        public uint DataOffset;
+        public short DataSelector;
+        public short Reserved3;
+        public uint MxCsr;
+        public uint MxCsr_Mask;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public M128A[] FloatRegisters;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+        public M128A[] XmmRegisters;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 96)]
+        public byte[] Reserved4;
+
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -167,6 +217,114 @@ namespace WhiteMagic.WinAPI
         {
             for (var index = 0; index < Kernel32.MaxHardwareBreakpoints; ++index)
                 if ((Dr7 & (1 << (index * 2))) == 0)
+                    return index;
+
+            return -1;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CONTEXT_x64
+    {
+        //
+        // Register parameter home addresses.
+        //
+        // N.B. These fields are for convience - they could be used to extend the
+        //      context record in the future.
+        //
+
+        public ulong P1Home;
+        public ulong P2Home;
+        public ulong P3Home;
+        public ulong P4Home;
+        public ulong P5Home;
+        public ulong P6Home;
+
+        //
+        // Control flags.
+        //
+
+        public uint ContextFlags;
+        public uint MxCsr;
+
+        //
+        // Segment Registers and processor flags.
+        //
+
+        public short SegCs;
+        public short SegDs;
+        public short SegEs;
+        public short SegFs;
+        public short SegGs;
+        public short SegSs;
+        public uint EFlags;
+
+        //
+        // Debug registers
+        //
+
+        public ulong Dr0;
+        public ulong Dr1;
+        public ulong Dr2;
+        public ulong Dr3;
+        public ulong Dr6;
+        public ulong Dr7;
+
+        //
+        // Integer registers.
+        //
+
+        public ulong Rax;
+        public ulong Rcx;
+        public ulong Rdx;
+        public ulong Rbx;
+        public ulong Rsp;
+        public ulong Rbp;
+        public ulong Rsi;
+        public ulong Rdi;
+        public ulong R8;
+        public ulong R9;
+        public ulong R10;
+        public ulong R11;
+        public ulong R12;
+        public ulong R13;
+        public ulong R14;
+        public ulong R15;
+
+        //
+        // Program counter.
+        //
+
+        public ulong Rip;
+
+        //
+        // Floating point state.
+        //
+
+        public FLOATING_SAVE_AREA_x64 FltSave;
+
+        //
+        // Vector registers.
+        //
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 26)]
+        public M128A[] VectorRegister;
+        public ulong VectorControl;
+
+        //
+        // Special debug control registers.
+        //
+
+        public ulong DebugControl;
+        public ulong LastBranchToRip;
+        public ulong LastBranchFromRip;
+        public ulong LastExceptionToRip;
+        public ulong LastExceptionFromRip;
+
+        public int GetFreeBreakpointSlot()
+        {
+            for (var index = 0; index < Kernel32.MaxHardwareBreakpoints; ++index)
+                if ((Dr7 & (1uL << (index * 2))) == 0)
                     return index;
 
             return -1;

@@ -73,8 +73,8 @@ namespace WhiteMagic.WinAPI
         public IntPtr ExceptionRecord;
         public IntPtr ExceptionAddress;
         public uint NumberParameters;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
-        public uint[] ExceptionInformation;
+        //[MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
+        //public uint[] ExceptionInformation;
     }
 
     public delegate uint PTHREAD_START_ROUTINE(IntPtr lpThreadParameter);
@@ -149,13 +149,13 @@ namespace WhiteMagic.WinAPI
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct DEBUG_EVENT
+    public struct DEBUG_EVENT   // 96 or 176
     {
         public DebugEventType dwDebugEventCode;
         public int dwProcessId;
         public int dwThreadId;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 86, ArraySubType = UnmanagedType.U1)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)] // 84 or 160
         byte[] debugInfo;
 
         public EXCEPTION_DEBUG_INFO Exception

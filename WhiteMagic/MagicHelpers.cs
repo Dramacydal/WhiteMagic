@@ -21,7 +21,7 @@ namespace WhiteMagic
             {
                 try
                 {
-                    return Kernel32.Is32BitProcess(process.Handle) &&
+                    return process.GetArchitecture() == MagicHelpers.RuntimeArchitecture &&
                         process.MainModule.FileVersionInfo.InternalName != null &&
                         process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
                 }
@@ -37,7 +37,7 @@ namespace WhiteMagic
             var processes = new List<Process>(Process.GetProcesses());
             return processes.Where(process =>
             {
-                return Kernel32.Is32BitProcess(process.Handle) &&
+                return process.GetArchitecture() == MagicHelpers.RuntimeArchitecture &&
                     process.MainModule.FileVersionInfo.ProductName != null &&
                     process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower();
             }).ToList();
@@ -46,7 +46,7 @@ namespace WhiteMagic
         public static List<Process> FindProcessesByName(string name)
         {
             var processes = new List<Process>(Process.GetProcessesByName(name));
-            return processes.Where(process => Kernel32.Is32BitProcess(process.Handle)).ToList();
+            return processes.Where(process => process.GetArchitecture() == MagicHelpers.RuntimeArchitecture).ToList();
         }
 
         public static Process FindProcessByName(string name)
@@ -144,5 +144,7 @@ namespace WhiteMagic
 
             return Kernel32.CloseHandle(hToken);
         }
+
+        public static ArchitectureType RuntimeArchitecture { get { return IntPtr.Size == 8 ? ArchitectureType.x64 : ArchitectureType.x86; } }
     }
 }

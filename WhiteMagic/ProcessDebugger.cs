@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Linq;
 using WhiteMagic.WinAPI;
+using System.Runtime.InteropServices;
 
 namespace WhiteMagic
 {
@@ -71,7 +72,10 @@ namespace WhiteMagic
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
-                HardwareBreakPoint.UnsetSlotsFromThread(hThread, 0xF);
+                if (Process.GetArchitecture() == ArchitectureType.x86)
+                    HardwareBreakPoint.UnsetContext_x86(hThread, 0xF);
+                else
+                    HardwareBreakPoint.UnsetContext_x64(hThread, 0xF);
 
                 if (!Kernel32.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
@@ -182,6 +186,7 @@ namespace WhiteMagic
                 //Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
 
                 bool okEvent = false;
+                Console.WriteLine(DebugEvent.dwDebugEventCode);
                 switch (DebugEvent.dwDebugEventCode)
                 {
                     case DebugEventType.RIP_EVENT:
@@ -211,29 +216,50 @@ namespace WhiteMagic
                             if (hThread == IntPtr.Zero)
                                 throw new DebuggerException("Failed to open thread");
 
-                            var Context = new CONTEXT();
-                            Context.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_FULL;
-                            if (!Kernel32.GetThreadContext(hThread, ref Context))
-                                throw new DebuggerException("Failed to get thread context");
+                            if (Process.GetArchitecture() == ArchitectureType.x86)
+                            {
+                                var Context = new CONTEXT();
+                                Context.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_FULL;
+                                if (!Kernel32.GetThreadContext(hThread, ref Context))
+                                    throw new DebuggerException("Failed to get thread context");
 
 
-                            if (!breakPoints.Any(e => e != null && e.Address.ToUInt32() == Context.Eip))
-                                break;
-                            
-                            var bp = breakPoints.First(e => e != null && e.Address.ToUInt32() == Context.Eip);
-                             //Console.WriteLine("Triggered");
-                            if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
-                                throw new DebuggerException("Failed to set thread context");
+                                if (!breakPoints.Any(_ => _ != null && _.Address.ToUInt32() == Context.Eip))
+                                    break;
+
+                                var bp = breakPoints.First(_ => _ != null && _.Address.ToUInt32() == Context.Eip);
+                                //Console.WriteLine("Triggered");
+                                if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
+                                    throw new DebuggerException("Failed to set thread context");
+                            }
+                            else
+                            {
+                                var Context = new CONTEXT_x64();
+                                Context.ContextFlags = (uint)CONTEXT_FLAGS_x64.CONTEXT_FULL;
+                                if (!Kernel32.GetThreadContext(hThread, ref Context))
+                                    throw new DebuggerException("Failed to get thread context");
+
+
+                                if (!breakPoints.Any(_ => _ != null && _.Address.ToUInt64() == Context.Rip))
+                                    break;
+
+                                var bp = breakPoints.First(_ => _ != null && _.Address.ToUInt64() == Context.Rip);
+                                //Console.WriteLine("Triggered");
+                                if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
+                                    throw new DebuggerException("Failed to set thread context");
+                            }
                         }
                         break;
                     case DebugEventType.CREATE_THREAD_DEBUG_EVENT:
                     {
+                        okEvent = true;
                         foreach (var bp in breakPoints)
                             bp.SetToThread(DebugEvent.CreateThread.hThread, DebugEvent.dwThreadId);
                         break;
                     }
                     case DebugEventType.EXIT_THREAD_DEBUG_EVENT:
                     {
+                        okEvent = true;
                         foreach (var bp in breakPoints)
                             bp.UnregisterThread(DebugEvent.dwThreadId);
                         break;
@@ -277,6 +303,7 @@ namespace WhiteMagic
                     catch (Exception e)
                     {
                         Console.WriteLine("Exception occured: {0}", e.Message);
+                        Console.WriteLine("{0}", Marshal.GetLastWin32Error());
                     }
                     try
                     {

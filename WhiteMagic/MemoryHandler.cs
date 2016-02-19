@@ -72,6 +72,9 @@ namespace WhiteMagic
             if (ProcessHandle != IntPtr.Zero)
                 Kernel32.CloseHandle(ProcessHandle);
 
+            if (process.GetArchitecture() != MagicHelpers.RuntimeArchitecture)
+                throw new MemoryException("Process architecture does not match runtime architecture");
+
             ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
         }
 
@@ -84,6 +87,8 @@ namespace WhiteMagic
 
             return !Process.HasExited;
         }
+
+        public ArchitectureType Architecture { get { return Process.GetArchitecture(); } }
 
         public void SuspendAllThreads(params int[] except)
         {
@@ -432,10 +437,10 @@ namespace WhiteMagic
         public IntPtr AllocateMemory(int size)
         {
             var addr = Kernel32.VirtualAllocEx(ProcessHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
-            if (addr == 0)
+            if (addr == IntPtr.Zero)
                 throw new MemoryException("Failed to allocate memory in remote process");
 
-            return new IntPtr(addr);
+            return addr;
         }
 
         public void FreeMemory(IntPtr addr)
@@ -601,6 +606,9 @@ namespace WhiteMagic
 
         public IntPtr GetThreadStartAddress(int threadId)
         {
+            if (Process.GetArchitecture() != ArchitectureType.x86)
+                throw new MagicException("Can't GetThreadStartAddress for non-x86 process");
+
             var hThread = Kernel32.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
             if (hThread == IntPtr.Zero)
                 throw new MemoryException("Failed to open thread");

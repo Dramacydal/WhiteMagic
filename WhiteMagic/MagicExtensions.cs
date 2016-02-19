@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using WhiteMagic.Modules;
 using WhiteMagic.Patterns;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
 {
@@ -27,7 +28,7 @@ namespace WhiteMagic
 
         public static IntPtr GetAddress(this MemoryHandler m, ModulePointer offs)
         {
-            return m.GetModuleAddress(offs.ModuleName) + offs.Offset;
+            return m.GetModuleAddress(offs.ModuleName).Add(offs.Offset);
         }
 
         /// <summary>
@@ -49,6 +50,11 @@ namespace WhiteMagic
             return (uint)p.ToInt32();
         }
 
+        public static ulong ToUInt64(this IntPtr p)
+        {
+            return (ulong)p.ToInt64();
+        }
+
         public static IntPtr Add(this IntPtr pointer, int offset)
         {
             return IntPtr.Add(pointer, offset);
@@ -59,9 +65,19 @@ namespace WhiteMagic
             return IntPtr.Add(pointer, (int)offset);
         }
 
+        public static IntPtr Add(this IntPtr pointer, long offset)
+        {
+            return new IntPtr(pointer.ToInt64() + offset);
+        }
+
+        public static IntPtr Add(this IntPtr pointer, ulong offset)
+        {
+            return new IntPtr(pointer.ToInt64() + (long)offset);
+        }
+
         public static IntPtr Add(this IntPtr pointer, IntPtr pointer2)
         {
-            return IntPtr.Add(pointer, pointer2.ToInt32());
+            return pointer.Add(pointer2.ToInt64());
         }
 
         public static IntPtr Subtract(this IntPtr pointer, int offset)
@@ -69,9 +85,14 @@ namespace WhiteMagic
             return IntPtr.Subtract(pointer, offset);
         }
 
+        public static IntPtr Subtract(this IntPtr pointer, long offset)
+        {
+            return new IntPtr(pointer.ToInt64() - offset);
+        }
+
         public static IntPtr Subtract(this IntPtr pointer, IntPtr pointer2)
         {
-            return IntPtr.Subtract(pointer, pointer2.ToInt32());
+            return pointer.Subtract(pointer2.ToInt64());
         }
 
         public static string GetVersionInfo(this Process process)
@@ -92,6 +113,11 @@ namespace WhiteMagic
         public static MatchCollection Matches(this IEnumerable<byte> Data, MemoryPattern Pattern)
         {
             return Pattern.Matches(PatternHelper.BytesToString(Data.ToArray()));
+        }
+
+        public static ArchitectureType GetArchitecture(this Process Process)
+        {
+            return Kernel32.Is32BitProcess(Process.Handle) ? ArchitectureType.x86 : ArchitectureType.x64;
         }
     }
 }

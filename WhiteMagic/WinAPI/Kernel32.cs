@@ -53,7 +53,13 @@ namespace WhiteMagic.WinAPI
         public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
 
         [DllImport("kernel32.dll")]
+        public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT_x64 lpContext);
+
+        [DllImport("kernel32.dll")]
         public static extern bool SetThreadContext(IntPtr hThread, [In] ref CONTEXT lpContext);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool SetThreadContext(IntPtr hThread, [In] ref CONTEXT_x64 lpContext);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int ResumeThread(IntPtr hThread);
@@ -80,7 +86,7 @@ namespace WhiteMagic.WinAPI
         public static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        public static extern uint VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
+        public static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress,
            int dwSize, AllocationType flAllocationType, AllocationProtect flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -116,7 +122,7 @@ namespace WhiteMagic.WinAPI
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process([In] IntPtr process, [Out] out bool wow64Process);
 
-        public static bool Is32BitSystem { get; private set; }
+        public static bool Is32BitOs { get; private set; }
 
         static Kernel32()
         {
@@ -125,12 +131,12 @@ namespace WhiteMagic.WinAPI
                 throw new MemoryException("Failed to get kernel32.dll module handle");
 
             var procAddress = Kernel32.GetProcAddress(pKernel32, "IsWow64Process");
-            Is32BitSystem = procAddress == IntPtr.Zero;
+            Is32BitOs = procAddress == IntPtr.Zero;
         }
 
         public static bool Is32BitProcess(IntPtr hProcess)
         {
-            if (Is32BitSystem)
+            if (Is32BitOs)
                 return true;
 
             bool isWow64;
