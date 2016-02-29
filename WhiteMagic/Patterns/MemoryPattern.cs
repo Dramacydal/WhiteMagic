@@ -28,7 +28,7 @@ namespace WhiteMagic.Patterns
     public class MemoryPattern : Regex
     {
         protected MemoryPattern(string Pattern, RegexOptions Options = RegexOptions.None)
-            : base(Pattern, Options)
+            : base(Pattern, Options | RegexOptions.Singleline)
         {
         }
 
