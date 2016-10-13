@@ -36,7 +36,7 @@ namespace WhiteMagic
             ThreadId = Process.Threads[0].Id;
         }
 
-        public void Attach()
+        private void Attach()
         {
             bool res = false;
             if (!Kernel32.CheckRemoteDebuggerPresent(Process.Handle, ref res))
@@ -72,7 +72,7 @@ namespace WhiteMagic
             }
         }
 
-        public void AddBreakPoint(HardwareBreakPoint bp, ModuleInfo Module)
+        public void AddBreakPoint(HardwareBreakPoint bp)
         {
             if (breakPoints.Count >= Kernel32.MaxHardwareBreakpoints)
                 throw new DebuggerException("Can't set any more breakpoints");
@@ -136,7 +136,7 @@ namespace WhiteMagic
                 throw new DebuggerException("Failed to stop process debugging");
         }
 
-        public void StartListener(uint waitInterval = 200)
+        private void StartListener(uint waitInterval = 200)
         {
             var DebugEvent = new DEBUG_EVENT();
             for (; IsDebugging; )
@@ -182,17 +182,19 @@ namespace WhiteMagic
 
                             var Context = new CONTEXT();
                             Context.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_FULL;
-                            if (!Kernel32.GetThreadContext(hThread, ref Context))
+                            if (!Kernel32.GetThreadContext(hThread, Context))
                                 throw new DebuggerException("Failed to get thread context");
-
 
                             if (!breakPoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
                                 break;
-                            
                             var bp = breakPoints.First(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
-                             //Console.WriteLine("Triggered");
-                            if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
-                                throw new DebuggerException("Failed to set thread context");
+
+                            var ContextWrapper = new ContextWrapper(this, Context);
+                            if (bp.HandleException(ContextWrapper))
+                            {
+                                if (!Kernel32.SetThreadContext(hThread, ContextWrapper.Context))
+                                    throw new DebuggerException("Failed to set thread context");
+                            }
                         }
                         break;
                     case DebugEventType.CREATE_THREAD_DEBUG_EVENT:
@@ -270,6 +272,63 @@ namespace WhiteMagic
 
             Thread.Sleep(delay);
             return IsDebugging;
+        }
+
+        public bool WaitForComeUp(int delay, int times)
+        {
+            for (int i = 0; i < times;++i)
+            {
+                if (WaitForComeUp(delay))
+                    return true;
+            }
+
+            return IsDebugging;
+        }
+
+        private bool CatchesSigInt = false;
+        public bool CatchSigInt
+        {
+            get
+            {
+                return CatchesSigInt;
+            }
+            set
+            {
+                CatchesSigInt = value;
+                if (CatchesSigInt)
+                    SigIntHandler.AddInstance(this);
+                else
+                    SigIntHandler.RemoveInstance(this);
+            }
+        }
+    }
+
+    public static class SigIntHandler
+    {
+        private static List<ProcessDebugger> AffectedInstances = new List<ProcessDebugger>();
+
+        static SigIntHandler()
+        {
+            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) =>
+            {
+                if (AffectedInstances.Count > 0)
+                {
+                    e.Cancel = true;
+
+                    foreach (var Debugger in AffectedInstances)
+                        Debugger.StopDebugging();
+                }
+            };
+        }
+
+        public static void AddInstance(ProcessDebugger Debugger)
+        {
+            AffectedInstances.Add(Debugger);
+        }
+
+        public static void RemoveInstance(ProcessDebugger Debugger)
+        {
+            AffectedInstances.Remove(Debugger);
         }
     }
 }

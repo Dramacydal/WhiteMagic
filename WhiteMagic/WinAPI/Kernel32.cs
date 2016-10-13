@@ -51,15 +51,15 @@ namespace WhiteMagic.WinAPI
         public static extern int SuspendThread(IntPtr hThread);
 
         [DllImport("kernel32.dll")]
-        public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
+        public static extern bool GetThreadContext(IntPtr hThread, [In, Out] CONTEXT lpContext);
 
         [DllImport("kernel32.dll")]
-        public static extern bool SetThreadContext(IntPtr hThread, [In] ref CONTEXT lpContext);
+        public static extern bool SetThreadContext(IntPtr hThread, [In, Out] CONTEXT lpContext);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int ResumeThread(IntPtr hThread);
 
-        public static uint MaxHardwareBreakpoints = 4;
+        public static readonly uint MaxHardwareBreakpoints = 4;
 
         [DllImport("kernel32.dll", EntryPoint = "WaitForDebugEvent")]
         [return: MarshalAs(UnmanagedType.Bool)]

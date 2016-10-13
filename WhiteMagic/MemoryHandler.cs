@@ -70,18 +70,22 @@ namespace WhiteMagic
             Dispose();
         }
 
-        public void SetProcess(Process process)
+        protected void SetProcess(Process process)
         {
             this.Process = process;
             if (ProcessHandle != IntPtr.Zero)
                 Kernel32.CloseHandle(ProcessHandle);
 
             ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
+            RefreshModules();
         }
 
         protected void RefreshModules()
         {
-            BaseModule.Update(Process.MainModule);
+            if (BaseModule == null)
+                BaseModule = new ModuleInfo(Process.MainModule);
+            else
+                BaseModule.Update(Process.MainModule);
 
             foreach (var Module in Modules)
                 Module.Value.Invalidate();
@@ -706,6 +710,9 @@ namespace WhiteMagic
 
         public IntPtr GetModuleAddress(string moduleName)
         {
+            if (moduleName == string.Empty)
+                moduleName = Process.MainModule.ModuleName;
+
             var Module = GetModule(moduleName);
             if (Module != null)
                 return Module.BaseAddress;

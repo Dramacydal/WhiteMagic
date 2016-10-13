@@ -32,7 +32,7 @@ namespace WhiteMagic.WinAPI.Structures
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct CONTEXT
+    public class CONTEXT
     {
         // Eax parts
         public ushort Ax

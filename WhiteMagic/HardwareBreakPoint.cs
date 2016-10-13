@@ -74,7 +74,7 @@ namespace WhiteMagic
             cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(hThread, ref cxt))
+            if (!Kernel32.GetThreadContext(hThread, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             // Find an available hardware register
@@ -97,7 +97,7 @@ namespace WhiteMagic
             SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(hThread, ref cxt))
+            if (!Kernel32.SetThreadContext(hThread, cxt))
                 throw new BreakPointException("Failed to set thread context");
 
             AffectedThreads[threadId] = index;
@@ -148,7 +148,7 @@ namespace WhiteMagic
             cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(hThread, ref cxt))
+            if (!Kernel32.GetThreadContext(hThread, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             for (var i = 0; i < Kernel32.MaxHardwareBreakpoints; ++i)
@@ -156,11 +156,11 @@ namespace WhiteMagic
                     SetBits(ref cxt.Dr7, i * 2, 1, 0);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(hThread, ref cxt))
+            if (!Kernel32.SetThreadContext(hThread, cxt))
                 throw new BreakPointException("Failed to set thread context");
         }
 
-        public virtual bool HandleException(ref CONTEXT ctx, ProcessDebugger pd) { return false; }
+        public virtual bool HandleException(ContextWrapper Wrapper) { return false; }
 
         protected static void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
         {
