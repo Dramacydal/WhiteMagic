@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic.WinAPI
 {

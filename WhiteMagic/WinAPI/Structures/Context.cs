@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
-namespace WhiteMagic.WinAPI
+namespace WhiteMagic.WinAPI.Structures
 {
     public enum CONTEXT_FLAGS : uint
     {

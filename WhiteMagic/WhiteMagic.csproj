@@ -53,21 +53,21 @@
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MagicHelpers.cs" />
     <Compile Include="Pointers\FunctionPointer.cs" />
-    <Compile Include="WinAPI\Types\AllocationType.cs" />
-    <Compile Include="WinAPI\Types\BreakpointCondition.cs" />
-    <Compile Include="WinAPI\Types\Context.cs" />
-    <Compile Include="WinAPI\Types\DebugEvent.cs" />
-    <Compile Include="WinAPI\Types\ErrorCodes.cs" />
-    <Compile Include="WinAPI\Types\FreeType.cs" />
-    <Compile Include="WinAPI\Types\Luid.cs" />
-    <Compile Include="WinAPI\Types\MemoryBasicInformation.cs" />
-    <Compile Include="WinAPI\Types\AllocationProtect.cs" />
-    <Compile Include="WinAPI\Types\ProcessAccess.cs" />
-    <Compile Include="WinAPI\Types\ProcessArchitecture.cs" />
-    <Compile Include="WinAPI\Types\ThreadAccess.cs" />
-    <Compile Include="WinAPI\Types\ThreadInfoClass.cs" />
-    <Compile Include="WinAPI\Types\TokenObject.cs" />
-    <Compile Include="WinAPI\Types\TokenPrivileges.cs" />
+    <Compile Include="WinAPI\Structures\AllocationType.cs" />
+    <Compile Include="WinAPI\Structures\BreakpointCondition.cs" />
+    <Compile Include="WinAPI\Structures\Context.cs" />
+    <Compile Include="WinAPI\Structures\DebugEvent.cs" />
+    <Compile Include="WinAPI\Structures\ErrorCodes.cs" />
+    <Compile Include="WinAPI\Structures\FreeType.cs" />
+    <Compile Include="WinAPI\Structures\Luid.cs" />
+    <Compile Include="WinAPI\Structures\MemoryBasicInformation.cs" />
+    <Compile Include="WinAPI\Structures\AllocationProtect.cs" />
+    <Compile Include="WinAPI\Structures\ProcessAccess.cs" />
+    <Compile Include="WinAPI\Structures\ProcessArchitecture.cs" />
+    <Compile Include="WinAPI\Structures\ThreadAccess.cs" />
+    <Compile Include="WinAPI\Structures\ThreadInfoClass.cs" />
+    <Compile Include="WinAPI\Structures\TokenObject.cs" />
+    <Compile Include="WinAPI\Structures\TokenPrivileges.cs" />
     <Compile Include="WinAPI\Kernel32.cs" />
     <Compile Include="MemoryHandler.cs" />
     <Compile Include="WinAPI\Misc.cs" />
@@ -76,8 +76,8 @@
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WinAPI\Ntdll.cs" />
-    <Compile Include="WinAPI\Types\WaitResult.cs" />
-    <Compile Include="WinAPI\Types\WakeFlags.cs" />
+    <Compile Include="WinAPI\Structures\WaitResult.cs" />
+    <Compile Include="WinAPI\Structures\WakeFlags.cs" />
     <Compile Include="WinAPI\User32.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using WhiteMagic.Pointers;
 using WhiteMagic.WinAPI;
-using WhiteMagic.WinAPI.Types;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic
 {

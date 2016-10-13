@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic
 {

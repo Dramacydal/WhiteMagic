@@ -5,6 +5,7 @@ using System.Threading;
 using System.Linq;
 using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic
 {

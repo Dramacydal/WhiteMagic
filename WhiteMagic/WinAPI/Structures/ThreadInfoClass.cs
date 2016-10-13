@@ -1,4 +1,4 @@
-﻿namespace WhiteMagic.WinAPI
+﻿namespace WhiteMagic.WinAPI.Structures
 {
     public enum ThreadInfoClass : int
     {

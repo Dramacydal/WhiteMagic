@@ -7,8 +7,8 @@ using System.Text;
 using Fasm;
 using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
-using WhiteMagic.WinAPI.Types;
 using WhiteMagic.Pointers;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic
 {

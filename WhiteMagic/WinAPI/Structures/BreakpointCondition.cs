@@ -1,5 +1,5 @@
-﻿
-namespace WhiteMagic.WinAPI.Types
+
+namespace WhiteMagic.WinAPI.Structures
 {
     public enum BreakpointCondition
     {

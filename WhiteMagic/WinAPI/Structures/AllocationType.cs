@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace WhiteMagic.WinAPI
+namespace WhiteMagic.WinAPI.Structures
 {
     [Flags]
     public enum AllocationType : uint
