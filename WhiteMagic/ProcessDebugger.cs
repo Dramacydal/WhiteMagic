@@ -1,15 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Linq;
 using WhiteMagic.WinAPI;
+using WhiteMagic.Modules;
 
 namespace WhiteMagic
 {
     public class DebuggerException : MagicException
     {
-        public DebuggerException(string message) : base(message) { }
+        public DebuggerException(string message, params object[] args) : base(message, args) { }
     }
 
     public class ProcessDebugger : MemoryHandler
@@ -21,14 +22,6 @@ namespace WhiteMagic
         public bool IsDebugging { get; protected set; }
         public bool IsDetached { get; protected set; }
         public bool HasExited { get { return Process.HasExited; } }
-
-        public void Refresh()
-        {
-            if (Process == null)
-                return;
-
-            Process.Refresh();
-        }
 
         public List<HardwareBreakPoint> Breakpoints { get { return breakPoints; } }
 
@@ -64,7 +57,7 @@ namespace WhiteMagic
 
         public void ClearUsedBreakpointSlots()
         {
-            Process.Refresh();
+            RefreshMemory();
             foreach (ProcessThread th in Process.Threads)
             {
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
@@ -78,42 +71,17 @@ namespace WhiteMagic
             }
         }
 
-        public void AddBreakPoint(HardwareBreakPoint bp, IntPtr baseAddress)
+        public void AddBreakPoint(HardwareBreakPoint bp, ModuleInfo Module)
         {
             if (breakPoints.Count >= Kernel32.MaxHardwareBreakpoints)
                 throw new DebuggerException("Can't set any more breakpoints");
 
-            bp.SetModuleBase(baseAddress);
-
             try
             {
                 using (var suspender = MakeSuspender())
                 {
-                    bp.Set(Process);
+                    bp.Set(this);
                     breakPoints.Add(bp);
-                }
-            }
-            catch (BreakPointException e)
-            {
-                throw new DebuggerException(e.Message);
-            }
-        }
-
-        public void RemoveBreakPoint(IntPtr offset, IntPtr moduleBase)
-        {
-            var bps = breakPoints.Where(it => it.Offset == offset && it.ModuleBase == moduleBase);
-            if (bps.Count() == 0)
-                return;
-
-            try
-            {
-                using (var suspender = MakeSuspender())
-                {
-                    foreach (var bp in bps)
-                    {
-                        bp.UnSet();
-                        breakPoints.Remove(bp);
-                    }
                 }
             }
             catch (BreakPointException e)
@@ -129,7 +97,7 @@ namespace WhiteMagic
                 using (var suspender = MakeSuspender())
                 {
                     foreach (var bp in breakPoints)
-                        bp.UnSet();
+                        bp.UnSet(this);
                 }
 
                 breakPoints.Clear();
@@ -157,7 +125,7 @@ namespace WhiteMagic
                 return;
             IsDetached = true;
 
-            Process.Refresh();
+            RefreshMemory();
             if (Process.HasExited)
                 return;
 
@@ -217,10 +185,10 @@ namespace WhiteMagic
                                 throw new DebuggerException("Failed to get thread context");
 
 
-                            if (!breakPoints.Any(e => e != null && e.Address.ToUInt32() == Context.Eip))
+                            if (!breakPoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
                                 break;
                             
-                            var bp = breakPoints.First(e => e != null && e.Address.ToUInt32() == Context.Eip);
+                            var bp = breakPoints.First(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
                              //Console.WriteLine("Triggered");
                             if (bp.HandleException(ref Context, this) && !Kernel32.SetThreadContext(hThread, ref Context))
                                 throw new DebuggerException("Failed to set thread context");

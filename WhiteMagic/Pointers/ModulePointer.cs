@@ -1,15 +1,16 @@
-﻿
-namespace WhiteMagic.Modules
+using System;
+
+namespace WhiteMagic.Pointers
 {
     public class ModulePointer
     {
         public string ModuleName { get; protected set; }
-        public int Offset { get; protected set; }
+        public IntPtr Offset { get; protected set; }
 
-        public ModulePointer(string moduleName, int offset)
+        public ModulePointer(string ModuleName, IntPtr Offset)
         {
-            this.ModuleName = moduleName;
-            this.Offset = offset;
+            this.ModuleName = ModuleName;
+            this.Offset = Offset;
         }
 
         public static ModulePointer operator +(ModulePointer pointer, int modOffs)

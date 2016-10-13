@@ -43,12 +43,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MemoryContainer.cs" />
+    <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
+    <Compile Include="Patterns\RegexExtensions.cs" />
     <Compile Include="Suspender.cs" />
+    <Compile Include="Pointers\ValuePointer.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
     <Compile Include="MagicExtensions.cs" />
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MagicHelpers.cs" />
+    <Compile Include="Pointers\FunctionPointer.cs" />
     <Compile Include="WinAPI\Types\AllocationType.cs" />
     <Compile Include="WinAPI\Types\BreakpointCondition.cs" />
     <Compile Include="WinAPI\Types\Context.cs" />
@@ -68,13 +72,16 @@
     <Compile Include="MemoryHandler.cs" />
     <Compile Include="WinAPI\Misc.cs" />
     <Compile Include="Modules\ModuleDump.cs" />
-    <Compile Include="Modules\ModulePointer.cs" />
+    <Compile Include="Pointers\ModulePointer.cs" />
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WinAPI\Ntdll.cs" />
     <Compile Include="WinAPI\Types\WaitResult.cs" />
     <Compile Include="WinAPI\Types\WakeFlags.cs" />
     <Compile Include="WinAPI\User32.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using WhiteMagic.Pointers;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Types;
 
@@ -8,34 +9,43 @@ namespace WhiteMagic
 {
     public class BreakPointException : MagicException
     {
-        public BreakPointException(string message) : base(message) { }
+        public BreakPointException(string message, params object[] args) : base(message, args) { }
     }
 
     public class HardwareBreakPoint
     {
-        public HardwareBreakPoint(IntPtr offset, int len, BreakpointCondition condition)
+        public HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
         {
-            Offset = offset;
-            Condition = condition;
+            if (Condition == BreakpointCondition.Code)
+                Length = 1;
 
-            switch (len)
+            this.Pointer = Pointer;
+            this.Condition = Condition;
+            this.Address = IntPtr.Zero;
+
+            switch (Length)
             {
-                case 1: this.len = 0; break;
-                case 2: this.len = 1; break;
-                case 4: this.len = 3; break;
-                case 8: this.len = 2; break;
+                case 1: this.Length = 0; break;
+                case 2: this.Length = 1; break;
+                case 4: this.Length = 3; break;
+                case 8: this.Length = 2; break;
                 default: throw new BreakPointException("Invalid length!");
             }
         }
 
-        public void Set(Process p)
+        public bool Set(MemoryHandler Memory)
         {
-            process = p;
-            process.Refresh();
+            this.Memory = Memory;
+            Memory.RefreshMemory();
+            var process = Memory.Process;
 
-            foreach (ProcessThread th in p.Threads)
+            Address = Memory.GetAddress(Pointer);
+            if (Address == null)
+                return false;
+
+            foreach (ProcessThread th in process.Threads)
             {
-                if (affectedThreads.ContainsKey(th.Id))
+                if (AffectedThreads.ContainsKey(th.Id))
                     continue;
 
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
@@ -47,12 +57,14 @@ namespace WhiteMagic
                 if (!Kernel32.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
             }
+
+            return true;
         }
 
         public void SetToThread(IntPtr hThread, int threadId)
         {
             // make sure this breakpoint isn't already set
-            if (affectedThreads.ContainsKey(threadId))
+            if (AffectedThreads.ContainsKey(threadId))
                 return;
                 //Console.WriteLine("Thread {0} already affected", threadId);
 
@@ -81,30 +93,29 @@ namespace WhiteMagic
             }
 
             SetBits(ref cxt.Dr7, 16 + index * 4, 2, (uint)Condition);
-            SetBits(ref cxt.Dr7, 18 + index * 4, 2, (uint)len);
+            SetBits(ref cxt.Dr7, 18 + index * 4, 2, (uint)Length);
             SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
             // Write out the new debug registers
             if (!Kernel32.SetThreadContext(hThread, ref cxt))
                 throw new BreakPointException("Failed to set thread context");
 
-            affectedThreads[threadId] = index;
+            AffectedThreads[threadId] = index;
         }
 
         public void UnregisterThread(int id)
         {
-            affectedThreads.Remove(id);
+            AffectedThreads.Remove(id);
         }
 
-        public void UnSet()
+        public void UnSet(MemoryHandler Memory)
         {
-            if (process == null)
-                return;
+            Memory.RefreshMemory();
+            var process = Memory.Process;
 
-            process.Refresh();
             foreach (ProcessThread th in process.Threads)
             {
-                if (!affectedThreads.ContainsKey(th.Id))
+                if (!AffectedThreads.ContainsKey(th.Id))
                     continue;
 
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
@@ -117,12 +128,12 @@ namespace WhiteMagic
                     throw new BreakPointException("Failed to close thread handle");
             }
 
-            affectedThreads.Clear();
+            AffectedThreads.Clear();
         }
 
         public void UnsetFromThread(IntPtr hThread, int threadId)
         {
-            var index = affectedThreads[threadId];
+            var index = AffectedThreads[threadId];
             // Zero out the debug register settings for this breakpoint
             if (index >= Kernel32.MaxHardwareBreakpoints)
                 throw new BreakPointException("Bogus breakpoints index");
@@ -157,19 +168,21 @@ namespace WhiteMagic
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
         }
 
-        public void SetModuleBase(IntPtr moduleBase)
-        {
-            ModuleBase = moduleBase;
-        }
+        public ModulePointer Pointer { get; private set; }
 
-        public IntPtr ModuleBase { get; protected set; }
-        public IntPtr Offset { get; protected set; }
-        public IntPtr Address { get { return ModuleBase.Add(Offset); } }
         public BreakpointCondition Condition { get; protected set; }
+        protected MemoryHandler Memory { get; private set; }
 
-        Dictionary<int, int> affectedThreads = new Dictionary<int, int>();
+        public bool IsSet { get { return Address != IntPtr.Zero; } }
+        public IntPtr Address { get; private set; }
 
-        protected readonly int len;
-        protected Process process = null;
+        private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();
+
+        protected readonly int Length;
+    }
+
+    public class CodeBreakpoint : HardwareBreakPoint
+    {
+        public CodeBreakpoint(ModulePointer Pointer) : base(Pointer, BreakpointCondition.Code, 1) { }
     }
 }

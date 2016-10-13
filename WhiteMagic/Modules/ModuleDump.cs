@@ -1,26 +1,34 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace WhiteMagic.Modules
 {
     public class ModuleDump : MemoryContainer
     {
-        protected ProcessModule Module { get; private set; }
-
-        public string ModuleName { get { return Module.FileName; } }
+        protected ModuleInfo Module { get; private set; }
 
         private static readonly int readCount = 256;
 
-        public ModuleDump(ProcessModule module, MemoryHandler m)
-            : base(module.BaseAddress)
+        public void Read(MemoryHandler Memory)
         {
-            this.Module = module;
             var bytes = new List<byte>();
-            for (var i = 0; i < module.ModuleMemorySize; i += readCount)
-                bytes.AddRange(m.ReadBytes(IntPtr.Add(module.BaseAddress, i), i + readCount >= module.ModuleMemorySize ? module.ModuleMemorySize - i : readCount));
+            for (var i = 0; i < Module.MemorySize; i += readCount)
+                bytes.AddRange(Memory.ReadBytes(IntPtr.Add(Module.BaseAddress, i), i + readCount >= Module.MemorySize ? Module.MemorySize - i : readCount));
 
             Data = bytes.ToArray();
         }
+
+        public ModuleDump(ModuleInfo Module)
+            : base(Module.BaseAddress)
+        {
+            this.Module = Module;
+        }
+
+        public void Clear()
+        {
+            Data = null;
+        }
+
+        public bool Initialized { get { return Data != null && Data.Length > 0; } }
     }
 }

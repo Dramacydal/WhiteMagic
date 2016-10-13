@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -8,17 +8,19 @@ using Fasm;
 using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
 using WhiteMagic.WinAPI.Types;
+using WhiteMagic.Pointers;
 
 namespace WhiteMagic
 {
     public class MagicException : Exception
     {
         public ErrorCodes LastError { get; private set; }
-        public MagicException(string message) : base(message) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
+        public MagicException(string message, params object[] args) : base(string.Format(message, args)) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
     }
+
     public class MemoryException : MagicException
     {
-        public MemoryException(string message) : base(message) { }
+        public MemoryException(string message, params object[] args) : base(message, args) { }
     }
 
     public enum MagicConvention
@@ -38,7 +40,9 @@ namespace WhiteMagic
         protected volatile int threadSuspendCount = 0;
         protected volatile List<int> remoteThreads = new List<int>();
 
-        protected Dictionary<string, ModuleDump> moduleDump = new Dictionary<string, ModuleDump>();
+        protected ModuleInfo BaseModule;
+        protected Dictionary<string, ModuleInfo> Modules = new Dictionary<string, ModuleInfo>();
+
         public MemoryHandler(Process process)
         {
             SetProcess(process);
@@ -48,7 +52,7 @@ namespace WhiteMagic
         {
             var process = Process.GetProcessById(processId);
             if (process == null)
-                throw new MemoryException("Process " + processId + " not found");
+                throw new MemoryException("Process {0} not found", processId);
             SetProcess(process);
         }
 
@@ -75,14 +79,37 @@ namespace WhiteMagic
             ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
         }
 
+        protected void RefreshModules()
+        {
+            BaseModule.Update(Process.MainModule);
+
+            foreach (var Module in Modules)
+                Module.Value.Invalidate();
+
+            foreach (ProcessModule ProcessModule in Process.Modules)
+                GetModule(ProcessModule.ModuleName, true);
+        }
+
         public bool IsValid()
         {
             if (Process == null)
                 return false;
 
-            Process.Refresh();
+            RefreshMemory();
 
             return !Process.HasExited;
+        }
+
+        public void RefreshMemory()
+        {
+            if (Process == null)
+                return;
+
+            lock ("process refresh")
+            {
+                Process.Refresh();
+                RefreshModules();
+            }
         }
 
         public void SuspendAllThreads(params int[] except)
@@ -90,7 +117,7 @@ namespace WhiteMagic
             if (++threadSuspendCount > 1)
                 return;
 
-            Process.Refresh();
+            RefreshMemory();
 
             foreach (ProcessThread pT in Process.Threads)
             {
@@ -128,7 +155,7 @@ namespace WhiteMagic
                 return;
 
             if (!ignoreSuspendCount && threadSuspendCount < 0)
-                throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is " + threadSuspendCount.ToString());
+                throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is {0}", threadSuspendCount.ToString());
 
             foreach (ProcessThread pT in Process.Threads)
                 ResumeThread(pT.Id);
@@ -189,16 +216,7 @@ namespace WhiteMagic
         public T Read<T>(IntPtr addr) where T : struct
         {
             var buf = ReadBytes(addr, Marshal.SizeOf(typeof(T)));
-            return ConvertToType<T>(buf);
-        }
-
-        protected static T ConvertToType<T>(object val) where T : struct
-        {
-            var h = GCHandle.Alloc(val, GCHandleType.Pinned);
-            var t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
-            h.Free();
-
-            return t;
+            return MagicHelpers.ReinterpretObject<T>(buf);
         }
 
         protected byte[] ReadNullTerminatedBytes(IntPtr addr, int step = 1)
@@ -246,6 +264,11 @@ namespace WhiteMagic
         public string ReadUTF32String(IntPtr addr, int len = 0)
         {
             return Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
+        }
+
+        public T Read<T>(ModulePointer offs) where T : struct
+        {
+            return Read<T>(GetAddress(offs));
         }
 
         #region Faster Read functions for basic types
@@ -344,14 +367,7 @@ namespace WhiteMagic
 
         public void Write<T>(IntPtr addr, T value)
         {
-            var size = Marshal.SizeOf(typeof(T));
-            var bytes = new byte[size];
-            var ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.StructureToPtr(value, ptr, true);
-            Marshal.Copy(ptr, bytes, 0, size);
-            Marshal.FreeHGlobal(ptr);
-
+            var bytes = MagicHelpers.ObjectToBytes(value);
             WriteBytes(addr, bytes);
         }
 
@@ -373,6 +389,10 @@ namespace WhiteMagic
         public void WriteUTF32String(IntPtr addr, string str, bool nullTerminated = true)
         {
             WriteBytes(addr, Encoding.UTF32.GetBytes(nullTerminated ? str + '\0' : str));
+        }
+        public void Write<T>(ModulePointer offs, T value) where T : struct
+        {
+            Write<T>(GetAddress(offs), value);
         }
 
         #region Faster Write functions for basic types
@@ -510,7 +530,7 @@ namespace WhiteMagic
                 if (!Kernel32.GetExitCodeThread(h, out exitCode))
                     throw new MemoryException("Failed to obtain exit code");
 
-                return ConvertToType<T>(exitCode);
+                return MagicHelpers.ReinterpretObject<T>(exitCode);
             }
         }
 
@@ -591,12 +611,22 @@ namespace WhiteMagic
                     }
                     default:
                     {
-                        throw new MemoryException("Unhandled calling convention " + cv.ToString());
+                        throw new MemoryException("Unhandled calling convention '{0}'", cv.ToString());
                     }
                 }
 
                 return ExecuteRemoteCode<T>(asm.Assemble());
             }
+        }
+
+        public T Call<T>(ModulePointer offs, MagicConvention cv, params object[] args) where T : struct
+        {
+            return Call<T>(GetAddress(offs), cv, args);
+        }
+
+        public void Call(ModulePointer offs, MagicConvention cv, params object[] args)
+        {
+            Call(GetAddress(offs), cv, args);
         }
 
         public IntPtr GetThreadStartAddress(int threadId)
@@ -611,7 +641,7 @@ namespace WhiteMagic
                                  ThreadInfoClass.ThreadQuerySetWin32StartAddress,
                                  buf, buf.Length, IntPtr.Zero);
                 if (result != 0)
-                    throw new MemoryException(string.Format("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result));
+                    throw new MemoryException("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result);
                 return new IntPtr(BitConverter.ToInt32(buf, 0));
             }
             finally
@@ -620,36 +650,48 @@ namespace WhiteMagic
             }
         }
 
-        protected ModuleDump DumpModule(string name, bool refreshModuleList = false)
+        public ModuleDump GetModuleDump(string name, bool Refresh = false)
         {
-            using (var suspender = MakeSuspender())
+            var moduleInfo = GetModule(name, Refresh);
+            if (moduleInfo == null)
+                return null;
+
+            if (!moduleInfo.Dump.Initialized || Refresh)
             {
-                if (refreshModuleList)
-                    Process.Refresh();
-
-                var lowerName = name.ToLower();
-
-                foreach (ProcessModule mod in Process.Modules)
+                using (var suspender = MakeSuspender())
                 {
-                    if (mod.ModuleName.ToLower() == lowerName)
-                    {
-                        var dump = new ModuleDump(mod, this);
-                        moduleDump[lowerName] = dump;
-                        return dump;
-                    }
+                    moduleInfo.Dump.Read(this);
                 }
             }
 
-            return null;
+            return moduleInfo.Dump;
         }
 
-        public ModuleDump GetModuleDump(string name, bool refreshData = false)
+        public ModuleInfo GetModule(string Name, bool Refresh = false)
         {
-            var dumpColl = moduleDump.Where(d => d.Key.ToLower() == name.ToLower());
-            if (dumpColl.Count() == 0 || refreshData)
-                return DumpModule(name, true);
-            else
-                return dumpColl.First().Value;
+            var NameKey = Name.ToLower();
+            var Module = Modules.ContainsKey(NameKey) ? Modules[NameKey] : null;
+            if (!Refresh)
+                return Module;
+
+            try
+            {
+                var ModuleSource = Process.Modules.Cast<ProcessModule>().First(_ => _.ModuleName.Equals(NameKey, StringComparison.InvariantCultureIgnoreCase));
+
+                if (Module != null)
+                    Module.Update(ModuleSource);
+                else
+                {
+                    Module = new ModuleInfo(ModuleSource);
+                    Modules[NameKey] = Module;
+                }
+
+                return Module;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public ProcessSuspender MakeSuspender()
@@ -657,53 +699,37 @@ namespace WhiteMagic
             return new ProcessSuspender(this);
         }
 
+        public IntPtr GetAddress(ModulePointer offs)
+        {
+            return GetModuleAddress(offs.ModuleName).Add(offs.Offset);
+        }
+
         public IntPtr GetModuleAddress(string moduleName)
         {
-            foreach (ProcessModule module in Process.Modules)
-                if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return module.BaseAddress;
+            var Module = GetModule(moduleName);
+            if (Module != null)
+                return Module.BaseAddress;
 
-            Process.Refresh();
-            if (Process.HasExited)
-                return IntPtr.Zero;
+            lock ("process refresh")
+            {
+                Module = GetModule(moduleName, true);
+                if (Module != null)
+                    return Module.BaseAddress;
 
-            foreach (ProcessModule module in Process.Modules)
-                if (module.ModuleName.ToLower() == moduleName.ToLower())
-                    return module.BaseAddress;
-
-            return LoadModule(moduleName);
+                return LoadModule(moduleName);
+            }
         }
 
         public IntPtr LoadModule(string name)
         {
             lock ("moduleLoad")
             {
-                var hModule = Kernel32.GetModuleHandle("kernel32.dll");
+                var hModule = Kernel32.LoadLibraryA(name);
                 if (hModule == IntPtr.Zero)
-                    hModule = Kernel32.LoadLibraryA("kernel32.dll");
-                if (hModule == IntPtr.Zero)
-                    throw new DebuggerException("Failed to get kernel32.dll module");
+                    throw new DebuggerException("Failed to load {0} module", name);
 
-                var funcAddress = Kernel32.GetProcAddress(hModule, "LoadLibraryA");
-                var arg = AllocateCString(name);
-
-                var ret = Call<int>(IntPtr.Add(GetModuleAddress("kernel32.dll"), funcAddress.ToInt32() - hModule.ToInt32()), MagicConvention.StdCall, arg);
-                FreeMemory(arg);
-                if (ret <= 0)
-                    throw new DebuggerException("Failed to load module '" + name + "'");
-
-                return new IntPtr(ret);
+                return hModule;
             }
-        }
-
-        public T Read<T>(ModulePointer offs) where T : struct
-        {
-            return Read<T>(this.GetAddress(offs));
-        }
-
-        public void Write<T>(ModulePointer offs, T value) where T : struct
-        {
-            Write<T>(this.GetAddress(offs), value);
         }
     }
 }

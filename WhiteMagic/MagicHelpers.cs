@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI;
 
 namespace WhiteMagic
@@ -143,6 +144,28 @@ namespace WhiteMagic
             }
 
             return Kernel32.CloseHandle(hToken);
+        }
+
+        public static T ReinterpretObject<T>(object val) where T : struct
+        {
+            var h = GCHandle.Alloc(val, GCHandleType.Pinned);
+            var t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
+            h.Free();
+
+            return t;
+        }
+
+        public static byte[] ObjectToBytes<T>(T value)
+        {
+            var size = Marshal.SizeOf(typeof(T));
+            var bytes = new byte[size];
+            var ptr = Marshal.AllocHGlobal(size);
+
+            Marshal.StructureToPtr(value, ptr, true);
+            Marshal.Copy(ptr, bytes, 0, size);
+            Marshal.FreeHGlobal(ptr);
+
+            return bytes;
         }
     }
 }

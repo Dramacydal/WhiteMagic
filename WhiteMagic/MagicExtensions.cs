@@ -1,35 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using WhiteMagic.Modules;
-using WhiteMagic.Patterns;
 
 namespace WhiteMagic
 {
     public static class MagicExtensions
     {
-        public static T Call<T>(this MemoryHandler m, ModulePointer offs, MagicConvention cv, params object[] args) where T : struct
-        {
-            return m.Call<T>(m.GetAddress(offs), cv, args);
-        }
-
-        public static void Call(this MemoryHandler m, ModulePointer offs, MagicConvention cv, params object[] args)
-        {
-            m.Call(m.GetAddress(offs), cv, args);
-        }
-
-        public static T Read<T>(this MemoryHandler m, ModulePointer offs) where T : struct
-        {
-            return m.Read<T>(m.GetAddress(offs));
-        }
-
-        public static IntPtr GetAddress(this MemoryHandler m, ModulePointer offs)
-        {
-            return m.GetModuleAddress(offs.ModuleName) + offs.Offset;
-        }
-
         /// <summary>
         /// Converts byte array into space-separated hex string
         /// </summary>
@@ -82,16 +59,6 @@ namespace WhiteMagic
                     process.MainModule.FileVersionInfo.FileMinorPart,
                     process.MainModule.FileVersionInfo.FileBuildPart,
                     process.MainModule.FileVersionInfo.FilePrivatePart);
-        }
-
-        public static Match Match(this IEnumerable<byte> Data, MemoryPattern Pattern)
-        {
-            return Pattern.Match(PatternHelper.BytesToString(Data.ToArray()));
-        }
-
-        public static MatchCollection Matches(this IEnumerable<byte> Data, MemoryPattern Pattern)
-        {
-            return Pattern.Matches(PatternHelper.BytesToString(Data.ToArray()));
         }
     }
 }
