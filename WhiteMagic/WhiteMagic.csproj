@@ -60,6 +60,10 @@
     <Compile Include="WinAPI\Structures\DebugEvent.cs" />
     <Compile Include="WinAPI\Structures\ErrorCodes.cs" />
     <Compile Include="WinAPI\Structures\FreeType.cs" />
+    <Compile Include="WinAPI\Structures\Input\Input.cs" />
+    <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
+    <Compile Include="WinAPI\Structures\Input\VirtualKeyShort.cs" />
+    <Compile Include="WinAPI\Structures\Input\WindowsMessage.cs" />
     <Compile Include="WinAPI\Structures\Luid.cs" />
     <Compile Include="WinAPI\Structures\MemoryBasicInformation.cs" />
     <Compile Include="WinAPI\Structures\AllocationProtect.cs" />

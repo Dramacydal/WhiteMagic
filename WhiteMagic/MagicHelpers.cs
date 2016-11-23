@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
 
@@ -16,66 +17,103 @@ namespace WhiteMagic
 
     public static class MagicHelpers
     {
-        public static List<Process> FindProcessesByInternalName(string name)
+        #region String parameters methods
+        public static IEnumerable<Process> FindProcessesByInternalName(string Name)
         {
-            var processes = new List<Process>(Process.GetProcesses());
-            return processes.Where(process =>
+            return FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static IEnumerable<Process> FindProcessesByProductName(string Name)
+        {
+            return FindProcessesByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static IEnumerable<Process> FindProcessesByName(string Name)
+        {
+            return FindProcessesByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static Process FindProcessByName(string Name)
+        {
+            return FindProcessByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static Process FindProcessByInternalName(string Name)
+        {
+            return FindProcessByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static Process FindProcessByProductName(string Name)
+        {
+            return FindProcessByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+
+        public static Process SelectProcess(string Name)
+        {
+            return SelectProcess(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        }
+        #endregion
+
+        public static IEnumerable<Process> FindProcessesByInternalName(Regex Pattern)
+        {
+            return Process.GetProcesses().Where(process =>
             {
                 try
                 {
                     return Kernel32.Is32BitProcess(process.Handle) &&
                         process.MainModule.FileVersionInfo.InternalName != null &&
-                        process.MainModule.FileVersionInfo.InternalName.ToLower() == name.ToLower();
+                        Pattern.IsMatch(process.MainModule.FileVersionInfo.InternalName);
                 }
                 catch (Win32Exception)
                 {
                     return false;
                 }
-            }).ToList();
+            });
         }
 
-        public static List<Process> FindProcessesByProductName(string name)
+        public static IEnumerable<Process> FindProcessesByProductName(Regex Pattern)
         {
-            var processes = new List<Process>(Process.GetProcesses());
-            return processes.Where(process =>
+            return Process.GetProcesses().Where(process =>
             {
                 return Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.ProductName != null &&
-                    process.MainModule.FileVersionInfo.ProductName.ToLower() == name.ToLower();
-            }).ToList();
+                    Pattern.IsMatch(process.MainModule.FileVersionInfo.ProductName);
+            });
         }
 
-        public static List<Process> FindProcessesByName(string name)
+        public static IEnumerable<Process> FindProcessesByName(Regex Pattern)
         {
-            var processes = new List<Process>(Process.GetProcessesByName(name));
-            return processes.Where(process => Kernel32.Is32BitProcess(process.Handle)).ToList();
+            return Process.GetProcesses().Where(process => 
+                {
+                    return Kernel32.Is32BitProcess(process.Handle) && Pattern.IsMatch(process.ProcessName);
+                });
         }
 
-        public static Process FindProcessByName(string name)
+        public static Process FindProcessByName(Regex Pattern)
         {
-            var processes = FindProcessesByName(name);
-            return processes.Count == 0 ? null : processes[0];
+            var processes = FindProcessesByName(Pattern);
+            return processes.FirstOrDefault();
         }
 
-        public static Process FindProcessByInternalName(string name)
+        public static Process FindProcessByInternalName(Regex Pattern)
         {
-            var processes = FindProcessesByInternalName(name);
-            return processes.Count == 0 ? null : processes[0];
+            var processes = FindProcessesByInternalName(Pattern);
+            return processes.FirstOrDefault();
         }
 
-        public static Process FindProcessByProductName(string name)
+        public static Process FindProcessByProductName(Regex Pattern)
         {
-            var processes = FindProcessesByProductName(name);
-            return processes.Count == 0 ? null : processes[0];
+            var processes = FindProcessesByProductName(Pattern);
+            return processes.FirstOrDefault();
         }
 
-        public static Process SelectProcess(string internalName)
+        public static Process SelectProcess(Regex Pattern)
         {
             for (; ; )
             {
-                var processList = FindProcessesByInternalName(internalName);
+                var processList = FindProcessesByInternalName(Pattern).ToList();
                 if (processList.Count == 0)
-                    throw new ProcessSelectorException(string.Format("No '{0}' processes found", internalName));
+                    throw new ProcessSelectorException(string.Format("No processes found"));
 
                 try
                 {
@@ -113,7 +151,7 @@ namespace WhiteMagic
             }
         }
 
-        private static string SE_DEBUG_NAME = "SeDebugPrivilege";
+        private const string SE_DEBUG_NAME = "SeDebugPrivilege";
 
         /// <summary>
         /// Sets debug privileges for running program.
