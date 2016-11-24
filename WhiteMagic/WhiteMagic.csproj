@@ -54,6 +54,7 @@
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MagicHelpers.cs" />
     <Compile Include="Pointers\FunctionPointer.cs" />
+    <Compile Include="WinAPI\Psapi.cs" />
     <Compile Include="WinAPI\Structures\AllocationType.cs" />
     <Compile Include="WinAPI\Structures\BreakpointCondition.cs" />
     <Compile Include="WinAPI\Structures\Context.cs" />

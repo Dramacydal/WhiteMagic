@@ -17,6 +17,45 @@ namespace WhiteMagic
 
     public static class MagicHelpers
     {
+        /// <summary>
+        /// Use this as alternative to builtin Process.GetProcesses() in
+        /// order not to deal with exceptions
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<Process> EnumerateProcesses()
+        {
+            var arraySize = 1024u;
+            var arrayBytesSize = arraySize * sizeof(UInt32);
+            var processIds = new int[arraySize];
+            uint bytesCopied;
+
+            if (!Psapi.EnumProcesses(processIds, arrayBytesSize, out bytesCopied))
+                yield break;
+
+            if (bytesCopied == 0)
+                yield break;
+
+            if ((bytesCopied & 3) != 0)
+                yield break;
+
+            UInt32 numIdsCopied = bytesCopied >> 2;
+            for (UInt32 i = 0; i < numIdsCopied; ++i)
+            {
+                var id = processIds[i];
+
+                var Handle = Kernel32.OpenProcess(ProcessAccess.QueryInformation, false, (int)id);
+                if (Handle == IntPtr.Zero)
+                    continue;
+
+                Kernel32.CloseHandle(Handle);
+                var process = Process.GetProcessById((int)id);
+                if (process == null)
+                    continue;
+
+                yield return process;
+            }
+        }
+
         #region String parameters methods
         public static IEnumerable<Process> FindProcessesByInternalName(string Name)
         {
@@ -56,7 +95,7 @@ namespace WhiteMagic
 
         public static IEnumerable<Process> FindProcessesByInternalName(Regex Pattern)
         {
-            return Process.GetProcesses().Where(process =>
+            return EnumerateProcesses().Where(process =>
             {
                 try
                 {
@@ -73,7 +112,7 @@ namespace WhiteMagic
 
         public static IEnumerable<Process> FindProcessesByProductName(Regex Pattern)
         {
-            return Process.GetProcesses().Where(process =>
+            return EnumerateProcesses().Where(process =>
             {
                 return Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.ProductName != null &&
@@ -83,9 +122,10 @@ namespace WhiteMagic
 
         public static IEnumerable<Process> FindProcessesByName(Regex Pattern)
         {
-            return Process.GetProcesses().Where(process => 
+            return EnumerateProcesses().Where(process => 
                 {
-                    return Kernel32.Is32BitProcess(process.Handle) && Pattern.IsMatch(process.ProcessName);
+                    return Kernel32.Is32BitProcess(process.Handle) &&
+                        Pattern.IsMatch(process.ProcessName);
                 });
         }
 

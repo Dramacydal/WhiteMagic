@@ -3,6 +3,7 @@ namespace WhiteMagic.WinAPI.Structures.Input
 {
     public enum VirtualKeyShort : short
     {
+        NONE = 0x0,
         ///<summary>
         ///Left mouse button
         ///</summary>
