@@ -1,75 +1,128 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Security;
+using System.Text;
 using WhiteMagic.WinAPI.Structures;
-using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.WinAPI
 {
     public static class User32
     {
-        [DllImport("user32.dll")]
-        public static extern WaitResult MsgWaitForMultipleObjects(uint nCount, IntPtr[] pHandles,
-            bool bWaitAll, uint dwMilliseconds, WakeFlags dwWakeMask);
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+        public static extern int GetSystemMetrics(SystemMetrics metric);
+ 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowPlacement(IntPtr hWnd, out WindowPlacement lpwndpl);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        public static extern bool FlashWindow(IntPtr hwnd, bool bInvert);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool FlashWindowEx(ref FlashInfo pwfi);
+
+        [DllImport("user32.dll")]
+        public static extern uint MapVirtualKey(uint key, TranslationTypes translation);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int SendInput(int nInputs, Input[] pInputs, int cbSize);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+  
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+ 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetWindowPlacement(IntPtr hWnd, [In] ref WindowPlacement lpwndpl);
 
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern bool PostMessage(IntPtr hWnd, WM Msg, uint wParam, uint lParam);
+        public static extern bool SetWindowText(IntPtr hwnd, string lpString);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(IntPtr hWnd, WindowStates nCmdShow);
+
+        [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        public static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+        [return: MarshalAs(UnmanagedType.Bool)]
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool PostMessage(IntPtr hWnd, int msg, UIntPtr wParam, UIntPtr lParam);
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true), SuppressUnmanagedCodeSecurity]
+        public static extern int CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+        internal static extern IntPtr GetWindowLong32(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetWindowsHookEx(HookType code,
+            HookProc func,
+            IntPtr hInstance,
+            int threadId);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowsHookEx")]
+        public static extern IntPtr SetWindowsHookLowLevel(HookType code,
+            LowLevelProc func,
+            IntPtr hInstance,
+            int threadId);
+
+        public static IntPtr SetWindowsHook(HookType hookType, LowLevelProc callback)
+        {
+            IntPtr hookId;
+            using (var currentProcess = System.Diagnostics.Process.GetCurrentProcess())
+            using (var currentModule = currentProcess.MainModule)
+            {
+                var handle = Kernel32.GetModuleHandle(currentModule.ModuleName);
+                hookId = SetWindowsHookLowLevel(hookType, callback, handle, 0);
+            }
+            return hookId;
+        }
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        internal static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+        internal static extern IntPtr SetWindowLong32(IntPtr hWnd, int nIndex, IntPtr newValue);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        internal static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr newValue);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, int msg, int wParam,
+            IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        internal static extern int RegisterWindowMessage(string lpString);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool UnhookWindowsHookEx(IntPtr hhk);
 
         public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-        public static void MoveMouse(int dx, int dy)
-        {
-            var inp = new INPUT();
-            inp.Type = InputType.MOUSE;
-            inp.Input.mi.dx = dx;
-            inp.Input.mi.dy = dy;
-            inp.Input.mi.mouseData = 0;
-            inp.Input.mi.dwFlags = MouseEventFlag.MOVE;
-            inp.Input.mi.time = 0;
-            inp.Input.mi.dwExtraInfo = IntPtr.Zero;
-
-            if (SendInput(1, ref inp, INPUT.Size) != 1)
-                throw new Win32Exception();
-        }
-
-        public static void SendKey(ScanCodeShort sc, VirtualKeyShort vk, bool up = false)
-        {
-            var inp = new INPUT();
-            inp.Type = InputType.KEYBOARD;
-            inp.Input.ki.dwFlags = up ? KeyEventFlags.KEYUP : 0;
-            inp.Input.ki.wVk = vk;
-            inp.Input.ki.wScan = sc;
-            inp.Input.ki.time = 0;
-            inp.Input.ki.dwExtraInfo = IntPtr.Zero;
-
-            if (SendInput(1, ref inp, INPUT.Size) != 1)
-                throw new Win32Exception();
-        }
-
-        public static void SendKeyToWindow(IntPtr Window, VirtualKeyShort Key, bool Up, bool Recursive = false)
-        {
-            if (!PostMessage(Window, Up ? WM.KEYUP : WM.KEYDOWN, (uint)Key, 0))
-                throw new Win32Exception();
-
-            if (Recursive)
-            {
-                EnumChildWindows(Window, (IntPtr hwnd, IntPtr param) =>
-                    {
-                        SendKeyToWindow(hwnd, Key, Up, false);
-                        return true;
-                    }, IntPtr.Zero);
-            }
-        }
     }
 }

@@ -35,18 +35,16 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContextWrapper.cs" />
+    <Compile Include="HandleManipulator.cs" />
     <Compile Include="MemoryContainer.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
     <Compile Include="Patterns\RegexExtensions.cs" />
+    <Compile Include="SafeMemoryHandle.cs" />
     <Compile Include="Suspender.cs" />
     <Compile Include="Pointers\ValuePointer.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
@@ -54,17 +52,28 @@
     <Compile Include="HardwareBreakPoint.cs" />
     <Compile Include="MagicHelpers.cs" />
     <Compile Include="Pointers\FunctionPointer.cs" />
+    <Compile Include="WinAPI\Callbacks.cs" />
     <Compile Include="WinAPI\Psapi.cs" />
     <Compile Include="WinAPI\Structures\AllocationType.cs" />
     <Compile Include="WinAPI\Structures\BreakpointCondition.cs" />
     <Compile Include="WinAPI\Structures\Context.cs" />
     <Compile Include="WinAPI\Structures\DebugEvent.cs" />
     <Compile Include="WinAPI\Structures\ErrorCodes.cs" />
+    <Compile Include="WinAPI\Structures\FlashInfo.cs" />
+    <Compile Include="WinAPI\Structures\FlashWindowFlags.cs" />
     <Compile Include="WinAPI\Structures\FreeType.cs" />
-    <Compile Include="WinAPI\Structures\Input\Input.cs" />
-    <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
-    <Compile Include="WinAPI\Structures\Input\VirtualKeyShort.cs" />
-    <Compile Include="WinAPI\Structures\Input\WindowsMessage.cs" />
+    <Compile Include="WinAPI\Structures\HardwareInput.cs" />
+    <Compile Include="WinAPI\Structures\HookType.cs" />
+    <Compile Include="WinAPI\Structures\Input.cs" />
+    <Compile Include="WinAPI\Structures\InputTypes.cs" />
+    <Compile Include="WinAPI\Structures\KeyboardInput.cs" />
+    <Compile Include="WinAPI\Structures\MouseFlags.cs" />
+    <Compile Include="WinAPI\Structures\MouseInput.cs" />
+    <Compile Include="WinAPI\Structures\Point.cs" />
+    <Compile Include="WinAPI\Structures\Rectangle.cs" />
+    <Compile Include="WinAPI\Structures\SystemMetrics.cs" />
+    <Compile Include="WinAPI\Structures\WindowPlacement.cs" />
+    <Compile Include="WinAPI\Structures\KeyboardFlags.cs" />
     <Compile Include="WinAPI\Structures\Luid.cs" />
     <Compile Include="WinAPI\Structures\MemoryBasicInformation.cs" />
     <Compile Include="WinAPI\Structures\AllocationProtect.cs" />
@@ -82,9 +91,19 @@
     <Compile Include="ProcessDebugger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WinAPI\Ntdll.cs" />
+    <Compile Include="WinAPI\Structures\TranslationTypes.cs" />
     <Compile Include="WinAPI\Structures\WaitResult.cs" />
     <Compile Include="WinAPI\Structures\WakeFlags.cs" />
+    <Compile Include="WinAPI\Structures\WindowStates.cs" />
+    <Compile Include="WinAPI\Structures\WM.cs" />
     <Compile Include="WinAPI\User32.cs" />
+    <Compile Include="Windows\RemoteWindow.cs" />
+    <Compile Include="Windows\IMouse.cs" />
+    <Compile Include="Windows\IKeyboard.cs" />
+    <Compile Include="Windows\MessageKeyboard.cs" />
+    <Compile Include="Windows\SendInputMouse.cs" />
+    <Compile Include="Windows\IWindow.cs" />
+    <Compile Include="Windows\WindowHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />

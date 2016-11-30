@@ -3,7 +3,7 @@ namespace WhiteMagic.Pointers
 {
     public class ValuePointer<T> where T : struct
     {
-        public ModulePointer Pointer { get; private set; }
+        public ModulePointer Pointer { get; }
 
         public ValuePointer(ModulePointer Pointer)
         {

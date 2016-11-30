@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace WhiteMagic
+namespace WhiteMagic.WinAPI
 {
     public partial class WinApi
     {
