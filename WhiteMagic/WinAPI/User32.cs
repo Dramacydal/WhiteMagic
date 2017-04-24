@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI.Structures;
+using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.WinAPI
@@ -27,6 +28,17 @@ namespace WhiteMagic.WinAPI
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        public delegate int HookProc(int code, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetWindowsHookEx(HookType hookType, HookProc lpFn, IntPtr hMod, int threadId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool UnhookWindowsHookEx(IntPtr handle);
+
+        [DllImport("user32.dll")]
+        public static extern int CallNextHookEx(IntPtr handle, int nCode, IntPtr wParam, IntPtr lParam);
 
         public static void MoveMouse(int dx, int dy)
         {

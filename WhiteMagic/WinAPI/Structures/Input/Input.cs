@@ -51,6 +51,48 @@ namespace WhiteMagic.WinAPI.Structures.Input
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KBDLLHOOKSTRUCT
+    {
+        public int vkCode;
+        public int scanCode;
+        public int flags;
+        public int time;
+        public IntPtr dwExtraInfo;
+
+        [Flags]
+        public enum Flags : int
+        {
+            KF_EXTENDED = 0x0100,
+            KF_DLGMODE = 0x0800,
+            KF_MENUMODE = 0x1000,
+            KF_ALTDOWN = 0x2000,
+            KF_REPEAT = 0x4000,
+            KF_UP = 0x8000,
+        }
+
+        [Flags]
+        public enum LLFlags : int
+        {
+            LLKHF_EXTENDED = (Flags.KF_EXTENDED >> 8),
+            LLKHF_INJECTED = 0x00000010,
+            LLKHF_ALTDOWN = (Flags.KF_ALTDOWN >> 8),
+            LLKHF_UP = (Flags.KF_UP >> 8),
+            LLKHF_LOWER_IL_INJECTED = 0x00000002,
+        };
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MSLLHOOKSTRUCT
+    {
+        public int ptX;
+        public int ptY;
+        public int mouseData;
+        public int flags;
+        public int time;
+        public IntPtr dwExtraInfo;
+    }
+
     [StructLayout(LayoutKind.Explicit)]
     public struct InputUnion
     {

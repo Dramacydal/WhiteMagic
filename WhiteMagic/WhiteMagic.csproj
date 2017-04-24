@@ -43,6 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ContextWrapper.cs" />
+    <Compile Include="HookManager.cs" />
+    <Compile Include="Hooks\HookBase.cs" />
+    <Compile Include="Hooks\Keyboard.cs" />
+    <Compile Include="Hooks\Mouse.cs" />
     <Compile Include="MemoryContainer.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
@@ -61,6 +65,7 @@
     <Compile Include="WinAPI\Structures\DebugEvent.cs" />
     <Compile Include="WinAPI\Structures\ErrorCodes.cs" />
     <Compile Include="WinAPI\Structures\FreeType.cs" />
+    <Compile Include="Hooks\HookType.cs" />
     <Compile Include="WinAPI\Structures\Input\Input.cs" />
     <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
     <Compile Include="WinAPI\Structures\Input\VirtualKeyShort.cs" />
