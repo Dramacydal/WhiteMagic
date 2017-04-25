@@ -21,7 +21,7 @@ namespace WhiteMagic.WinAPI
         public static extern bool AdjustTokenPrivileges(IntPtr TokenHandle,
            [MarshalAs(UnmanagedType.Bool)]bool DisableAllPrivileges,
            ref TOKEN_PRIVILEGES NewState,
-           UInt32 Zero,
+           uint Zero,
            IntPtr Null1,
            IntPtr Null2);
     }

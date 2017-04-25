@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
 
@@ -15,7 +16,7 @@ namespace WhiteMagic.Hooks
             Raw = raw;
         }
 
-        public VirtualKeyShort VirtualKey { get { return (VirtualKeyShort)Raw.vkCode; } }
+        public Keys VirtualKey { get { return (Keys)Raw.vkCode; } }
         public ScanCodeShort ScanCode { get { return (ScanCodeShort)Raw.scanCode; } }
         
         public bool IsExtended { get { return Flags.HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED); } }
@@ -42,18 +43,18 @@ namespace WhiteMagic.Hooks
         public bool ControlPressed { get { return LControlPressed || RControlPressed; } }
         public bool ShiftPressed { get { return LShiftPressed || RShiftPressed; } }
 
-        private Dictionary<VirtualKeyShort, bool> SpecialKeyStates = new Dictionary<VirtualKeyShort, bool>();
+        private Dictionary<Keys, bool> SpecialKeyStates = new Dictionary<Keys, bool>();
         void StoreSpecialKeyState(WM Event, KeyInfo info)
         {
             var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
             switch (info.VirtualKey)
             {
-                case VirtualKeyShort.LMENU: LAltPressed = toggle; break;
-                case VirtualKeyShort.RMENU: RAltPressed = toggle; break;
-                case VirtualKeyShort.LCONTROL: LControlPressed = toggle; break;
-                case VirtualKeyShort.RCONTROL: RControlPressed = toggle; break;
-                case VirtualKeyShort.LSHIFT: LShiftPressed = toggle; break;
-                case VirtualKeyShort.RSHIFT: RShiftPressed = toggle; break;
+                case Keys.LMenu: LAltPressed = toggle; break;
+                case Keys.RMenu: RAltPressed = toggle; break;
+                case Keys.LControlKey: LControlPressed = toggle; break;
+                case Keys.RControlKey: RControlPressed = toggle; break;
+                case Keys.LShiftKey: LShiftPressed = toggle; break;
+                case Keys.RShiftKey: RShiftPressed = toggle; break;
                 default: break;
             }
         }

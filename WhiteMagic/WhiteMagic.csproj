@@ -35,6 +35,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,6 +48,7 @@
     <Compile Include="Hooks\HookBase.cs" />
     <Compile Include="Hooks\Keyboard.cs" />
     <Compile Include="Hooks\Mouse.cs" />
+    <Compile Include="InputManager.cs" />
     <Compile Include="MemoryContainer.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
@@ -68,7 +70,6 @@
     <Compile Include="Hooks\HookType.cs" />
     <Compile Include="WinAPI\Structures\Input\Input.cs" />
     <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
-    <Compile Include="WinAPI\Structures\Input\VirtualKeyShort.cs" />
     <Compile Include="WinAPI\Structures\Input\WindowsMessage.cs" />
     <Compile Include="WinAPI\Structures\Luid.cs" />
     <Compile Include="WinAPI\Structures\MemoryBasicInformation.cs" />

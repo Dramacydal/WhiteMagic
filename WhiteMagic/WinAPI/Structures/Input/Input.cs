@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace WhiteMagic.WinAPI.Structures.Input
 {
@@ -43,7 +44,7 @@ namespace WhiteMagic.WinAPI.Structures.Input
     public struct INPUT
     {
         public InputType Type;
-        public InputUnion Input;
+        public InputUnion Union;
 
         public static int Size
         {
@@ -97,9 +98,9 @@ namespace WhiteMagic.WinAPI.Structures.Input
     public struct InputUnion
     {
         [FieldOffset(0)]
-        internal MOUSEINPUT mi;
+        internal MOUSEINPUT Mouse;
         [FieldOffset(0)]
-        internal KEYBDINPUT ki;
+        internal KEYBDINPUT Keyboard;
         //[FieldOffset(0)]
         //internal HARDWAREINPUT hi;
     }
@@ -116,10 +117,10 @@ namespace WhiteMagic.WinAPI.Structures.Input
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct KEYBDINPUT
+    public struct KEYBDINPUT
     {
-        internal VirtualKeyShort wVk;
-        internal ScanCodeShort wScan;
+        internal short wVk;
+        internal short wScan;
         internal KeyEventFlags dwFlags;
         internal int time;
         internal IntPtr dwExtraInfo;

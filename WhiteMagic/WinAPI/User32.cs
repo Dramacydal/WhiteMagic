@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
@@ -44,32 +45,32 @@ namespace WhiteMagic.WinAPI
         {
             var inp = new INPUT();
             inp.Type = InputType.MOUSE;
-            inp.Input.mi.dx = dx;
-            inp.Input.mi.dy = dy;
-            inp.Input.mi.mouseData = 0;
-            inp.Input.mi.dwFlags = MouseEventFlag.MOVE;
-            inp.Input.mi.time = 0;
-            inp.Input.mi.dwExtraInfo = IntPtr.Zero;
+            inp.Union.Mouse.dx = dx;
+            inp.Union.Mouse.dy = dy;
+            inp.Union.Mouse.mouseData = 0;
+            inp.Union.Mouse.dwFlags = MouseEventFlag.MOVE;
+            inp.Union.Mouse.time = 0;
+            inp.Union.Mouse.dwExtraInfo = IntPtr.Zero;
 
             if (SendInput(1, ref inp, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
-        public static void SendKey(ScanCodeShort sc, VirtualKeyShort vk, bool up = false)
+        public static void SendKey(ScanCodeShort sc, Keys vk, bool up = false)
         {
             var inp = new INPUT();
             inp.Type = InputType.KEYBOARD;
-            inp.Input.ki.dwFlags = up ? KeyEventFlags.KEYUP : 0;
-            inp.Input.ki.wVk = vk;
-            inp.Input.ki.wScan = sc;
-            inp.Input.ki.time = 0;
-            inp.Input.ki.dwExtraInfo = IntPtr.Zero;
+            inp.Union.Keyboard.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
+            inp.Union.Keyboard.wVk = (short)vk;
+            inp.Union.Keyboard.wScan = (short)sc;
+            inp.Union.Keyboard.time = 0;
+            inp.Union.Keyboard.dwExtraInfo = IntPtr.Zero;
 
             if (SendInput(1, ref inp, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
-        public static void SendKeyToWindow(IntPtr Window, VirtualKeyShort Key, bool Up, bool Recursive = false)
+        public static void SendKeyToWindow(IntPtr Window, Keys Key, bool Up, bool Recursive = false)
         {
             if (!PostMessage(Window, Up ? WM.KEYUP : WM.KEYDOWN, (uint)Key, 0))
                 throw new Win32Exception();
