@@ -22,6 +22,11 @@ namespace WhiteMagic.Hooks
         public bool IsExtended { get { return Flags.HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED); } }
 
         private KBDLLHOOKSTRUCT.LLFlags Flags { get { return (KBDLLHOOKSTRUCT.LLFlags)Raw.flags; } }
+
+        public override string ToString()
+        {
+            return string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode}");
+        }
     }
 
     public delegate bool KeyboardMessageHandler(WM mEvent, KeyInfo info);

@@ -19,6 +19,8 @@ namespace WhiteMagic.Hooks
 
         public int XButtonIndex { get { return Raw.mouseData >> 16; } }
         public bool MouseWheelRotatedForward { get { return XButtonIndex > 0; } }
+
+        public override string ToString() { return $"X: {X} Y: {Y}"; }
     }
 
     public delegate bool MouseMessageHandler(WM Event, MouseInfo Info);

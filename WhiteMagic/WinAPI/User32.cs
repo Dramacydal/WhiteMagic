@@ -41,6 +41,25 @@ namespace WhiteMagic.WinAPI
         [DllImport("user32.dll")]
         public static extern int CallNextHookEx(IntPtr handle, int nCode, IntPtr wParam, IntPtr lParam);
 
+        public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType,
+            IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+        [DllImport("user32.dll")]
+        static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr
+           hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess,
+           uint idThread, WinEvent dwFlags);
+
+        [DllImport("user32.dll")]
+        public static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+        [DllImport("user32.dll")]
+        static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, PeekMessageParams wRemoveMsg);
+
+        [DllImport("user32.dll")]
+        public static extern bool TranslateMessage([In] ref MSG lpMsg);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr DispatchMessage([In] ref MSG lpmsg);
+
         public static void MoveMouse(int dx, int dy)
         {
             var inp = new INPUT();

@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -48,7 +49,6 @@
     <Compile Include="Hooks\HookBase.cs" />
     <Compile Include="Hooks\Keyboard.cs" />
     <Compile Include="Hooks\Mouse.cs" />
-    <Compile Include="InputManager.cs" />
     <Compile Include="MemoryContainer.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
@@ -69,11 +69,16 @@
     <Compile Include="WinAPI\Structures\FreeType.cs" />
     <Compile Include="Hooks\HookType.cs" />
     <Compile Include="WinAPI\Structures\Input\Input.cs" />
+    <Compile Include="WinAPI\Structures\Input\Msg.cs" />
+    <Compile Include="WinAPI\Structures\Input\PeekMessageParams.cs" />
+    <Compile Include="WinAPI\Structures\Input\QueueStatusFlags.cs" />
     <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
     <Compile Include="WinAPI\Structures\Input\WindowsMessage.cs" />
+    <Compile Include="WinAPI\Structures\Input\WinEvent.cs" />
     <Compile Include="WinAPI\Structures\Luid.cs" />
     <Compile Include="WinAPI\Structures\MemoryBasicInformation.cs" />
     <Compile Include="WinAPI\Structures\AllocationProtect.cs" />
+    <Compile Include="WinAPI\Structures\Point.cs" />
     <Compile Include="WinAPI\Structures\ProcessAccess.cs" />
     <Compile Include="WinAPI\Structures\ProcessArchitecture.cs" />
     <Compile Include="WinAPI\Structures\ThreadAccess.cs" />
