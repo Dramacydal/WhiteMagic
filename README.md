@@ -9,7 +9,8 @@ Uses Shynd's Fasm.NET library
 Capabilities:
 * Read/write process memory 
 * Suspend/resume process thread(s)
-* Call remote process functions or assembled code (using remote thread injenction)
+* Call remote process functions or assembled code (using remote thread injection)
 * Attach hardware breakpoints to remote processes
 * Search for data patterns in remote process' memory
+* Hooks mouse and keyboard events
 * ...
