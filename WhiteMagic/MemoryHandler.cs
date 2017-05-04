@@ -70,13 +70,13 @@ namespace WhiteMagic
             Dispose();
         }
 
-        protected void SetProcess(Process process)
+        protected void SetProcess(Process Process)
         {
-            this.Process = process;
+            this.Process = Process;
             if (ProcessHandle != IntPtr.Zero)
                 Kernel32.CloseHandle(ProcessHandle);
 
-            ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, process.Id);
+            ProcessHandle = Kernel32.OpenProcess(ProcessAccess.AllAccess, false, Process.Id);
             RefreshModules();
         }
 
@@ -733,7 +733,7 @@ namespace WhiteMagic
             {
                 var hModule = Kernel32.LoadLibraryA(name);
                 if (hModule == IntPtr.Zero)
-                    throw new DebuggerException("Failed to load {0} module", name);
+                    throw new DebuggerException($"Failed to load {name} module");
 
                 return hModule;
             }

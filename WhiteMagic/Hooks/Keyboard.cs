@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using WhiteMagic.WinAPI.Structures.Hooks;
@@ -50,6 +51,9 @@ namespace WhiteMagic.Hooks
         {
             get
             {
+                if (!Installed)
+                    throw new Win32Exception("Keyboard hooks are not installed");
+
                 Modifiers state = Modifiers.None;
                 if (LAltPressed || RAltPressed)
                     state |= Modifiers.Alt;

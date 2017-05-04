@@ -5,9 +5,9 @@ namespace WhiteMagic.Modules
 {
     public class ModuleDump : MemoryContainer
     {
-        protected ModuleInfo Module { get; private set; }
+        protected ModuleInfo Module { get; }
 
-        private static readonly int readCount = 256;
+        private const int readCount = 256;
 
         public void Read(MemoryHandler Memory)
         {

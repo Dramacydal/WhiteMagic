@@ -4,8 +4,8 @@ namespace WhiteMagic.Pointers
 {
     public class ModulePointer
     {
-        public string ModuleName { get; protected set; }
-        public int Offset { get; protected set; }
+        public string ModuleName { get; }
+        public int Offset { get; }
 
         /// <summary>
         /// Pointer to named module

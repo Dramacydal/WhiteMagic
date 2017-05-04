@@ -4,17 +4,17 @@ namespace WhiteMagic
 {
     public class ProcessSuspender : IDisposable
     {
-        private MemoryHandler m;
+        private MemoryHandler Memory;
 
-        public ProcessSuspender(MemoryHandler m)
+        public ProcessSuspender(MemoryHandler Memory)
         {
-            this.m = m;
-            m.SuspendAllThreads();
+            this.Memory = Memory;
+            Memory.SuspendAllThreads();
         }
 
         public void Dispose()
         {
-            m.ResumeAllThreads();
+            Memory.ResumeAllThreads();
         }
     }
 }

@@ -153,7 +153,7 @@ namespace WhiteMagic
             {
                 var processList = FindProcessesByInternalName(Pattern).ToList();
                 if (processList.Count == 0)
-                    throw new ProcessSelectorException(string.Format("No processes found"));
+                    throw new ProcessSelectorException("No processes found");
 
                 try
                 {

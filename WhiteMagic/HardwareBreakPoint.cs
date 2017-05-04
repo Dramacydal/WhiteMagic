@@ -170,7 +170,7 @@ namespace WhiteMagic
 
         public ModulePointer Pointer { get; }
 
-        public BreakpointCondition Condition { get; protected set; }
+        public BreakpointCondition Condition { get; }
         protected MemoryHandler Memory { get; private set; }
 
         public bool IsSet { get { return Address != IntPtr.Zero; } }
