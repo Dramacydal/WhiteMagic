@@ -17,6 +17,8 @@ namespace WhiteMagic.Hooks
 
         protected List<T> Handlers = new List<T>();
 
+        public bool Installed { get { return Handlers.Count > 0; } }
+
         public void AttachCallback(T Handler)
         {
             HookManager.InstallHook(Type);

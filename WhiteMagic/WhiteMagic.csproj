@@ -49,6 +49,7 @@
     <Compile Include="Hooks\HookBase.cs" />
     <Compile Include="Hooks\Keyboard.cs" />
     <Compile Include="Hooks\Mouse.cs" />
+    <Compile Include="Hooks\MouseEvent.cs" />
     <Compile Include="InputManager.cs" />
     <Compile Include="Input\GlobalKeyboardInput.cs" />
     <Compile Include="Input\GlobalMouseInput.cs" />

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using WhiteMagic.WinAPI.Structures.Hooks;
@@ -7,29 +6,32 @@ using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.Hooks
 {
-    public class KeyInfo
+    public class KeyEventInfo
     {
         private KBDLLHOOKSTRUCT Raw;
+        private Keyboard Hook;
+        private WM Event;
 
-        public KeyInfo(KBDLLHOOKSTRUCT raw)
+        public KeyEventInfo(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook)
         {
-            Raw = raw;
+            this.Event = Event;
+            this.Hook = Hook;
+            this.Raw = Raw;
         }
 
         public Keys VirtualKey { get { return (Keys)Raw.vkCode; } }
         public ScanCodeShort ScanCode { get { return (ScanCodeShort)Raw.scanCode; } }
+        public bool Up { get { return Event == WM.KEYUP || Event == WM.SYSKEYUP; } }
+
+        public Modifiers ModifiersState { get { return Hook.ModifiersState; } }
         
-        public bool IsExtended { get { return Flags.HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED); } }
-
-        private KBDLLHOOKSTRUCT.LLFlags Flags { get { return (KBDLLHOOKSTRUCT.LLFlags)Raw.flags; } }
-
         public override string ToString()
         {
-            return string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode}");
+            return string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Up: {Up}");
         }
     }
 
-    public delegate bool KeyboardMessageHandler(WM mEvent, KeyInfo info);
+    public delegate bool KeyboardMessageHandler(KeyEventInfo Info);
 
     public class Keyboard : HookBase<KeyboardMessageHandler>
     {
@@ -37,19 +39,30 @@ namespace WhiteMagic.Hooks
         {
         }
 
-        public bool LAltPressed { get; private set; }
-        public bool RAltPressed { get; private set; }
-        public bool LControlPressed { get; private set; }
-        public bool RControlPressed { get; private set; }
-        public bool LShiftPressed { get; private set; }
-        public bool RShiftPressed { get; private set; }
+        private bool LAltPressed { get; set; } = false;
+        private bool RAltPressed { get; set; } = false;
+        private bool LControlPressed { get; set; } = false;
+        private bool RControlPressed { get; set; } = false;
+        private bool LShiftPressed { get; set; } = false;
+        private bool RShiftPressed { get; set; } = false;
 
-        public bool AltPressed { get { return LAltPressed || RAltPressed; } }
-        public bool ControlPressed { get { return LControlPressed || RControlPressed; } }
-        public bool ShiftPressed { get { return LShiftPressed || RShiftPressed; } }
+        public Modifiers ModifiersState
+        {
+            get
+            {
+                Modifiers state = Modifiers.None;
+                if (LAltPressed || RAltPressed)
+                    state |= Modifiers.Alt;
+                if (LControlPressed || RControlPressed)
+                    state |= Modifiers.Ctrl;
+                if (LShiftPressed || RShiftPressed)
+                    state |= Modifiers.Shift;
 
-        private Dictionary<Keys, bool> SpecialKeyStates = new Dictionary<Keys, bool>();
-        void StoreSpecialKeyState(WM Event, KeyInfo info)
+                return state;
+            }
+        }
+
+        private void StoreSpecialKeyState(WM Event, KeyEventInfo info)
         {
             var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
             switch (info.VirtualKey)
@@ -74,12 +87,12 @@ namespace WhiteMagic.Hooks
             try
             {
                 var str = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
-                var keyInfo = new KeyInfo(str);
+                var keyInfo = new KeyEventInfo(ev, str, this);
 
                 StoreSpecialKeyState(ev, keyInfo);
 
                 foreach (var Handler in Handlers)
-                    if (!Handler(ev, keyInfo))
+                    if (!Handler(keyInfo))
                         return false;
             }
             catch (Exception)
