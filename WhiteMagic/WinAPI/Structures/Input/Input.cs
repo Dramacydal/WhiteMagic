@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 namespace WhiteMagic.WinAPI.Structures.Input
 {
@@ -98,9 +97,9 @@ namespace WhiteMagic.WinAPI.Structures.Input
     public struct InputUnion
     {
         [FieldOffset(0)]
-        internal MOUSEINPUT Mouse;
+        internal MOUSEINPUT mi;
         [FieldOffset(0)]
-        internal KEYBDINPUT Keyboard;
+        internal KEYBDINPUT ki;
         //[FieldOffset(0)]
         //internal HARDWAREINPUT hi;
     }

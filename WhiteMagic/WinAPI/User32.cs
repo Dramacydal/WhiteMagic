@@ -1,7 +1,5 @@
 using System;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
@@ -60,48 +58,13 @@ namespace WhiteMagic.WinAPI
         [DllImport("user32.dll")]
         public static extern IntPtr DispatchMessage([In] ref MSG lpmsg);
 
-        public static void MoveMouse(int dx, int dy)
-        {
-            var inp = new INPUT();
-            inp.Type = InputType.MOUSE;
-            inp.Union.Mouse.dx = dx;
-            inp.Union.Mouse.dy = dy;
-            inp.Union.Mouse.mouseData = 0;
-            inp.Union.Mouse.dwFlags = MouseEventFlag.MOVE;
-            inp.Union.Mouse.time = 0;
-            inp.Union.Mouse.dwExtraInfo = IntPtr.Zero;
+        [DllImport("user32.dll")]
+        public static extern int GetSystemMetrics(SystemMetric smIndex);
 
-            if (SendInput(1, ref inp, INPUT.Size) != 1)
-                throw new Win32Exception();
-        }
+        [DllImport("user32.dll")]
+        public static extern bool BlockInput(bool fBlockIt);
 
-        public static void SendKey(ScanCodeShort sc, Keys vk, bool up = false)
-        {
-            var inp = new INPUT();
-            inp.Type = InputType.KEYBOARD;
-            inp.Union.Keyboard.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
-            inp.Union.Keyboard.wVk = (short)vk;
-            inp.Union.Keyboard.wScan = (short)sc;
-            inp.Union.Keyboard.time = 0;
-            inp.Union.Keyboard.dwExtraInfo = IntPtr.Zero;
-
-            if (SendInput(1, ref inp, INPUT.Size) != 1)
-                throw new Win32Exception();
-        }
-
-        public static void SendKeyToWindow(IntPtr Window, Keys Key, bool Up, bool Recursive = false)
-        {
-            if (!PostMessage(Window, Up ? WM.KEYUP : WM.KEYDOWN, (uint)Key, 0))
-                throw new Win32Exception();
-
-            if (Recursive)
-            {
-                EnumChildWindows(Window, (IntPtr hwnd, IntPtr param) =>
-                    {
-                        SendKeyToWindow(hwnd, Key, Up, false);
-                        return true;
-                    }, IntPtr.Zero);
-            }
-        }
+        [DllImport("user32.dll")]
+        public static extern int MapVirtualKey(uint uCode, MapVirtualKeyMapTypes uMapType);
     }
 }

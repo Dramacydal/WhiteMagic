@@ -62,7 +62,7 @@ namespace WhiteMagic.WinAPI
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern int ResumeThread(IntPtr hThread);
 
-        public static readonly uint MaxHardwareBreakpoints = 4;
+        public const uint MaxHardwareBreakpointsCount = 4;
 
         [DllImport("kernel32.dll", EntryPoint = "WaitForDebugEvent")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -120,7 +120,7 @@ namespace WhiteMagic.WinAPI
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process([In] IntPtr process, [Out] out bool wow64Process);
 
-        public static bool Is32BitSystem { get; private set; }
+        public static bool Is32BitSystem { get; }
 
         static Kernel32()
         {
@@ -128,7 +128,7 @@ namespace WhiteMagic.WinAPI
             if (pKernel32 == IntPtr.Zero)
                 throw new MemoryException("Failed to get kernel32.dll module handle");
 
-            var procAddress = Kernel32.GetProcAddress(pKernel32, "IsWow64Process");
+            var procAddress = GetProcAddress(pKernel32, "IsWow64Process");
             Is32BitSystem = procAddress == IntPtr.Zero;
         }
 

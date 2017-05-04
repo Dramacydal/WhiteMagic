@@ -60,5 +60,10 @@ namespace WhiteMagic
                     process.MainModule.FileVersionInfo.FileBuildPart,
                     process.MainModule.FileVersionInfo.FilePrivatePart);
         }
+
+        public static bool IsEmpty(this TimeSpan TimeSpan)
+        {
+            return TimeSpan.Ticks <= 0;
+        }
     }
 }

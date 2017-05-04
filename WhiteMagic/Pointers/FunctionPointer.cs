@@ -3,8 +3,8 @@ namespace WhiteMagic.Pointers
 {
     public class FunctionPointer
     {
-        public ModulePointer Pointer { get; private set; }
-        public MagicConvention CallingConvention { get; private set; }
+        public ModulePointer Pointer { get; }
+        public MagicConvention CallingConvention { get; }
 
         public FunctionPointer(ModulePointer Pointer, MagicConvention CallingConvention)
         {

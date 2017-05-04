@@ -9,8 +9,8 @@ namespace WhiteMagic
 {
     public class ContextWrapper
     {
-        public ProcessDebugger Debugger { get; private set; }
-        public CONTEXT Context { get; private set; }
+        public ProcessDebugger Debugger { get; }
+        public CONTEXT Context { get; }
 
         public ContextWrapper(ProcessDebugger Debugger, CONTEXT Context)
         {

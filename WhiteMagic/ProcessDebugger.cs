@@ -74,7 +74,7 @@ namespace WhiteMagic
 
         public void AddBreakPoint(HardwareBreakPoint bp)
         {
-            if (breakPoints.Count >= Kernel32.MaxHardwareBreakpoints)
+            if (breakPoints.Count >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new DebuggerException("Can't set any more breakpoints");
 
             try

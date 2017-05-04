@@ -165,7 +165,7 @@ namespace WhiteMagic.WinAPI.Structures
 
         public int GetFreeBreakpointSlot()
         {
-            for (var index = 0; index < Kernel32.MaxHardwareBreakpoints; ++index)
+            for (var index = 0; index < Kernel32.MaxHardwareBreakpointsCount; ++index)
                 if ((Dr7 & (1 << (index * 2))) == 0)
                     return index;
 

@@ -135,7 +135,7 @@ namespace WhiteMagic
         {
             var index = AffectedThreads[threadId];
             // Zero out the debug register settings for this breakpoint
-            if (index >= Kernel32.MaxHardwareBreakpoints)
+            if (index >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new BreakPointException("Bogus breakpoints index");
 
             UnsetSlotsFromThread(hThread, 1 << index);
@@ -151,7 +151,7 @@ namespace WhiteMagic
             if (!Kernel32.GetThreadContext(hThread, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
-            for (var i = 0; i < Kernel32.MaxHardwareBreakpoints; ++i)
+            for (var i = 0; i < Kernel32.MaxHardwareBreakpointsCount; ++i)
                 if ((slotMask & (1 << i)) != 0)
                     SetBits(ref cxt.Dr7, i * 2, 1, 0);
 
@@ -168,7 +168,7 @@ namespace WhiteMagic
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
         }
 
-        public ModulePointer Pointer { get; private set; }
+        public ModulePointer Pointer { get; }
 
         public BreakpointCondition Condition { get; protected set; }
         protected MemoryHandler Memory { get; private set; }

@@ -14,7 +14,7 @@ namespace WhiteMagic
 {
     public class MagicException : Exception
     {
-        public ErrorCodes LastError { get; private set; }
+        public ErrorCodes LastError { get; }
         public MagicException(string message, params object[] args) : base(string.Format(message, args)) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
     }
 
