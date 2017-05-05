@@ -45,10 +45,7 @@ namespace WhiteMagic.WinAPI.Structures.Input
         public InputType Type;
         public InputUnion Union;
 
-        public static int Size
-        {
-            get { return Marshal.SizeOf(typeof(INPUT)); }
-        }
+        public static int Size => Marshal.SizeOf(typeof(INPUT));
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -9,20 +9,11 @@ namespace WhiteMagic.Patterns
     {
         private static readonly Encoding ConversionEncoding = Encoding.GetEncoding("iso-8859-1"); // to encode all chars in byte range
 
-        public static string BytesToString(byte[] Data)
-        {
-            return ConversionEncoding.GetString(Data, 0, Data.Length);
-        }
+        public static string BytesToString(byte[] Data) => ConversionEncoding.GetString(Data, 0, Data.Length);
 
-        public static string ToBinaryRegex(string Source)
-        {
-            return ToBinaryRegex(ConversionEncoding.GetBytes(Source));
-        }
+        public static string ToBinaryRegex(string Source) => ToBinaryRegex(ConversionEncoding.GetBytes(Source));
 
-        public static string ToBinaryRegex(byte[] Source)
-        {
-            return string.Concat(Source.Select(_ => @"\x" + string.Format("{0:X2}", _)));
-        }
+        public static string ToBinaryRegex(byte[] Source) => string.Concat(Source.Select(_ => @"\x" + string.Format("{0:X2}", _)));
     }
 
     public class MemoryPattern : Regex
@@ -33,9 +24,7 @@ namespace WhiteMagic.Patterns
         }
 
         public static MemoryPattern FromRegex(string Pattern, RegexOptions Options = RegexOptions.None)
-        {
-            return new MemoryPattern(Pattern, Options);
-        }
+            => new MemoryPattern(Pattern, Options);
 
         public static MemoryPattern FromBinary(string Pattern)
         {
@@ -50,9 +39,6 @@ namespace WhiteMagic.Patterns
                     })));
         }
 
-        public static MemoryPattern FromBinary(byte[] Pattern)
-        {
-            return new MemoryPattern(PatternHelper.ToBinaryRegex(Pattern));
-        }
+        public static MemoryPattern FromBinary(byte[] Pattern) => new MemoryPattern(PatternHelper.ToBinaryRegex(Pattern));
     }
 }

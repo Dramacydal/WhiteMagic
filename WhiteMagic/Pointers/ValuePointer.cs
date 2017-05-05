@@ -10,14 +10,8 @@ namespace WhiteMagic.Pointers
             this.Pointer = Pointer;
         }
 
-        public T Read(MemoryHandler Memory)
-        {
-            return Memory.Read<T>(Pointer);
-        }
+        public T Read(MemoryHandler Memory) => Memory.Read<T>(Pointer);
 
-        public void Write(MemoryHandler Memory, T Value)
-        {
-            Memory.Write<T>(Pointer, Value);
-        }
+        public void Write(MemoryHandler Memory, T Value) => Memory.Write<T>(Pointer, Value);
     }
 }

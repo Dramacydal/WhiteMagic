@@ -218,10 +218,7 @@ namespace WhiteMagic
         }
 
         public T Read<T>(IntPtr addr) where T : struct
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(T)));
-            return MagicHelpers.ReinterpretObject<T>(buf);
-        }
+            => MagicHelpers.ReinterpretObject<T>(ReadBytes(addr, Marshal.SizeOf(typeof(T))));
 
         protected byte[] ReadNullTerminatedBytes(IntPtr addr, int step = 1)
         {
@@ -251,105 +248,41 @@ namespace WhiteMagic
         }
 
         public string ReadASCIIString(IntPtr addr, int len = 0)
-        {
-            return Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
-        }
+            => Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
 
         public string ReadUTF8String(IntPtr addr, int len = 0)
-        {
-            return Encoding.UTF8.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
-        }
+            => Encoding.UTF8.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
 
         public string ReadUTF16String(IntPtr addr, int len = 0)
-        {
-            return Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 2) : ReadBytes(addr, len));
-        }
+            => Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 2) : ReadBytes(addr, len));
 
         public string ReadUTF32String(IntPtr addr, int len = 0)
-        {
-            return Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
-        }
+            => Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
 
-        public T Read<T>(ModulePointer offs) where T : struct
-        {
-            return Read<T>(GetAddress(offs));
-        }
+        public T Read<T>(ModulePointer offs) where T : struct => Read<T>(GetAddress(offs));
 
         #region Faster Read functions for basic types
-        public uint ReadUInt(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(uint)));
+        public uint ReadUInt(IntPtr addr) => BitConverter.ToUInt32(ReadBytes(addr, Marshal.SizeOf(typeof(uint))), 0);
 
-            return BitConverter.ToUInt32(buf, 0);
-        }
+        public int ReadInt(IntPtr addr) => BitConverter.ToInt32(ReadBytes(addr, Marshal.SizeOf(typeof(int))), 0);
 
-        public int ReadInt(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(int)));
+        public ushort ReadUShort(IntPtr addr) => BitConverter.ToUInt16(ReadBytes(addr, Marshal.SizeOf(typeof(ushort))), 0);
 
-            return BitConverter.ToInt32(buf, 0);
-        }
+        public short ReadShort(IntPtr addr) => BitConverter.ToInt16(ReadBytes(addr, Marshal.SizeOf(typeof(short))), 0);
 
-        public ushort ReadUShort(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(ushort)));
+        public ulong ReadULong(IntPtr addr) => BitConverter.ToUInt64(ReadBytes(addr, Marshal.SizeOf(typeof(ulong))), 0);
 
-            return BitConverter.ToUInt16(buf, 0);
-        }
+        public long ReadLong(IntPtr addr) => BitConverter.ToInt64(ReadBytes(addr, Marshal.SizeOf(typeof(long))), 0);
 
-        public short ReadShort(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(short)));
+        public byte ReadByte(IntPtr addr) => ReadBytes(addr, Marshal.SizeOf(typeof(byte)))[0];
 
-            return BitConverter.ToInt16(buf, 0);
-        }
+        public sbyte ReadSByte(IntPtr addr) => (sbyte)ReadBytes(addr, Marshal.SizeOf(typeof(sbyte)))[0];
 
-        public ulong ReadULong(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(ulong)));
+        public float ReadSingle(IntPtr addr) => BitConverter.ToSingle(ReadBytes(addr, Marshal.SizeOf(typeof(float))), 0);
 
-            return BitConverter.ToUInt64(buf, 0);
-        }
+        public double ReadDouble(IntPtr addr) => BitConverter.ToDouble(ReadBytes(addr, Marshal.SizeOf(typeof(float))), 0);
 
-        public long ReadLong(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(long)));
-
-            return BitConverter.ToInt64(buf, 0);
-        }
-
-        public byte ReadByte(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(byte)));
-
-            return buf[0];
-        }
-
-        public sbyte ReadSByte(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(sbyte)));
-
-            return (sbyte)buf[0];
-        }
-
-        public float ReadSingle(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(float)));
-
-            return BitConverter.ToSingle(buf, 0);
-        }
-
-        public double ReadDouble(IntPtr addr)
-        {
-            var buf = ReadBytes(addr, Marshal.SizeOf(typeof(float)));
-
-            return BitConverter.ToDouble(buf, 0);
-        }
-
-        public IntPtr ReadPointer(IntPtr addr)
-        {
-            return new IntPtr(ReadInt(addr));
-        }
+        public IntPtr ReadPointer(IntPtr addr) => new IntPtr(ReadInt(addr));
 
         #endregion
         #endregion
@@ -357,15 +290,15 @@ namespace WhiteMagic
         #region Memory writing
         public void WriteBytes(IntPtr addr, byte[] bytes)
         {
-            AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            AllocationProtect originalProtection, tmpProtection;
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out originalProtection))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
             if (!Kernel32.WriteProcessMemory(ProcessHandle, addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
                 throw new MemoryException("Failed to write memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, originalProtection, out tmpProtection))
                 throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
@@ -376,79 +309,39 @@ namespace WhiteMagic
         }
 
         public void WriteCString(IntPtr addr, string str, bool nullTerminated = true)
-        {
-            WriteBytes(addr, Encoding.ASCII.GetBytes(nullTerminated ? str + '\0' : str));
-        }
+            => WriteBytes(addr, Encoding.ASCII.GetBytes(nullTerminated ? str + '\0' : str));
 
         public void WriteUTF8String(IntPtr addr, string str, bool nullTerminated = true)
-        {
-            WriteBytes(addr, Encoding.UTF8.GetBytes(nullTerminated ? str + '\0' : str));
-        }
+            => WriteBytes(addr, Encoding.UTF8.GetBytes(nullTerminated ? str + '\0' : str));
 
         public void WriteUTF16String(IntPtr addr, string str, bool nullTerminated = true)
-        {
-            WriteBytes(addr, Encoding.Unicode.GetBytes(nullTerminated ? str + '\0' : str));
-        }
+            => WriteBytes(addr, Encoding.Unicode.GetBytes(nullTerminated ? str + '\0' : str));
 
         public void WriteUTF32String(IntPtr addr, string str, bool nullTerminated = true)
-        {
-            WriteBytes(addr, Encoding.UTF32.GetBytes(nullTerminated ? str + '\0' : str));
-        }
-        public void Write<T>(ModulePointer offs, T value) where T : struct
-        {
-            Write<T>(GetAddress(offs), value);
-        }
+            => WriteBytes(addr, Encoding.UTF32.GetBytes(nullTerminated ? str + '\0' : str));
+
+        public void Write<T>(ModulePointer offs, T value) where T : struct => Write<T>(GetAddress(offs), value);
 
         #region Faster Write functions for basic types
-        public void WriteUInt(IntPtr addr, uint value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteUInt(IntPtr addr, uint value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteInt(IntPtr addr, int value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteInt(IntPtr addr, int value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteUShort(IntPtr addr, ushort value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteUShort(IntPtr addr, ushort value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteShort(IntPtr addr, short value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteShort(IntPtr addr, short value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteULong(IntPtr addr, ulong value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteULong(IntPtr addr, ulong value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteLong(IntPtr addr, long value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteLong(IntPtr addr, long value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteByte(IntPtr addr, byte value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteByte(IntPtr addr, byte value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteSByte(IntPtr addr, sbyte value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteSByte(IntPtr addr, sbyte value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteSingle(IntPtr addr, float value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteSingle(IntPtr addr, float value) => WriteBytes(addr, BitConverter.GetBytes(value));
 
-        public void WriteDouble(IntPtr addr, double value)
-        {
-            WriteBytes(addr, BitConverter.GetBytes(value));
-        }
+        public void WriteDouble(IntPtr addr, double value) => WriteBytes(addr, BitConverter.GetBytes(value));
         #endregion
         #endregion
 
@@ -468,25 +361,13 @@ namespace WhiteMagic
                 throw new MemoryException("Failed to free memory in remote process");
         }
 
-        public IntPtr AllocateCString(string str)
-        {
-            return AllocateBytes(Encoding.ASCII.GetBytes(str));
-        }
+        public IntPtr AllocateCString(string str) => AllocateBytes(Encoding.ASCII.GetBytes(str));
 
-        public IntPtr AllocateUTF8String(string str)
-        {
-            return AllocateBytes(Encoding.UTF8.GetBytes(str));
-        }
+        public IntPtr AllocateUTF8String(string str) => AllocateBytes(Encoding.UTF8.GetBytes(str));
 
-        public IntPtr AllocateUTF16String(string str)
-        {
-            return AllocateBytes(Encoding.Unicode.GetBytes(str));
-        }
+        public IntPtr AllocateUTF16String(string str) => AllocateBytes(Encoding.Unicode.GetBytes(str));
 
-        public IntPtr AllocateUTF32String(string str)
-        {
-            return AllocateBytes(Encoding.UTF32.GetBytes(str));
-        }
+        public IntPtr AllocateUTF32String(string str) => AllocateBytes(Encoding.UTF32.GetBytes(str));
 
         public IntPtr AllocateBytes(byte[] bytes)
         {
@@ -539,9 +420,7 @@ namespace WhiteMagic
         }
 
         public void Call(IntPtr addr, MagicConvention cv, params object[] args)
-        {
-            Call<int>(addr, cv, args);
-        }
+            => Call<int>(addr, cv, args);
 
         public T Call<T>(IntPtr addr, MagicConvention cv, params object[] args) where T : struct
         {
@@ -624,14 +503,10 @@ namespace WhiteMagic
         }
 
         public T Call<T>(ModulePointer offs, MagicConvention cv, params object[] args) where T : struct
-        {
-            return Call<T>(GetAddress(offs), cv, args);
-        }
+            => Call<T>(GetAddress(offs), cv, args);
 
         public void Call(ModulePointer offs, MagicConvention cv, params object[] args)
-        {
-            Call(GetAddress(offs), cv, args);
-        }
+            => Call(GetAddress(offs), cv, args);
 
         public IntPtr GetThreadStartAddress(int threadId)
         {
@@ -698,15 +573,9 @@ namespace WhiteMagic
             }
         }
 
-        public ProcessSuspender MakeSuspender()
-        {
-            return new ProcessSuspender(this);
-        }
+        public ProcessSuspender MakeSuspender() => new ProcessSuspender(this);
 
-        public IntPtr GetAddress(ModulePointer offs)
-        {
-            return GetModuleAddress(offs.ModuleName).Add(offs.Offset);
-        }
+        public IntPtr GetAddress(ModulePointer offs) => GetModuleAddress(offs.ModuleName).Add(offs.Offset);
 
         public IntPtr GetModuleAddress(string moduleName)
         {

@@ -9,12 +9,12 @@ namespace WhiteMagic
 {
     public class HookManager
     {
-        public static Keyboard KeyboardHooks = new Keyboard();
-        public static Mouse MouseHooks = new Mouse();
+        public static Keyboard KeyboardHooks { get; } = new Keyboard();
+        public static Mouse MouseHooks { get; } = new Mouse();
 
-        private static string HookContainerLock = "HookContainerLock";
+        private const string HookContainerLock = "HookContainerLock";
 
-        private static Dictionary<HookType, User32.HookProc> Delegates = new Dictionary<HookType, User32.HookProc>();
+        private static Dictionary<HookType, User32.HookProc> Delegates { get; } = new Dictionary<HookType, User32.HookProc>();
         private static User32.HookProc GetHookDelegate(HookType Type)
         {
             if (!Delegates.ContainsKey(Type))

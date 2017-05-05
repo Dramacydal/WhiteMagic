@@ -24,7 +24,7 @@ namespace WhiteMagic.Modules
             Dump = new ModuleDump(this);
         }
 
-        public void Invalidate() { Invalidated = true; }
+        public void Invalidate() => Invalidated = true;
 
         public string ModuleName { get; private set; }
         public IntPtr BaseAddress { get; private set; }

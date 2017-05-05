@@ -12,10 +12,7 @@ namespace WhiteMagic.Input
         public abstract void KeyPress(Keys Key, TimeSpan KeyPressTime);
         public abstract void SendChar(char c);
 
-        public void KeyPress(Keys Key)
-        {
-            KeyPress(Key, KeypressTime);
-        }
+        public void KeyPress(Keys Key) => KeyPress(Key, KeypressTime);
 
         public void SendText(string Text)
         {
@@ -23,9 +20,6 @@ namespace WhiteMagic.Input
                 SendChar(c);
         }
 
-        public ModifierToggler SetModifiers(Modifiers Mask)
-        {
-            return new ModifierToggler(this, Mask);
-        }
+        public ModifierToggler SetModifiers(Modifiers Mask) => new ModifierToggler(this, Mask);
     }
 }

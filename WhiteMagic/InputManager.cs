@@ -1,14 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using WhiteMagic.Input;
-using WhiteMagic.WinAPI;
-using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic
 {
@@ -22,8 +13,6 @@ namespace WhiteMagic
         }
 
         public static WindowKeyboardInput CreateWindowInput(IntPtr Handle, bool Recursive = true)
-        {
-            return new WindowKeyboardInput(Handle, Recursive);
-        }
+            => new WindowKeyboardInput(Handle, Recursive);
     }
 }

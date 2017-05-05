@@ -43,20 +43,8 @@ namespace WhiteMagic.Hooks
             }
         }
 
-        public int X
-        {
-            get
-            {
-                return Event == MouseEvent.Move ? Raw.ptX : -1;
-            }
-        }
-        public int Y
-        {
-            get
-            {
-                return Event == MouseEvent.Move ? Raw.ptY : -1;
-            }
-        }
+        public int X => Event == MouseEvent.Move ? Raw.ptX : -1;
+        public int Y => Event == MouseEvent.Move ? Raw.ptY : -1;
 
         public struct ClickInfo
         {
@@ -69,8 +57,8 @@ namespace WhiteMagic.Hooks
             public MouseButtons Button;
             private bool Up;
 
-            public bool ButtonUp { get { return Up; } }
-            public bool ButtonDown { get { return !Up; } }
+            public bool ButtonUp => Up;
+            public bool ButtonDown => !Up;
         }
 
         public ClickInfo Click

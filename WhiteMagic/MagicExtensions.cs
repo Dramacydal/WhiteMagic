@@ -21,35 +21,17 @@ namespace WhiteMagic
             return string.Join(separator, (reverse ? array.Reverse() : array).Select(_ => string.Format("{0:X2}", _)));
         }
 
-        public static uint ToUInt32(this IntPtr p)
-        {
-            return (uint)p.ToInt32();
-        }
+        public static uint ToUInt32(this IntPtr p) => (uint)p.ToInt32();
 
-        public static IntPtr Add(this IntPtr pointer, int offset)
-        {
-            return IntPtr.Add(pointer, offset);
-        }
+        public static IntPtr Add(this IntPtr pointer, int offset) => IntPtr.Add(pointer, offset);
 
-        public static IntPtr Add(this IntPtr pointer, uint offset)
-        {
-            return IntPtr.Add(pointer, (int)offset);
-        }
+        public static IntPtr Add(this IntPtr pointer, uint offset) => IntPtr.Add(pointer, (int)offset);
 
-        public static IntPtr Add(this IntPtr pointer, IntPtr pointer2)
-        {
-            return IntPtr.Add(pointer, pointer2.ToInt32());
-        }
+        public static IntPtr Add(this IntPtr pointer, IntPtr pointer2) => IntPtr.Add(pointer, pointer2.ToInt32());
 
-        public static IntPtr Subtract(this IntPtr pointer, int offset)
-        {
-            return IntPtr.Subtract(pointer, offset);
-        }
+        public static IntPtr Subtract(this IntPtr pointer, int offset) => IntPtr.Subtract(pointer, offset);
 
-        public static IntPtr Subtract(this IntPtr pointer, IntPtr pointer2)
-        {
-            return IntPtr.Subtract(pointer, pointer2.ToInt32());
-        }
+        public static IntPtr Subtract(this IntPtr pointer, IntPtr pointer2) => IntPtr.Subtract(pointer, pointer2.ToInt32());
 
         public static string GetVersionInfo(this Process process)
         {
@@ -61,9 +43,6 @@ namespace WhiteMagic
                     process.MainModule.FileVersionInfo.FilePrivatePart);
         }
 
-        public static bool IsEmpty(this TimeSpan TimeSpan)
-        {
-            return TimeSpan.Ticks <= 0;
-        }
+        public static bool IsEmpty(this TimeSpan TimeSpan) => TimeSpan.Ticks <= 0;
     }
 }

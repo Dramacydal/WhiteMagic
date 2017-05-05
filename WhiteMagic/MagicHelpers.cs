@@ -25,7 +25,7 @@ namespace WhiteMagic
         public static IEnumerable<Process> EnumerateProcesses()
         {
             var arraySize = 1024u;
-            var arrayBytesSize = arraySize * sizeof(UInt32);
+            var arrayBytesSize = arraySize * sizeof(uint);
             var processIds = new int[arraySize];
             uint bytesCopied;
 
@@ -38,17 +38,17 @@ namespace WhiteMagic
             if ((bytesCopied & 3) != 0)
                 yield break;
 
-            UInt32 numIdsCopied = bytesCopied >> 2;
-            for (UInt32 i = 0; i < numIdsCopied; ++i)
+            var numIdsCopied = bytesCopied >> 2;
+            for (var i = 0; i < numIdsCopied; ++i)
             {
                 var id = processIds[i];
 
-                var Handle = Kernel32.OpenProcess(ProcessAccess.QueryInformation, false, (int)id);
+                var Handle = Kernel32.OpenProcess(ProcessAccess.QueryInformation, false, id);
                 if (Handle == IntPtr.Zero)
                     continue;
 
                 Kernel32.CloseHandle(Handle);
-                var process = Process.GetProcessById((int)id);
+                var process = Process.GetProcessById(id);
                 if (process == null)
                     continue;
 
@@ -58,39 +58,25 @@ namespace WhiteMagic
 
         #region String parameters methods
         public static IEnumerable<Process> FindProcessesByInternalName(string Name)
-        {
-            return FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static IEnumerable<Process> FindProcessesByProductName(string Name)
-        {
-            return FindProcessesByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessesByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static IEnumerable<Process> FindProcessesByName(string Name)
-        {
-            return FindProcessesByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessesByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static Process FindProcessByName(string Name)
-        {
-            return FindProcessByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static Process FindProcessByInternalName(string Name)
-        {
-            return FindProcessByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static Process FindProcessByProductName(string Name)
-        {
-            return FindProcessByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => FindProcessByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
         public static Process SelectProcess(string Name)
-        {
-            return SelectProcess(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
-        }
+            => SelectProcess(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
         #endregion
 
         public static IEnumerable<Process> FindProcessesByInternalName(Regex Pattern)
@@ -130,22 +116,13 @@ namespace WhiteMagic
         }
 
         public static Process FindProcessByName(Regex Pattern)
-        {
-            var processes = FindProcessesByName(Pattern);
-            return processes.FirstOrDefault();
-        }
+            => FindProcessesByName(Pattern).FirstOrDefault();
 
         public static Process FindProcessByInternalName(Regex Pattern)
-        {
-            var processes = FindProcessesByInternalName(Pattern);
-            return processes.FirstOrDefault();
-        }
+            => FindProcessesByInternalName(Pattern).FirstOrDefault();
 
         public static Process FindProcessByProductName(Regex Pattern)
-        {
-            var processes = FindProcessesByProductName(Pattern);
-            return processes.FirstOrDefault();
-        }
+            => FindProcessesByProductName(Pattern).FirstOrDefault();
 
         public static Process SelectProcess(Regex Pattern)
         {

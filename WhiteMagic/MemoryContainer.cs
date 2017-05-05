@@ -20,10 +20,10 @@ namespace WhiteMagic
         public MemoryContainer(MemoryHandler m, IntPtr Address, int Length)
             : this(Address)
         {
-            this.Data = m.ReadBytes(Address, Length);
+            Data = m.ReadBytes(Address, Length);
         }
 
-        public IntPtr BaseAddress { get; private set; }
+        public IntPtr BaseAddress { get; }
 
         private byte[] _data { get; set; }
         public byte[] Data
@@ -33,16 +33,10 @@ namespace WhiteMagic
         }
         protected string StringDump { get; private set; }
 
-        public int DataLength { get { return Data.Length; } }
+        public int DataLength => Data.Length;
 
-        public Match Match(MemoryPattern Pattern)
-        {
-            return Pattern.Match(StringDump);
-        }
+        public Match Match(MemoryPattern Pattern) => Pattern.Match(StringDump);
 
-        public MatchCollection Matches(MemoryPattern Pattern)
-        {
-            return Pattern.Matches(StringDump);
-        }
+        public MatchCollection Matches(MemoryPattern Pattern) => Pattern.Matches(StringDump);
     }
 }

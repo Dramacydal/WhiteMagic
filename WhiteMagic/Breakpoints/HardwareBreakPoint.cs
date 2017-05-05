@@ -5,13 +5,8 @@ using WhiteMagic.Pointers;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
 
-namespace WhiteMagic
+namespace WhiteMagic.Breakpoints
 {
-    public class BreakPointException : MagicException
-    {
-        public BreakPointException(string message, params object[] args) : base(message, args) { }
-    }
-
     public class HardwareBreakPoint
     {
         public HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
@@ -21,7 +16,6 @@ namespace WhiteMagic
 
             this.Pointer = Pointer;
             this.Condition = Condition;
-            this.Address = IntPtr.Zero;
 
             switch (Length)
             {
@@ -103,10 +97,7 @@ namespace WhiteMagic
             AffectedThreads[threadId] = index;
         }
 
-        public void UnregisterThread(int id)
-        {
-            AffectedThreads.Remove(id);
-        }
+        public void UnregisterThread(int id) => AffectedThreads.Remove(id);
 
         public void UnSet(MemoryHandler Memory)
         {
@@ -174,15 +165,10 @@ namespace WhiteMagic
         protected MemoryHandler Memory { get; private set; }
 
         public bool IsSet { get { return Address != IntPtr.Zero; } }
-        public IntPtr Address { get; private set; }
+        public IntPtr Address { get; private set; } = IntPtr.Zero;
 
         private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();
 
         protected readonly int Length;
-    }
-
-    public class CodeBreakpoint : HardwareBreakPoint
-    {
-        public CodeBreakpoint(ModulePointer Pointer) : base(Pointer, BreakpointCondition.Code, 1) { }
     }
 }

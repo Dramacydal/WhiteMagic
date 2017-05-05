@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Linq;
 using WhiteMagic.WinAPI;
-using WhiteMagic.Modules;
 using WhiteMagic.WinAPI.Structures;
+using WhiteMagic.Breakpoints;
 
 namespace WhiteMagic
 {
@@ -16,7 +16,6 @@ namespace WhiteMagic
 
     public class ProcessDebugger : MemoryHandler
     {
-        protected List<HardwareBreakPoint> breakPoints = new List<HardwareBreakPoint>();
         protected Thread debugThread = null;
 
         public int ThreadId { get; protected set; }
@@ -24,7 +23,7 @@ namespace WhiteMagic
         public bool IsDetached { get; protected set; }
         public bool HasExited { get { return Process.HasExited; } }
 
-        public List<HardwareBreakPoint> Breakpoints { get { return breakPoints; } }
+        public List<HardwareBreakPoint> Breakpoints { get; protected set; } = new List<HardwareBreakPoint>();
 
         public ProcessDebugger(int processId) : base(processId)
         {
@@ -74,7 +73,7 @@ namespace WhiteMagic
 
         public void AddBreakPoint(HardwareBreakPoint bp)
         {
-            if (breakPoints.Count >= Kernel32.MaxHardwareBreakpointsCount)
+            if (Breakpoints.Count >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new DebuggerException("Can't set any more breakpoints");
 
             try
@@ -82,7 +81,7 @@ namespace WhiteMagic
                 using (var suspender = MakeSuspender())
                 {
                     bp.Set(this);
-                    breakPoints.Add(bp);
+                    Breakpoints.Add(bp);
                 }
             }
             catch (BreakPointException e)
@@ -97,11 +96,11 @@ namespace WhiteMagic
             {
                 using (var suspender = MakeSuspender())
                 {
-                    foreach (var bp in breakPoints)
+                    foreach (var bp in Breakpoints)
                         bp.UnSet(this);
                 }
 
-                breakPoints.Clear();
+                Breakpoints.Clear();
             }
             catch (BreakPointException e)
             {
@@ -109,10 +108,7 @@ namespace WhiteMagic
             }
         }
 
-        public void StopDebugging()
-        {
-            IsDebugging = false;
-        }
+        public void StopDebugging() => IsDebugging = false;
 
         public void Join()
         {
@@ -139,7 +135,7 @@ namespace WhiteMagic
         private void StartListener(uint waitInterval = 200)
         {
             var DebugEvent = new DEBUG_EVENT();
-            for (; IsDebugging; )
+            for (; IsDebugging;)
             {
                 if (!Kernel32.WaitForDebugEvent(ref DebugEvent, waitInterval))
                 {
@@ -185,9 +181,9 @@ namespace WhiteMagic
                             if (!Kernel32.GetThreadContext(hThread, Context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            if (!breakPoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
+                            if (!Breakpoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
                                 break;
-                            var bp = breakPoints.First(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
+                            var bp = Breakpoints.First(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
 
                             var ContextWrapper = new ContextWrapper(this, Context);
                             if (bp.HandleException(ContextWrapper))
@@ -198,17 +194,17 @@ namespace WhiteMagic
                         }
                         break;
                     case DebugEventType.CREATE_THREAD_DEBUG_EVENT:
-                    {
-                        foreach (var bp in breakPoints)
-                            bp.SetToThread(DebugEvent.CreateThread.hThread, DebugEvent.dwThreadId);
-                        break;
-                    }
+                        {
+                            foreach (var bp in Breakpoints)
+                                bp.SetToThread(DebugEvent.CreateThread.hThread, DebugEvent.dwThreadId);
+                            break;
+                        }
                     case DebugEventType.EXIT_THREAD_DEBUG_EVENT:
-                    {
-                        foreach (var bp in breakPoints)
-                            bp.UnregisterThread(DebugEvent.dwThreadId);
-                        break;
-                    }
+                        {
+                            foreach (var bp in Breakpoints)
+                                bp.UnregisterThread(DebugEvent.dwThreadId);
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -276,7 +272,7 @@ namespace WhiteMagic
 
         public bool WaitForComeUp(int delay, int times)
         {
-            for (int i = 0; i < times;++i)
+            for (int i = 0; i < times; ++i)
             {
                 if (WaitForComeUp(delay))
                     return true;
@@ -321,14 +317,8 @@ namespace WhiteMagic
             };
         }
 
-        public static void AddInstance(ProcessDebugger Debugger)
-        {
-            AffectedInstances.Add(Debugger);
-        }
+        public static void AddInstance(ProcessDebugger Debugger) => AffectedInstances.Add(Debugger);
 
-        public static void RemoveInstance(ProcessDebugger Debugger)
-        {
-            AffectedInstances.Remove(Debugger);
-        }
+        public static void RemoveInstance(ProcessDebugger Debugger) => AffectedInstances.Remove(Debugger);
     }
 }

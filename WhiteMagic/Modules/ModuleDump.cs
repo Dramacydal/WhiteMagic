@@ -24,11 +24,8 @@ namespace WhiteMagic.Modules
             this.Module = Module;
         }
 
-        public void Clear()
-        {
-            Data = null;
-        }
+        public void Clear() => Data = null;
 
-        public bool Initialized { get { return Data != null && Data.Length > 0; } }
+        public bool Initialized  => Data != null && Data.Length > 0;
     }
 }

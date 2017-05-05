@@ -18,10 +18,7 @@ namespace WhiteMagic.Input
             SendButton(Button, true);
         }
 
-        public void Click(MouseButtons Button)
-        {
-            Click(Button, new TimeSpan());
-        }
+        public void Click(MouseButtons Button) => Click(Button, new TimeSpan());
 
         public abstract void SendScroll(ScrollDirection Direction);
     }

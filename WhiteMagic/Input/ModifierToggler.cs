@@ -34,9 +34,6 @@ namespace WhiteMagic.Input
             Mask = Modifiers.None;
         }
 
-        public void Dispose()
-        {
-            Reset();
-        }
+        public void Dispose() => Reset();
     }
 }

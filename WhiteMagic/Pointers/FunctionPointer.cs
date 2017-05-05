@@ -12,14 +12,8 @@ namespace WhiteMagic.Pointers
             this.CallingConvention = CallingConvention;
         }
 
-        public void Call(MemoryHandler Memory, params object[] Args)
-        {
-            Memory.Call(Pointer, CallingConvention, Args);
-        }
+        public void Call(MemoryHandler Memory, params object[] Args) => Memory.Call(Pointer, CallingConvention, Args);
 
-        public T Call<T>(MemoryHandler Memory, params object[] Args) where T : struct
-        {
-            return Memory.Call<T>(Pointer, CallingConvention, Args);
-        }
+        public T Call<T>(MemoryHandler Memory, params object[] Args) where T : struct => Memory.Call<T>(Pointer, CallingConvention, Args);
     }
 }

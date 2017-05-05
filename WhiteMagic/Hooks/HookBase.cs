@@ -26,9 +26,6 @@ namespace WhiteMagic.Hooks
             Handlers.Add(Handler);
         }
 
-        public void Remove()
-        {
-            Handlers.Clear();
-        }
+        public void Remove() => Handlers.Clear();
     }
 }

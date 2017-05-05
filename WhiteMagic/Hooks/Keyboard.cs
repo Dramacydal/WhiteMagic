@@ -20,16 +20,13 @@ namespace WhiteMagic.Hooks
             this.Raw = Raw;
         }
 
-        public Keys VirtualKey { get { return (Keys)Raw.vkCode; } }
-        public ScanCodeShort ScanCode { get { return (ScanCodeShort)Raw.scanCode; } }
-        public bool Up { get { return Event == WM.KEYUP || Event == WM.SYSKEYUP; } }
+        public Keys VirtualKey => (Keys)Raw.vkCode;
+        public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
+        public bool Up => Event == WM.KEYUP || Event == WM.SYSKEYUP;
 
-        public Modifiers ModifiersState { get { return Hook.ModifiersState; } }
+        public Modifiers ModifiersState => Hook.ModifiersState;
         
-        public override string ToString()
-        {
-            return string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Up: {Up}");
-        }
+        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Up: {Up}");
     }
 
     public delegate bool KeyboardMessageHandler(KeyEventInfo Info);

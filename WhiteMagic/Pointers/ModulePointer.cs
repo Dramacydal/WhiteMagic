@@ -1,5 +1,3 @@
-using System;
-
 namespace WhiteMagic.Pointers
 {
     public class ModulePointer
@@ -27,13 +25,9 @@ namespace WhiteMagic.Pointers
         { }
 
         public static ModulePointer operator +(ModulePointer pointer, int modOffs)
-        {
-            return new ModulePointer(pointer.ModuleName, pointer.Offset + modOffs);
-        }
+            => new ModulePointer(pointer.ModuleName, pointer.Offset + modOffs);
 
         public static ModulePointer operator +(ModulePointer pointer, uint modOffs)
-        {
-            return new ModulePointer(pointer.ModuleName, pointer.Offset + (int)modOffs);
-        }
+            => new ModulePointer(pointer.ModuleName, pointer.Offset + (int)modOffs);
     }
 }
