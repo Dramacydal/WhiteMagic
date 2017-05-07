@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace WhiteMagic.WinAPI.Types
+namespace WhiteMagic.WinAPI.Structures.Process
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct SECURITY_ATTRIBUTES

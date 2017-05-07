@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace WhiteMagic.WinAPI.Types
+namespace WhiteMagic.WinAPI.Structures.Process
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal struct PROCESS_INFORMATION
+    public struct PROCESS_INFORMATION
     {
         public IntPtr hProcess;
         public IntPtr hThread;

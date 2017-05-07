@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace WhiteMagic.WinAPI.Types
+namespace WhiteMagic.WinAPI.Structures.Process
 {
     [Flags]
-    enum CreateProcessFlags : uint
+    public enum CreateProcessFlags : uint
     {
         CREATE_BREAKAWAY_FROM_JOB = 0x01000000,
         CREATE_DEFAULT_ERROR_MODE = 0x04000000,

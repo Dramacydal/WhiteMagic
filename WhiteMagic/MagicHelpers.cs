@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
-using WhiteMagic.WinAPI.Types.Process;
+using WhiteMagic.WinAPI.Structures.Process;
 
 namespace WhiteMagic
 {

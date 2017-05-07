@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI.Structures;
-using WhiteMagic.WinAPI.Types.Process;
+using WhiteMagic.WinAPI.Structures.Process;
 
 namespace WhiteMagic.WinAPI
 {
