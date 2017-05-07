@@ -72,7 +72,11 @@ namespace WhiteMagic
 
         protected void SetProcess(Process Process)
         {
+            if (!Kernel32.Is32BitProcess(Process.Handle))
+                throw new MemoryException("Can't operate with x64 processes");
+
             this.Process = Process;
+
             if (ProcessHandle != IntPtr.Zero)
                 Kernel32.CloseHandle(ProcessHandle);
 

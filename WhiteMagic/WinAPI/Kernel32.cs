@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI.Structures;
+using WhiteMagic.WinAPI.Types.Process;
 
 namespace WhiteMagic.WinAPI
 {
@@ -140,5 +141,18 @@ namespace WhiteMagic.WinAPI
             bool isWow64;
             return IsWow64Process(hProcess, out isWow64) && isWow64;
         }
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool CreateProcess(
+           string lpApplicationName,
+           string lpCommandLine,
+           ref SECURITY_ATTRIBUTES lpProcessAttributes,
+           ref SECURITY_ATTRIBUTES lpThreadAttributes,
+           bool bInheritHandles,
+           CreateProcessFlags dwCreationFlags,
+           IntPtr lpEnvironment,
+           string lpCurrentDirectory,
+           [In] ref STARTUPINFO lpStartupInfo,
+           out PROCESS_INFORMATION lpProcessInformation);
     }
 }

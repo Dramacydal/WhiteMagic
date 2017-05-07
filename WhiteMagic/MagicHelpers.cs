@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
+using WhiteMagic.WinAPI.Types.Process;
 
 namespace WhiteMagic
 {
@@ -222,6 +224,53 @@ namespace WhiteMagic
             Marshal.FreeHGlobal(ptr);
 
             return bytes;
+        }
+
+        public enum ProcessStartFlags
+        {
+            None = 0,
+            Suspended = 1,
+            NoWindow = 2,
+        }
+
+        public class ProcessStartResult
+        {
+            public IntPtr ProcessHandle;
+            public IntPtr MainThreadHandle;
+            public int ProcessId;
+            public int MainThreadId;
+        }
+
+        public static ProcessStartResult StartProcess(string FilePath, string Arguments = "", ProcessStartFlags StartFlags = ProcessStartFlags.None)
+        {
+            if (!File.Exists(FilePath))
+                throw new MagicException("No such file '{0}'", FilePath);
+
+            var pInfo = new PROCESS_INFORMATION();
+            var sInfo = new STARTUPINFO();
+            var pSec = new SECURITY_ATTRIBUTES();
+            var tSec = new SECURITY_ATTRIBUTES();
+            pSec.nLength = Marshal.SizeOf(pSec);
+            tSec.nLength = Marshal.SizeOf(tSec);
+
+            var flags = CreateProcessFlags.DETACHED_PROCESS;
+            if (StartFlags.HasFlag(ProcessStartFlags.NoWindow))
+                flags |= CreateProcessFlags.CREATE_NO_WINDOW;
+            if (StartFlags.HasFlag(ProcessStartFlags.Suspended))
+                flags |= CreateProcessFlags.CREATE_SUSPENDED;
+
+            if (!Kernel32.CreateProcess(FilePath, Arguments,
+                ref pSec, ref tSec, false, flags,
+                IntPtr.Zero, null, ref sInfo, out pInfo))
+                throw new MagicException("Failed to start process");
+
+            return new ProcessStartResult()
+                {
+                    ProcessId = pInfo.dwProcessId,
+                    ProcessHandle = pInfo.hProcess,
+                    MainThreadId = pInfo.dwThreadId,
+                    MainThreadHandle= pInfo.hThread
+                };
         }
     }
 }

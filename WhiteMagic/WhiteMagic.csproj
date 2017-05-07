@@ -97,6 +97,10 @@
     <Compile Include="WinAPI\Structures\ProcessAccess.cs" />
     <Compile Include="WinAPI\Structures\ProcessArchitecture.cs" />
     <Compile Include="WinAPI\Structures\SystemMetric.cs" />
+    <Compile Include="WinAPI\Structures\Process\CreateProcessFlags.cs" />
+    <Compile Include="WinAPI\Structures\Process\ProcessInformation.cs" />
+    <Compile Include="WinAPI\Structures\Process\SecurityAttributes.cs" />
+    <Compile Include="WinAPI\Structures\Process\StartupInfo.cs" />
     <Compile Include="WinAPI\Structures\ThreadAccess.cs" />
     <Compile Include="WinAPI\Structures\ThreadInfoClass.cs" />
     <Compile Include="WinAPI\Structures\TokenObject.cs" />
