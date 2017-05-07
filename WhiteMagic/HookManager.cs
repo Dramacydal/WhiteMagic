@@ -7,7 +7,7 @@ using WhiteMagic.WinAPI.Structures.Hooks;
 
 namespace WhiteMagic
 {
-    public class HookManager
+    public static class HookManager
     {
         public static Keyboard KeyboardHooks { get; } = new Keyboard();
         public static Mouse MouseHooks { get; } = new Mouse();

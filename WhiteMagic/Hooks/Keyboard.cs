@@ -52,12 +52,18 @@ namespace WhiteMagic.Hooks
                     throw new Win32Exception("Keyboard hooks are not installed");
 
                 Modifiers state = Modifiers.None;
-                if (LAltPressed || RAltPressed)
-                    state |= Modifiers.Alt;
-                if (LControlPressed || RControlPressed)
-                    state |= Modifiers.Ctrl;
-                if (LShiftPressed || RShiftPressed)
-                    state |= Modifiers.Shift;
+                if (LAltPressed)
+                    state |= Modifiers.LAlt;
+                if (RAltPressed)
+                    state |= Modifiers.RAlt;
+                if (LControlPressed)
+                    state |= Modifiers.LCtrl;
+                if (RControlPressed)
+                    state |= Modifiers.RCtrl;
+                if (LShiftPressed)
+                    state |= Modifiers.LShift;
+                if (RShiftPressed)
+                    state |= Modifiers.RShift;
 
                 return state;
             }
