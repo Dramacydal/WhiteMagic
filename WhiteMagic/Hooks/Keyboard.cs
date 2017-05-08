@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
 
@@ -13,20 +14,23 @@ namespace WhiteMagic.Hooks
         private Keyboard Hook;
         private WM Event;
 
-        public KeyEventInfo(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook)
+        public KeyEventInfo(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook, bool WasPressed)
         {
             this.Event = Event;
             this.Hook = Hook;
             this.Raw = Raw;
+            this.WasPressed = WasPressed;
         }
 
         public Keys VirtualKey => (Keys)Raw.vkCode;
         public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
         public bool Up => Event == WM.KEYUP || Event == WM.SYSKEYUP;
+        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags).HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED);
+        public bool WasPressed { get; } = false;
 
         public Modifiers ModifiersState => Hook.ModifiersState;
         
-        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Up: {Up}");
+        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {Up} WasPressed: {WasPressed}");
     }
 
     public delegate bool KeyboardMessageHandler(KeyEventInfo Info);
@@ -89,12 +93,15 @@ namespace WhiteMagic.Hooks
             if (code != 0)
                 return true;
 
-            var ev = (WM)wParam;
+            var ev = (WM)wParam.ToUInt32();
 
             try
             {
                 var str = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
-                var keyInfo = new KeyEventInfo(ev, str, this);
+
+                var state = User32.GetAsyncKeyState(str.vkCode);
+
+                var keyInfo = new KeyEventInfo(ev, str, this, (state & 0x8000) != 0);
 
                 StoreSpecialKeyState(ev, keyInfo);
 

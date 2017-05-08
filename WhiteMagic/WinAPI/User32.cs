@@ -66,5 +66,8 @@ namespace WhiteMagic.WinAPI
 
         [DllImport("user32.dll")]
         public static extern int MapVirtualKey(uint uCode, MapVirtualKeyMapTypes uMapType);
+
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(int vKey);
     }
 }
