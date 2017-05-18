@@ -2,7 +2,7 @@
 {
     public class BreakPointException : MagicException
     {
-        public BreakPointException(string message, params object[] args) : base(message, args) { }
+        public BreakPointException(string Message, params object[] Arguments) : base(Message, Arguments) { }
     }
 
 }

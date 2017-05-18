@@ -11,28 +11,25 @@ namespace WhiteMagic
 {
     public class DebuggerException : MagicException
     {
-        public DebuggerException(string message, params object[] args) : base(message, args) { }
+        public DebuggerException(string Message, params object[] Arguments) : base(Message, Arguments) { }
     }
 
     public class ProcessDebugger : MemoryHandler
     {
         protected Thread debugThread = null;
 
-        public int ThreadId { get; protected set; }
         public bool IsDebugging { get; protected set; }
         public bool IsDetached { get; protected set; }
-        public bool HasExited { get { return Process.HasExited; } }
+        public bool HasExited => Process.HasExited;
 
         public List<HardwareBreakPoint> Breakpoints { get; protected set; } = new List<HardwareBreakPoint>();
 
-        public ProcessDebugger(int processId) : base(processId)
+        public ProcessDebugger(int ProcessId) : base(ProcessId)
         {
-            ThreadId = Process.Threads[0].Id;
         }
 
         public ProcessDebugger(Process process) : base(process)
         {
-            ThreadId = Process.Threads[0].Id;
         }
 
         private void Attach()
@@ -64,14 +61,14 @@ namespace WhiteMagic
                 if (hThread == IntPtr.Zero)
                     throw new BreakPointException("Can't open thread for access");
 
-                HardwareBreakPoint.UnsetSlotsFromThread(hThread, 0xF);
+                HardwareBreakPoint.UnsetSlotsFromThread(hThread, SlotFlags.All);
 
                 if (!Kernel32.CloseHandle(hThread))
                     throw new BreakPointException("Failed to close thread handle");
             }
         }
 
-        public void AddBreakPoint(HardwareBreakPoint bp)
+        public void AddBreakPoint(HardwareBreakPoint Breakpoint)
         {
             if (Breakpoints.Count >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new DebuggerException("Can't set any more breakpoints");
@@ -80,8 +77,8 @@ namespace WhiteMagic
             {
                 using (var suspender = MakeSuspender())
                 {
-                    bp.Set(this);
-                    Breakpoints.Add(bp);
+                    Breakpoint.Set(this);
+                    Breakpoints.Add(Breakpoint);
                 }
             }
             catch (BreakPointException e)
@@ -132,12 +129,12 @@ namespace WhiteMagic
                 throw new DebuggerException("Failed to stop process debugging");
         }
 
-        private void StartListener(uint waitInterval = 200)
+        private void StartListener(uint WaitInterval = 200)
         {
             var DebugEvent = new DEBUG_EVENT();
             for (; IsDebugging;)
             {
-                if (!Kernel32.WaitForDebugEvent(ref DebugEvent, waitInterval))
+                if (!Kernel32.WaitForDebugEvent(ref DebugEvent, WaitInterval))
                 {
                     if (!IsDebugging)
                         break;
@@ -261,37 +258,37 @@ namespace WhiteMagic
             debugThread.Start();
         }
 
-        public bool WaitForComeUp(int delay)
+        public bool WaitForComeUp(int WaitTime)
         {
             if (IsDebugging)
                 return true;
 
-            Thread.Sleep(delay);
+            Thread.Sleep(WaitTime);
             return IsDebugging;
         }
 
-        public bool WaitForComeUp(int delay, int times)
+        public bool WaitForComeUp(int WaitTime, int RepeatCount)
         {
-            for (int i = 0; i < times; ++i)
+            for (int i = 0; i < RepeatCount; ++i)
             {
-                if (WaitForComeUp(delay))
+                if (WaitForComeUp(WaitTime))
                     return true;
             }
 
             return IsDebugging;
         }
 
-        private bool CatchesSigInt = false;
+        private bool _CatchSigInt = false;
         public bool CatchSigInt
         {
             get
             {
-                return CatchesSigInt;
+                return _CatchSigInt;
             }
             set
             {
-                CatchesSigInt = value;
-                if (CatchesSigInt)
+                _CatchSigInt = value;
+                if (_CatchSigInt)
                     SigIntHandler.AddInstance(this);
                 else
                     SigIntHandler.RemoveInstance(this);

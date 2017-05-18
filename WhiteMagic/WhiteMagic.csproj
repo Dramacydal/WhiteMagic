@@ -61,7 +61,7 @@
     <Compile Include="Input\ModifierToggler.cs" />
     <Compile Include="Input\ScreenTranslator.cs" />
     <Compile Include="Input\WindowKeyboardInput.cs" />
-    <Compile Include="MemoryContainer.cs" />
+    <Compile Include="MemoryDump.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
     <Compile Include="Patterns\RegexExtensions.cs" />

@@ -7,6 +7,17 @@ using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic.Breakpoints
 {
+    [Flags]
+    public enum SlotFlags : int
+    {
+        None = 0,
+        Bp0 = 1,
+        Bp1 = 2,
+        Bp2 = 4,
+        Bp3 = 8,
+        All = Bp0 | Bp1 | Bp2 | Bp3
+    }
+
     public class HardwareBreakPoint
     {
         public HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
@@ -55,10 +66,10 @@ namespace WhiteMagic.Breakpoints
             return true;
         }
 
-        public void SetToThread(IntPtr hThread, int threadId)
+        public void SetToThread(IntPtr ThreadHandle, int ThreadId)
         {
             // make sure this breakpoint isn't already set
-            if (AffectedThreads.ContainsKey(threadId))
+            if (AffectedThreads.ContainsKey(ThreadId))
                 return;
                 //Console.WriteLine("Thread {0} already affected", threadId);
 
@@ -68,7 +79,7 @@ namespace WhiteMagic.Breakpoints
             cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(hThread, cxt))
+            if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             // Find an available hardware register
@@ -91,13 +102,13 @@ namespace WhiteMagic.Breakpoints
             SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(hThread, cxt))
+            if (!Kernel32.SetThreadContext(ThreadHandle, cxt))
                 throw new BreakPointException("Failed to set thread context");
 
-            AffectedThreads[threadId] = index;
+            AffectedThreads[ThreadId] = index;
         }
 
-        public void UnregisterThread(int id) => AffectedThreads.Remove(id);
+        public void UnregisterThread(int ThreadId) => AffectedThreads.Remove(ThreadId);
 
         public void UnSet(MemoryHandler Memory)
         {
@@ -122,32 +133,32 @@ namespace WhiteMagic.Breakpoints
             AffectedThreads.Clear();
         }
 
-        public void UnsetFromThread(IntPtr hThread, int threadId)
+        public void UnsetFromThread(IntPtr ThreadHandle, int ThreadId)
         {
-            var index = AffectedThreads[threadId];
+            var index = AffectedThreads[ThreadId];
             // Zero out the debug register settings for this breakpoint
             if (index >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new BreakPointException("Bogus breakpoints index");
 
-            UnsetSlotsFromThread(hThread, 1 << index);
+            UnsetSlotsFromThread(ThreadHandle, (SlotFlags)(1 << index));
         }
 
-        public static void UnsetSlotsFromThread(IntPtr hThread, int slotMask)
+        public static void UnsetSlotsFromThread(IntPtr ThreadHandle, SlotFlags SlotMask)
         {
             var cxt = new CONTEXT();
             // The only registers we care about are the debug registers
             cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(hThread, cxt))
+            if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             for (var i = 0; i < Kernel32.MaxHardwareBreakpointsCount; ++i)
-                if ((slotMask & (1 << i)) != 0)
+                if (SlotMask.HasFlag((SlotFlags)(1 << i)))
                     SetBits(ref cxt.Dr7, i * 2, 1, 0);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(hThread, cxt))
+            if (!Kernel32.SetThreadContext(ThreadHandle, cxt))
                 throw new BreakPointException("Failed to set thread context");
         }
 
@@ -164,7 +175,7 @@ namespace WhiteMagic.Breakpoints
         public BreakpointCondition Condition { get; }
         protected MemoryHandler Memory { get; private set; }
 
-        public bool IsSet { get { return Address != IntPtr.Zero; } }
+        public bool IsSet => Address != IntPtr.Zero;
         public IntPtr Address { get; private set; } = IntPtr.Zero;
 
         private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();

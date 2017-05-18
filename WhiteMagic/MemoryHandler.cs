@@ -15,12 +15,12 @@ namespace WhiteMagic
     public class MagicException : Exception
     {
         public ErrorCodes LastError { get; }
-        public MagicException(string message, params object[] args) : base(string.Format(message, args)) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
+        public MagicException(string Message, params object[] Arguments) : base(string.Format(Message, Arguments)) { LastError = (ErrorCodes)Marshal.GetLastWin32Error(); }
     }
 
     public class MemoryException : MagicException
     {
-        public MemoryException(string message, params object[] args) : base(message, args) { }
+        public MemoryException(string Message, params object[] Arguments) : base(Message, Arguments) { }
     }
 
     public enum MagicConvention
@@ -43,16 +43,16 @@ namespace WhiteMagic
         protected ModuleInfo BaseModule;
         protected Dictionary<string, ModuleInfo> Modules = new Dictionary<string, ModuleInfo>();
 
-        public MemoryHandler(Process process)
+        public MemoryHandler(Process Process)
         {
-            SetProcess(process);
+            SetProcess(Process);
         }
 
-        public MemoryHandler(int processId)
+        public MemoryHandler(int ProcessId)
         {
-            var process = Process.GetProcessById(processId);
+            var process = Process.GetProcessById(ProcessId);
             if (process == null)
-                throw new MemoryException("Process {0} not found", processId);
+                throw new MemoryException("Process {0} not found", ProcessId);
             SetProcess(process);
         }
 
@@ -98,14 +98,19 @@ namespace WhiteMagic
                 GetModule(ProcessModule.ModuleName, true);
         }
 
-        public bool IsValid()
+        public bool IsValid
         {
-            if (Process == null)
-                return false;
+            get
+            {
+                {
+                    if (Process == null)
+                        return false;
 
-            RefreshMemory();
+                    RefreshMemory();
 
-            return !Process.HasExited;
+                    return !Process.HasExited;
+                }
+            }
         }
 
         public void RefreshMemory()
@@ -120,7 +125,7 @@ namespace WhiteMagic
             }
         }
 
-        public void SuspendAllThreads(params int[] except)
+        public void SuspendAllThreads(params int[] ExceptIds)
         {
             if (++threadSuspendCount > 1)
                 return;
@@ -129,7 +134,7 @@ namespace WhiteMagic
 
             foreach (ProcessThread pT in Process.Threads)
             {
-                if (except.Contains(pT.Id))
+                if (ExceptIds.Contains(pT.Id))
                     continue;
 
                 if (remoteThreads.Contains(pT.Id))
@@ -139,9 +144,9 @@ namespace WhiteMagic
             }
         }
 
-        public void SuspendThread(int id)
+        public void SuspendThread(int ThreadId)
         {
-            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, ThreadId);
             if (pOpenThread == IntPtr.Zero)
             {
                 // thread does not exist
@@ -157,21 +162,21 @@ namespace WhiteMagic
             Kernel32.CloseHandle(pOpenThread);
         }
 
-        public void ResumeAllThreads(bool ignoreSuspendCount = false)
+        public void ResumeAllThreads(bool IgnoreSuspensionCount = false)
         {
             if (--threadSuspendCount > 0)
                 return;
 
-            if (!ignoreSuspendCount && threadSuspendCount < 0)
+            if (!IgnoreSuspensionCount && threadSuspendCount < 0)
                 throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is {0}", threadSuspendCount.ToString());
 
             foreach (ProcessThread pT in Process.Threads)
                 ResumeThread(pT.Id);
         }
 
-        public void ResumeThread(int id)
+        public void ResumeThread(int ThreadId)
         {
-            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, id);
+            var pOpenThread = Kernel32.OpenThread(ThreadAccess.SUSPEND_RESUME, false, ThreadId);
             if (pOpenThread == IntPtr.Zero)
             {
                 // thread does not exist
@@ -193,57 +198,57 @@ namespace WhiteMagic
         }
 
         #region Memory reading
-        public byte[] ReadBytes(IntPtr addr, int count)
+        public byte[] ReadBytes(IntPtr Address, int Count)
         {
-            var buf = new byte[count];
+            var buffer = new byte[Count];
 
             AllocationProtect oldProtect, oldProtect2;
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, Address, Count, AllocationProtect.PAGE_EXECUTE_READWRITE, out oldProtect))
                 throw new MemoryException("Failed to set page protection before read in remote process");
 
             int numBytes;
-            if (!Kernel32.ReadProcessMemory(ProcessHandle, addr, buf, count, out numBytes) || numBytes != count)
+            if (!Kernel32.ReadProcessMemory(ProcessHandle, Address, buffer, Count, out numBytes) || numBytes != Count)
                 throw new MemoryException("Failed to read memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, count, oldProtect, out oldProtect2))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, Address, Count, oldProtect, out oldProtect2))
                 throw new MemoryException("Failed to set page protection after read in remote process");
 
-            return buf;
+            return buffer;
         }
 
-        public T[] ReadArray<T>(IntPtr addr, int count)
+        public T[] ReadArray<T>(IntPtr Address, int ElementsCount)
         {
-            var bytes = ReadBytes(addr, count * Marshal.SizeOf(typeof(T)));
-            var dest = new T[count];
+            var bytes = ReadBytes(Address, ElementsCount * Marshal.SizeOf(typeof(T)));
+            var dest = new T[ElementsCount];
 
             Buffer.BlockCopy(bytes, 0, dest, 0, bytes.Length);
 
             return dest;
         }
 
-        public T Read<T>(IntPtr addr) where T : struct
-            => MagicHelpers.ReinterpretObject<T>(ReadBytes(addr, Marshal.SizeOf(typeof(T))));
+        public T Read<T>(IntPtr Address) where T : struct
+            => MagicHelpers.ReinterpretObject<T>(ReadBytes(Address, Marshal.SizeOf(typeof(T))));
 
-        protected byte[] ReadNullTerminatedBytes(IntPtr addr, int step = 1)
+        protected byte[] ReadNullTerminatedBytes(IntPtr Address, int CharSize = 1)
         {
-            if (step == 0)
-                throw new MemoryException("Wrong step specified for ReadNullTerminatedBytes");
+            if (CharSize == 0)
+                throw new MemoryException($"Wrong charsize specified for {nameof(ReadNullTerminatedBytes)}");
 
             var bytes = new List<byte>();
             for (; ; )
             {
                 bool notNull = false;
-                for (var i = 0; i < step; ++i)
+                for (var i = 0; i < CharSize; ++i)
                 {
-                    var b = ReadByte(addr);
+                    var b = ReadByte(Address);
                     bytes.Add(b);
                     notNull |= b != 0;
 
-                    addr = IntPtr.Add(addr, 1);
+                    Address = IntPtr.Add(Address, 1);
                 }
                 if (!notNull)
                 {
-                    bytes.RemoveRange(bytes.Count - step, step);
+                    bytes.RemoveRange(bytes.Count - CharSize, CharSize);
                     break;
                 }
             }
@@ -251,147 +256,147 @@ namespace WhiteMagic
             return bytes.ToArray();
         }
 
-        public string ReadASCIIString(IntPtr addr, int len = 0)
-            => Encoding.ASCII.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
+        public string ReadASCIIString(IntPtr Address, int Length = 0)
+            => Encoding.ASCII.GetString(Length == 0 ? ReadNullTerminatedBytes(Address) : ReadBytes(Address, Length));
 
-        public string ReadUTF8String(IntPtr addr, int len = 0)
-            => Encoding.UTF8.GetString(len == 0 ? ReadNullTerminatedBytes(addr) : ReadBytes(addr, len));
+        public string ReadUTF8String(IntPtr Address, int Length = 0)
+            => Encoding.UTF8.GetString(Length == 0 ? ReadNullTerminatedBytes(Address) : ReadBytes(Address, Length));
 
-        public string ReadUTF16String(IntPtr addr, int len = 0)
-            => Encoding.Unicode.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 2) : ReadBytes(addr, len));
+        public string ReadUTF16String(IntPtr Address, int Length = 0)
+            => Encoding.Unicode.GetString(Length == 0 ? ReadNullTerminatedBytes(Address, 2) : ReadBytes(Address, Length));
 
-        public string ReadUTF32String(IntPtr addr, int len = 0)
-            => Encoding.UTF32.GetString(len == 0 ? ReadNullTerminatedBytes(addr, 4) : ReadBytes(addr, len));
+        public string ReadUTF32String(IntPtr Address, int Length = 0)
+            => Encoding.UTF32.GetString(Length == 0 ? ReadNullTerminatedBytes(Address, 4) : ReadBytes(Address, Length));
 
-        public T Read<T>(ModulePointer offs) where T : struct => Read<T>(GetAddress(offs));
+        public T Read<T>(ModulePointer Pointer) where T : struct => Read<T>(GetAddress(Pointer));
 
         #region Faster Read functions for basic types
-        public uint ReadUInt(IntPtr addr) => BitConverter.ToUInt32(ReadBytes(addr, Marshal.SizeOf(typeof(uint))), 0);
+        public uint ReadUInt(IntPtr Address) => BitConverter.ToUInt32(ReadBytes(Address, Marshal.SizeOf(typeof(uint))), 0);
 
-        public int ReadInt(IntPtr addr) => BitConverter.ToInt32(ReadBytes(addr, Marshal.SizeOf(typeof(int))), 0);
+        public int ReadInt(IntPtr Address) => BitConverter.ToInt32(ReadBytes(Address, Marshal.SizeOf(typeof(int))), 0);
 
-        public ushort ReadUShort(IntPtr addr) => BitConverter.ToUInt16(ReadBytes(addr, Marshal.SizeOf(typeof(ushort))), 0);
+        public ushort ReadUShort(IntPtr Address) => BitConverter.ToUInt16(ReadBytes(Address, Marshal.SizeOf(typeof(ushort))), 0);
 
-        public short ReadShort(IntPtr addr) => BitConverter.ToInt16(ReadBytes(addr, Marshal.SizeOf(typeof(short))), 0);
+        public short ReadShort(IntPtr Address) => BitConverter.ToInt16(ReadBytes(Address, Marshal.SizeOf(typeof(short))), 0);
 
-        public ulong ReadULong(IntPtr addr) => BitConverter.ToUInt64(ReadBytes(addr, Marshal.SizeOf(typeof(ulong))), 0);
+        public ulong ReadULong(IntPtr Address) => BitConverter.ToUInt64(ReadBytes(Address, Marshal.SizeOf(typeof(ulong))), 0);
 
-        public long ReadLong(IntPtr addr) => BitConverter.ToInt64(ReadBytes(addr, Marshal.SizeOf(typeof(long))), 0);
+        public long ReadLong(IntPtr Address) => BitConverter.ToInt64(ReadBytes(Address, Marshal.SizeOf(typeof(long))), 0);
 
-        public byte ReadByte(IntPtr addr) => ReadBytes(addr, Marshal.SizeOf(typeof(byte)))[0];
+        public byte ReadByte(IntPtr Address) => ReadBytes(Address, Marshal.SizeOf(typeof(byte)))[0];
 
-        public sbyte ReadSByte(IntPtr addr) => (sbyte)ReadBytes(addr, Marshal.SizeOf(typeof(sbyte)))[0];
+        public sbyte ReadSByte(IntPtr Address) => (sbyte)ReadBytes(Address, Marshal.SizeOf(typeof(sbyte)))[0];
 
-        public float ReadSingle(IntPtr addr) => BitConverter.ToSingle(ReadBytes(addr, Marshal.SizeOf(typeof(float))), 0);
+        public float ReadSingle(IntPtr Address) => BitConverter.ToSingle(ReadBytes(Address, Marshal.SizeOf(typeof(float))), 0);
 
-        public double ReadDouble(IntPtr addr) => BitConverter.ToDouble(ReadBytes(addr, Marshal.SizeOf(typeof(float))), 0);
+        public double ReadDouble(IntPtr Address) => BitConverter.ToDouble(ReadBytes(Address, Marshal.SizeOf(typeof(float))), 0);
 
-        public IntPtr ReadPointer(IntPtr addr) => new IntPtr(ReadInt(addr));
+        public IntPtr ReadPointer(IntPtr Address) => new IntPtr(ReadInt(Address));
 
         #endregion
         #endregion
 
         #region Memory writing
-        public void WriteBytes(IntPtr addr, byte[] bytes)
+        public void WriteBytes(IntPtr Address, byte[] Data)
         {
             AllocationProtect originalProtection, tmpProtection;
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out originalProtection))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, Address, Data.Length, AllocationProtect.PAGE_EXECUTE_READWRITE, out originalProtection))
                 throw new MemoryException("Failed to set page protection before write in remote process");
 
             int numBytes;
-            if (!Kernel32.WriteProcessMemory(ProcessHandle, addr, bytes, bytes.Length, out numBytes) || numBytes != bytes.Length)
+            if (!Kernel32.WriteProcessMemory(ProcessHandle, Address, Data, Data.Length, out numBytes) || numBytes != Data.Length)
                 throw new MemoryException("Failed to write memory in remote process");
 
-            if (!Kernel32.VirtualProtectEx(ProcessHandle, addr, bytes.Length, originalProtection, out tmpProtection))
+            if (!Kernel32.VirtualProtectEx(ProcessHandle, Address, Data.Length, originalProtection, out tmpProtection))
                 throw new MemoryException("Failed to set page protection after write in remote process");
         }
 
-        public void Write<T>(IntPtr addr, T value)
+        public void Write<T>(IntPtr Address, T Value)
         {
-            var bytes = MagicHelpers.ObjectToBytes(value);
-            WriteBytes(addr, bytes);
+            var bytes = MagicHelpers.ObjectToBytes(Value);
+            WriteBytes(Address, bytes);
         }
 
-        public void WriteCString(IntPtr addr, string str, bool nullTerminated = true)
-            => WriteBytes(addr, Encoding.ASCII.GetBytes(nullTerminated ? str + '\0' : str));
+        public void WriteCString(IntPtr Address, string String, bool DoNullTermination = true)
+            => WriteBytes(Address, Encoding.ASCII.GetBytes(DoNullTermination ? String + '\0' : String));
 
-        public void WriteUTF8String(IntPtr addr, string str, bool nullTerminated = true)
-            => WriteBytes(addr, Encoding.UTF8.GetBytes(nullTerminated ? str + '\0' : str));
+        public void WriteUTF8String(IntPtr Address, string String, bool DoNullTermination = true)
+            => WriteBytes(Address, Encoding.UTF8.GetBytes(DoNullTermination ? String + '\0' : String));
 
-        public void WriteUTF16String(IntPtr addr, string str, bool nullTerminated = true)
-            => WriteBytes(addr, Encoding.Unicode.GetBytes(nullTerminated ? str + '\0' : str));
+        public void WriteUTF16String(IntPtr Address, string String, bool DoNullTermination = true)
+            => WriteBytes(Address, Encoding.Unicode.GetBytes(DoNullTermination ? String + '\0' : String));
 
-        public void WriteUTF32String(IntPtr addr, string str, bool nullTerminated = true)
-            => WriteBytes(addr, Encoding.UTF32.GetBytes(nullTerminated ? str + '\0' : str));
+        public void WriteUTF32String(IntPtr Address, string String, bool DoNullTermination = true)
+            => WriteBytes(Address, Encoding.UTF32.GetBytes(DoNullTermination ? String + '\0' : String));
 
-        public void Write<T>(ModulePointer offs, T value) where T : struct => Write<T>(GetAddress(offs), value);
+        public void Write<T>(ModulePointer Pointer, T Value) where T : struct => Write<T>(GetAddress(Pointer), Value);
 
         #region Faster Write functions for basic types
-        public void WriteUInt(IntPtr addr, uint value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteUInt(IntPtr Address, uint Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteInt(IntPtr addr, int value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteInt(IntPtr Address, int Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteUShort(IntPtr addr, ushort value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteUShort(IntPtr Address, ushort Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteShort(IntPtr addr, short value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteShort(IntPtr Address, short Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteULong(IntPtr addr, ulong value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteULong(IntPtr Address, ulong Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteLong(IntPtr addr, long value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteLong(IntPtr Address, long Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteByte(IntPtr addr, byte value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteByte(IntPtr Address, byte Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteSByte(IntPtr addr, sbyte value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteSByte(IntPtr Address, sbyte Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteSingle(IntPtr addr, float value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteSingle(IntPtr Address, float Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
 
-        public void WriteDouble(IntPtr addr, double value) => WriteBytes(addr, BitConverter.GetBytes(value));
+        public void WriteDouble(IntPtr Address, double Value) => WriteBytes(Address, BitConverter.GetBytes(Value));
         #endregion
         #endregion
 
         #region Memory allocators
-        public IntPtr AllocateMemory(int size)
+        public IntPtr AllocateMemory(int Size)
         {
-            var addr = Kernel32.VirtualAllocEx(ProcessHandle, IntPtr.Zero, size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
+            var addr = Kernel32.VirtualAllocEx(ProcessHandle, IntPtr.Zero, Size, AllocationType.Commit | AllocationType.Reserve, AllocationProtect.PAGE_EXECUTE_READWRITE);
             if (addr == 0)
                 throw new MemoryException("Failed to allocate memory in remote process");
 
             return new IntPtr(addr);
         }
 
-        public void FreeMemory(IntPtr addr)
+        public void FreeMemory(IntPtr Address)
         {
-            if (!Kernel32.VirtualFreeEx(ProcessHandle, addr, 0, FreeType.Release))
+            if (!Kernel32.VirtualFreeEx(ProcessHandle, Address, 0, FreeType.Release))
                 throw new MemoryException("Failed to free memory in remote process");
         }
 
-        public IntPtr AllocateCString(string str) => AllocateBytes(Encoding.ASCII.GetBytes(str));
+        public IntPtr AllocateCString(string String) => AllocateBytes(Encoding.ASCII.GetBytes(String));
 
-        public IntPtr AllocateUTF8String(string str) => AllocateBytes(Encoding.UTF8.GetBytes(str));
+        public IntPtr AllocateUTF8String(string String) => AllocateBytes(Encoding.UTF8.GetBytes(String));
 
-        public IntPtr AllocateUTF16String(string str) => AllocateBytes(Encoding.Unicode.GetBytes(str));
+        public IntPtr AllocateUTF16String(string String) => AllocateBytes(Encoding.Unicode.GetBytes(String));
 
-        public IntPtr AllocateUTF32String(string str) => AllocateBytes(Encoding.UTF32.GetBytes(str));
+        public IntPtr AllocateUTF32String(string String) => AllocateBytes(Encoding.UTF32.GetBytes(String));
 
-        public IntPtr AllocateBytes(byte[] bytes)
+        public IntPtr AllocateBytes(byte[] Data)
         {
-            var addr = AllocateMemory(bytes.Length);
-            WriteBytes(addr, bytes);
+            var addr = AllocateMemory(Data.Length);
+            WriteBytes(addr, Data);
             return addr;
         }
 
-        public IntPtr Allocate<T>(T obj)
+        public IntPtr Allocate<T>(T Object)
         {
             var size = Marshal.SizeOf(typeof(T));
             var addr = AllocateMemory(size);
-            Write<T>(addr, obj);
+            Write<T>(addr, Object);
             return addr;
         }
         #endregion
 
-        public T ExecuteRemoteCode<T>(byte[] bytes) where T : struct
+        public T ExecuteRemoteCode<T>(byte[] ByteCode) where T : struct
         {
-            var addr = AllocateBytes(bytes);
+            var addr = AllocateBytes(ByteCode);
             var exitCode = ExecuteRemoteCode<T>(addr);
 
             FreeMemory(addr);
@@ -399,12 +404,12 @@ namespace WhiteMagic
             return exitCode;
         }
 
-        public T ExecuteRemoteCode<T>(IntPtr addr) where T : struct
+        public T ExecuteRemoteCode<T>(IntPtr Address) where T : struct
         {
             lock ("codeExecution")
             {
                 int threadId;
-                var h = Kernel32.CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, addr, IntPtr.Zero, 0, out threadId);
+                var h = Kernel32.CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, Address, IntPtr.Zero, 0, out threadId);
                 if (h == IntPtr.Zero)
                     throw new MemoryException("Failed to create remote thread");
 
@@ -423,25 +428,31 @@ namespace WhiteMagic
             }
         }
 
-        public void Call(IntPtr addr, MagicConvention cv, params object[] args)
-            => Call<int>(addr, cv, args);
+        public T Call<T>(ModulePointer Pointer, MagicConvention CallingConvention, params object[] Arguments) where T : struct
+            => Call<T>(GetAddress(Pointer), CallingConvention, Arguments);
 
-        public T Call<T>(IntPtr addr, MagicConvention cv, params object[] args) where T : struct
+        public void Call(ModulePointer Pointer, MagicConvention CallingConvention, params object[] Arguments)
+            => Call(GetAddress(Pointer), CallingConvention, Arguments);
+
+        public void Call(IntPtr Address, MagicConvention CallingConvention, params object[] Arguments)
+            => Call<int>(Address, CallingConvention, Arguments);
+
+        public T Call<T>(IntPtr Address, MagicConvention CallingConvention, params object[] Arguments) where T : struct
         {
             using (var asm = new ManagedFasm())
             {
                 asm.Clear();
 
-                switch (cv)
+                switch (CallingConvention)
                 {
                     case MagicConvention.Cdecl:
                     {
                         asm.AddLine("push ebp");
-                        for (var i = args.Length - 1; i >= 0; --i)
-                            asm.AddLine("push {0}", args[i]);
-                        asm.AddLine("mov eax, {0}", addr);
+                        for (var i = Arguments.Length - 1; i >= 0; --i)
+                            asm.AddLine("push {0}", Arguments[i]);
+                        asm.AddLine("mov eax, {0}", Address);
                         asm.AddLine("call eax");
-                        for (var i = 0; i < args.Length; ++i)
+                        for (var i = 0; i < Arguments.Length; ++i)
                             asm.AddLine("pop ebp");
                         asm.AddLine("pop ebp");
 
@@ -450,55 +461,55 @@ namespace WhiteMagic
                     }
                     case MagicConvention.StdCall:
                     {
-                        for (var i = args.Length - 1; i >= 0; --i)
-                            asm.AddLine("push {0}", args[i]);
-                        asm.AddLine("mov eax, {0}", addr);
+                        for (var i = Arguments.Length - 1; i >= 0; --i)
+                            asm.AddLine("push {0}", Arguments[i]);
+                        asm.AddLine("mov eax, {0}", Address);
                         asm.AddLine("call eax");
                         asm.AddLine("retn");
                         break;
                     }
                     case MagicConvention.FastCall:
                     {
-                        if (args.Length > 0)
-                            asm.AddLine("mov ecx, {0}", args[0]);
-                        if (args.Length > 1)
-                            asm.AddLine("mov edx, {0}", args[1]);
-                        for (var i = args.Length - 1; i >= 2; --i)
-                            asm.AddLine("push {0}", args[i]);
-                        asm.AddLine("mov eax, {0}", addr);
+                        if (Arguments.Length > 0)
+                            asm.AddLine("mov ecx, {0}", Arguments[0]);
+                        if (Arguments.Length > 1)
+                            asm.AddLine("mov edx, {0}", Arguments[1]);
+                        for (var i = Arguments.Length - 1; i >= 2; --i)
+                            asm.AddLine("push {0}", Arguments[i]);
+                        asm.AddLine("mov eax, {0}", Address);
                         asm.AddLine("call eax");
                         asm.AddLine("retn");
                         break;
                     }
                     case MagicConvention.Register:
                     {
-                        if (args.Length > 0)
-                            asm.AddLine("mov eax, {0}", args[0]);
-                        if (args.Length > 1)
-                            asm.AddLine("mov edx, {0}", args[1]);
-                        if (args.Length > 2)
-                            asm.AddLine("mov ecx, {0}", args[2]);
-                        for (var i = 3; i < args.Length; ++i)
-                            asm.AddLine("push {0}", args[i]);
-                        asm.AddLine("mov ebx, {0}", addr);
+                        if (Arguments.Length > 0)
+                            asm.AddLine("mov eax, {0}", Arguments[0]);
+                        if (Arguments.Length > 1)
+                            asm.AddLine("mov edx, {0}", Arguments[1]);
+                        if (Arguments.Length > 2)
+                            asm.AddLine("mov ecx, {0}", Arguments[2]);
+                        for (var i = 3; i < Arguments.Length; ++i)
+                            asm.AddLine("push {0}", Arguments[i]);
+                        asm.AddLine("mov ebx, {0}", Address);
                         asm.AddLine("call ebx");
                         asm.AddLine("retn");
                         break;
                     }
                     case MagicConvention.ThisCall:
                     {
-                        if (args.Length > 0)
-                            asm.AddLine("mov ecx, {0}", args[0]);
-                        for (var i = args.Length - 1; i >= 1; --i)
-                            asm.AddLine("push {0}", args[i]);
-                        asm.AddLine("mov eax, {0}", addr);
+                        if (Arguments.Length > 0)
+                            asm.AddLine("mov ecx, {0}", Arguments[0]);
+                        for (var i = Arguments.Length - 1; i >= 1; --i)
+                            asm.AddLine("push {0}", Arguments[i]);
+                        asm.AddLine("mov eax, {0}", Address);
                         asm.AddLine("call eax");
                         asm.AddLine("retn");
                         break;
                     }
                     default:
                     {
-                        throw new MemoryException("Unhandled calling convention '{0}'", cv.ToString());
+                        throw new MemoryException("Unhandled calling convention '{0}'", CallingConvention.ToString());
                     }
                 }
 
@@ -506,15 +517,9 @@ namespace WhiteMagic
             }
         }
 
-        public T Call<T>(ModulePointer offs, MagicConvention cv, params object[] args) where T : struct
-            => Call<T>(GetAddress(offs), cv, args);
-
-        public void Call(ModulePointer offs, MagicConvention cv, params object[] args)
-            => Call(GetAddress(offs), cv, args);
-
-        public IntPtr GetThreadStartAddress(int threadId)
+        public IntPtr GetThreadStartAddress(int ThreadId)
         {
-            var hThread = Kernel32.OpenThread(ThreadAccess.QUERY_INFORMATION, false, threadId);
+            var hThread = Kernel32.OpenThread(ThreadAccess.QUERY_INFORMATION, false, ThreadId);
             if (hThread == IntPtr.Zero)
                 throw new MemoryException("Failed to open thread");
             var buf = new byte[4];
@@ -533,9 +538,9 @@ namespace WhiteMagic
             }
         }
 
-        public ModuleDump GetModuleDump(string name, bool Refresh = false)
+        public ModuleDump GetModuleDump(string ModuleName, bool Refresh = false)
         {
-            var moduleInfo = GetModule(name, Refresh);
+            var moduleInfo = GetModule(ModuleName, Refresh);
             if (moduleInfo == null)
                 return null;
 
@@ -579,34 +584,34 @@ namespace WhiteMagic
 
         public ProcessSuspender MakeSuspender() => new ProcessSuspender(this);
 
-        public IntPtr GetAddress(ModulePointer offs) => GetModuleAddress(offs.ModuleName).Add(offs.Offset);
+        public IntPtr GetAddress(ModulePointer Pointer) => GetModuleAddress(Pointer.ModuleName).Add(Pointer.Offset);
 
-        public IntPtr GetModuleAddress(string moduleName)
+        public IntPtr GetModuleAddress(string ModuleName)
         {
-            if (moduleName == string.Empty)
-                moduleName = Process.MainModule.ModuleName;
+            if (ModuleName == string.Empty)
+                ModuleName = Process.MainModule.ModuleName;
 
-            var Module = GetModule(moduleName);
+            var Module = GetModule(ModuleName);
             if (Module != null)
                 return Module.BaseAddress;
 
             lock ("process refresh")
             {
-                Module = GetModule(moduleName, true);
+                Module = GetModule(ModuleName, true);
                 if (Module != null)
                     return Module.BaseAddress;
 
-                return LoadModule(moduleName);
+                return LoadModule(ModuleName);
             }
         }
 
-        public IntPtr LoadModule(string name)
+        public IntPtr LoadModule(string ModuleName)
         {
             lock ("moduleLoad")
             {
-                var hModule = Kernel32.LoadLibraryA(name);
+                var hModule = Kernel32.LoadLibraryA(ModuleName);
                 if (hModule == IntPtr.Zero)
-                    throw new DebuggerException($"Failed to load {name} module");
+                    throw new DebuggerException($"Failed to load {ModuleName} module");
 
                 return hModule;
             }

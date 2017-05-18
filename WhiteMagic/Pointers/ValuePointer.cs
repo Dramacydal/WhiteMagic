@@ -1,17 +1,12 @@
 
 namespace WhiteMagic.Pointers
 {
-    public class ValuePointer<T> where T : struct
+    public class ValuePointer<T> : ModulePointer where T : struct
     {
-        public ModulePointer Pointer { get; }
+        public ValuePointer(string ModuleName, int Offset) : base(ModuleName, Offset) { }
 
-        public ValuePointer(ModulePointer Pointer)
-        {
-            this.Pointer = Pointer;
-        }
+        public T Read(MemoryHandler Memory) => Memory.Read<T>(this);
 
-        public T Read(MemoryHandler Memory) => Memory.Read<T>(Pointer);
-
-        public void Write(MemoryHandler Memory, T Value) => Memory.Write<T>(Pointer, Value);
+        public void Write(MemoryHandler Memory, T Value) => Memory.Write<T>(this, Value);
     }
 }

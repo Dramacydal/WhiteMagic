@@ -204,9 +204,9 @@ namespace WhiteMagic
             return Kernel32.CloseHandle(hToken);
         }
 
-        public static T ReinterpretObject<T>(object val) where T : struct
+        public static T ReinterpretObject<T>(object Object) where T : struct
         {
-            var h = GCHandle.Alloc(val, GCHandleType.Pinned);
+            var h = GCHandle.Alloc(Object, GCHandleType.Pinned);
             var t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
             h.Free();
 

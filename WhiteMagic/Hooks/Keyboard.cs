@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using WhiteMagic.WinAPI;
@@ -41,51 +40,27 @@ namespace WhiteMagic.Hooks
         {
         }
 
-        private bool LAltPressed { get; set; } = false;
-        private bool RAltPressed { get; set; } = false;
-        private bool LControlPressed { get; set; } = false;
-        private bool RControlPressed { get; set; } = false;
-        private bool LShiftPressed { get; set; } = false;
-        private bool RShiftPressed { get; set; } = false;
-
-        public Modifiers ModifiersState
-        {
-            get
-            {
-                if (!Installed)
-                    throw new Win32Exception("Keyboard hooks are not installed");
-
-                Modifiers state = Modifiers.None;
-                if (LAltPressed)
-                    state |= Modifiers.LAlt;
-                if (RAltPressed)
-                    state |= Modifiers.RAlt;
-                if (LControlPressed)
-                    state |= Modifiers.LCtrl;
-                if (RControlPressed)
-                    state |= Modifiers.RCtrl;
-                if (LShiftPressed)
-                    state |= Modifiers.LShift;
-                if (RShiftPressed)
-                    state |= Modifiers.RShift;
-
-                return state;
-            }
-        }
+        public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
         private void StoreSpecialKeyState(WM Event, KeyEventInfo info)
         {
             var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
+            Modifiers Flag = Modifiers.None;
             switch (info.VirtualKey)
             {
-                case Keys.LMenu: LAltPressed = toggle; break;
-                case Keys.RMenu: RAltPressed = toggle; break;
-                case Keys.LControlKey: LControlPressed = toggle; break;
-                case Keys.RControlKey: RControlPressed = toggle; break;
-                case Keys.LShiftKey: LShiftPressed = toggle; break;
-                case Keys.RShiftKey: RShiftPressed = toggle; break;
-                default: break;
+                case Keys.LMenu: Flag = Modifiers.LAlt; break;
+                case Keys.RMenu: Flag = Modifiers.RAlt; break;
+                case Keys.LControlKey: Flag = Modifiers.LCtrl; break;
+                case Keys.RControlKey: Flag = Modifiers.RCtrl; break;
+                case Keys.LShiftKey: Flag = Modifiers.LShift; break;
+                case Keys.RShiftKey: Flag = Modifiers.RShift; break;
+                default: return;
             }
+
+            if (toggle)
+                ModifiersState |= Flag;
+            else
+                ModifiersState &= ~Flag;
         }
 
         public override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)

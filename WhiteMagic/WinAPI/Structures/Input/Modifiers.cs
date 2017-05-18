@@ -17,4 +17,11 @@ namespace WhiteMagic.WinAPI.Structures.Input
         Ctrl = LCtrl | RCtrl,
         Shift = LShift | RShift
     }
+
+    public static class ModifiersExtension
+    {
+        public static bool AltPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Alt);
+        public static bool CtrlPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Ctrl);
+        public static bool ShiftPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Shift);
+    }
 }
