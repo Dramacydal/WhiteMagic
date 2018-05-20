@@ -61,10 +61,13 @@
     <Compile Include="Input\ModifierToggler.cs" />
     <Compile Include="Input\ScreenTranslator.cs" />
     <Compile Include="Input\WindowKeyboardInput.cs" />
+    <Compile Include="Input\WindowMouseInput.cs" />
     <Compile Include="MemoryDump.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
     <Compile Include="Patterns\RegexExtensions.cs" />
+    <Compile Include="Processes\RemoteProcess.cs" />
+    <Compile Include="Processes\RemoteWindow.cs" />
     <Compile Include="Suspender.cs" />
     <Compile Include="Pointers\ValuePointer.cs" />
     <Compile Include="WinAPI\Advapi32.cs" />
@@ -119,6 +122,7 @@
   <ItemGroup>
     <None Include=".editorconfig" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

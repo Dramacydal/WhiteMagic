@@ -1,5 +1,6 @@
 ﻿using System;
 using WhiteMagic.Input;
+using WhiteMagic.Processes;
 
 namespace WhiteMagic
 {
@@ -12,7 +13,13 @@ namespace WhiteMagic
             public static GlobalMouseInput Mouse { get; } = new GlobalMouseInput();
         }
 
-        public static WindowKeyboardInput CreateWindowInput(IntPtr Handle, bool Recursive = true)
-            => new WindowKeyboardInput(Handle, Recursive);
+        public static class Window
+        {
+            public static WindowKeyboardInput GetKeyboard(RemoteWindow Window, bool Recursive)
+                => Window.KeyboardInput;
+
+            public static WindowMouseInput GetMouse(RemoteWindow Window, bool Recursive)
+                => Window.MouseInput;
+        }
     }
 }

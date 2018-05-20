@@ -58,6 +58,24 @@ namespace WhiteMagic
             }
         }
 
+        public static Process FindProcessById(int ProcesId)
+        {
+            Process process;
+            try
+            {
+                process = Process.GetProcessById(ProcesId);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
+            if (!Kernel32.Is32BitProcess(process.Handle))
+                throw new MagicException("Can't operate with x64 processes");
+
+            return process;
+        }
+
         #region String parameters methods
         public static IEnumerable<Process> FindProcessesByInternalName(string Name)
             => FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
