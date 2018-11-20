@@ -50,9 +50,18 @@ namespace WhiteMagic
                     continue;
 
                 Kernel32.CloseHandle(Handle);
-                var process = Process.GetProcessById(id);
-                if (process == null)
+
+                Process process = null;
+                try
+                {
+                    process = Process.GetProcessById(id);
+                    if (process == null)
+                        continue;
+                }
+                catch (Exception)
+                {
                     continue;
+                }
 
                 yield return process;
             }
