@@ -20,8 +20,8 @@ namespace WhiteMagic.WinAPI.Structures.Input
 
     public static class ModifiersExtension
     {
-        public static bool AltPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Alt);
-        public static bool CtrlPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Ctrl);
-        public static bool ShiftPressed(this Modifiers Modifiers) => Modifiers.HasFlag(Modifiers.Shift);
+        public static bool AltPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Alt) != Modifiers.None;
+        public static bool CtrlPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Ctrl) != Modifiers.None;
+        public static bool ShiftPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Shift) != Modifiers.None;
     }
 }

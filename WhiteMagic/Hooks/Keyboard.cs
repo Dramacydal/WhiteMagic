@@ -18,18 +18,19 @@ namespace WhiteMagic.Hooks
             this.Event = Event;
             this.Hook = Hook;
             this.Raw = Raw;
-            this.WasPressed = WasPressed;
+            this.PreviouslyPressed = WasPressed;
         }
 
         public Keys VirtualKey => (Keys)Raw.vkCode;
         public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
-        public bool Up => Event == WM.KEYUP || Event == WM.SYSKEYUP;
+        public bool IsKeyUp => Event == WM.KEYUP || Event == WM.SYSKEYUP;
+        public bool IsKeyDown => !IsKeyUp;
         public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags).HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED);
-        public bool WasPressed { get; } = false;
+        public bool PreviouslyPressed { get; } = false;
 
         public Modifiers ModifiersState => Hook.ModifiersState;
         
-        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {Up} WasPressed: {WasPressed}");
+        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed}");
     }
 
     public delegate bool KeyboardMessageHandler(KeyEventInfo Info);

@@ -43,8 +43,25 @@ namespace WhiteMagic.Hooks
             }
         }
 
-        public int X => Event == MouseEvent.Move || Event == MouseEvent.Button ? Raw.ptX : -1;
-        public int Y => Event == MouseEvent.Move || Event == MouseEvent.Button ? Raw.ptY : -1;
+        public int X
+        {
+            get
+            {
+                if (Event == MouseEvent.Move || Event == MouseEvent.Button)
+                    return Raw.ptX;
+                else return -1;
+            }
+        }
+
+        public int Y
+        {
+            get
+            {
+                if (Event == MouseEvent.Move || Event == MouseEvent.Button)
+                    return Raw.ptY;
+                else return -1;
+            }
+        }
 
         public struct ClickInfo
         {
