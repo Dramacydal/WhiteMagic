@@ -31,7 +31,7 @@ namespace WhiteMagic.Input
                 throw new Win32Exception();
         }
 
-        public override void SendKey(Keys Key, bool Up = false)
+        public override void SendKey(Keys Key, bool Up = false, int ExtraInfo = 0)
         {
             var inp = new INPUT();
             inp.Type = InputType.KEYBOARD;
@@ -39,7 +39,7 @@ namespace WhiteMagic.Input
             inp.Union.ki.wVk = (short)Key;
             inp.Union.ki.wScan = 0;
             inp.Union.ki.time = 0;
-            inp.Union.ki.dwExtraInfo = IntPtr.Zero;
+            inp.Union.ki.dwExtraInfo = new IntPtr(ExtraInfo);
 
             if (User32.SendInput(1, ref inp, INPUT.Size) != 1)
                 throw new Win32Exception();

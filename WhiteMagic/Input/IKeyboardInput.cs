@@ -8,7 +8,7 @@ namespace WhiteMagic.Input
     {
         public TimeSpan KeypressTime = TimeSpan.FromMilliseconds(50);
 
-        public abstract void SendKey(Keys Key, bool Up = false);
+        public abstract void SendKey(Keys Key, bool Up = false, int ExtraInfo = 0);
         public abstract void KeyPress(Keys Key, TimeSpan KeyPressTime);
         public abstract void SendChar(char c);
 

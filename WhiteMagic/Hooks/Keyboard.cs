@@ -25,12 +25,14 @@ namespace WhiteMagic.Hooks
         public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
         public bool IsKeyUp => Event == WM.KEYUP || Event == WM.SYSKEYUP;
         public bool IsKeyDown => !IsKeyUp;
-        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags).HasFlag(KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED);
+        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED) != 0;
+        public bool IsInjected => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & (KBDLLHOOKSTRUCT.LLFlags.LLKHF_INJECTED)) != 0;
+        public int ExtraInfo => Raw.dwExtraInfo.ToInt32();
         public bool PreviouslyPressed { get; } = false;
 
         public Modifiers ModifiersState => Hook.ModifiersState;
         
-        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed}");
+        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed} Injected: {IsInjected} ExtraInfo: {Raw.dwExtraInfo.ToInt32()}");
     }
 
     public delegate bool KeyboardMessageHandler(KeyEventInfo Info);

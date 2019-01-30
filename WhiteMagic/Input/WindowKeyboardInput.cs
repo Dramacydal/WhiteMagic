@@ -52,7 +52,7 @@ namespace WhiteMagic.Input
             }
         }
 
-        public override void SendKey(Keys Key, bool Up = false)
+        public override void SendKey(Keys Key, bool Up = false, int ExtraInfo = 0)
         {
             SendKeyToWindow(Window.Handle, Key, Up, Recursive);
         }
