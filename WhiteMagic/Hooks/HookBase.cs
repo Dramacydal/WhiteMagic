@@ -1,31 +1,44 @@
 ﻿using System;
-using System.Collections.Generic;
-using WhiteMagic.WinAPI.Structures.Hooks;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic.Hooks
 {
-    public abstract class HookBase<T>
+    public abstract class HookBase<T> where T : HookEvent
     {
         private HookType Type;
 
-        public HookBase(HookType Type)
+        internal HookBase(HookType Type)
         {
             this.Type = Type;
         }
 
-        public abstract bool Dispatch(int code, IntPtr wParam, IntPtr lParam);
+        internal abstract bool Dispatch(int code, IntPtr wParam, IntPtr lParam);
 
-        protected List<T> Handlers = new List<T>();
+        public bool IsInstalled => HookManager.IsHookInstalled(Type);
 
-        public bool Installed => Handlers.Count > 0;
-
-        public void AttachCallback(T Handler)
+        public void Install()
         {
             HookManager.InstallHook(Type);
-
-            Handlers.Add(Handler);
         }
 
-        public void Remove() => Handlers.Clear();
+        public void Uninstall(bool RemoveHandlers = true)
+        {
+            HookManager.Uninstall(Type);
+            if (RemoveHandlers)
+                this.RemoveHandlers();
+        }
+
+        protected void Dispatch(T e)
+        {
+            Handlers(e);
+        }
+
+        public event Action<T> Handlers;
+
+        private void RemoveHandlers()
+        {
+            foreach (var d in Handlers.GetInvocationList())
+                Handlers -= (Action<T>)d;
+        }
     }
 }

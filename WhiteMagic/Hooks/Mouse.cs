@@ -1,30 +1,30 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using WhiteMagic.WinAPI.Structures.Hooks;
+using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.Hooks
 {
-    public class MouseEventInfo
+    public class MouseEvent : HookEvent
     {
         private WM WMEvent;
         private MSLLHOOKSTRUCT Raw;
 
-        public MouseEventInfo(WM Event, MSLLHOOKSTRUCT Raw)
+        public MouseEvent(WM Event, MSLLHOOKSTRUCT Raw)
         {
             this.Raw = Raw;
             this.WMEvent = Event;
         }
 
-        public MouseEvent Event
+        public MouseEventType Event
         {
             get
             {
                 switch (WMEvent)
                 {
                     case WM.MOUSEMOVE:
-                        return MouseEvent.Move;
+                        return MouseEventType.Move;
                     case WM.LBUTTONDOWN:
                     case WM.LBUTTONUP:
                     case WM.RBUTTONDOWN:
@@ -33,13 +33,13 @@ namespace WhiteMagic.Hooks
                     case WM.MBUTTONUP:
                     case WM.XBUTTONDOWN:
                     case WM.XBUTTONUP:
-                        return MouseEvent.Button;
+                        return MouseEventType.Button;
                     case WM.MOUSEWHEEL:
                     case WM.MOUSEHWHEEL:
-                        return MouseEvent.Wheel;
+                        return MouseEventType.Wheel;
                 }
 
-                return MouseEvent.None;
+                return MouseEventType.None;
             }
         }
 
@@ -47,7 +47,7 @@ namespace WhiteMagic.Hooks
         {
             get
             {
-                if (Event == MouseEvent.Move || Event == MouseEvent.Button)
+                if (Event == MouseEventType.Move || Event == MouseEventType.Button)
                     return Raw.ptX;
                 else return -1;
             }
@@ -57,7 +57,7 @@ namespace WhiteMagic.Hooks
         {
             get
             {
-                if (Event == MouseEvent.Move || Event == MouseEvent.Button)
+                if (Event == MouseEventType.Move || Event == MouseEventType.Button)
                     return Raw.ptY;
                 else return -1;
             }
@@ -82,7 +82,7 @@ namespace WhiteMagic.Hooks
         {
             get
             {
-                if (Event != MouseEvent.Button)
+                if (Event != MouseEventType.Button)
                     return new ClickInfo(MouseButtons.None, false);
 
                 switch (WMEvent)
@@ -116,7 +116,7 @@ namespace WhiteMagic.Hooks
         {
             get
             {
-                if (Event != MouseEvent.Wheel)
+                if (Event != MouseEventType.Wheel)
                     return ScrollDirection.None;
 
                 var delta = Raw.mouseData >> 16;
@@ -139,18 +139,20 @@ namespace WhiteMagic.Hooks
             var result = $"Event: {Event}";
             switch (Event)
             {
-                case MouseEvent.Move:
+                case MouseEventType.Move:
                     result += $", X: {X}, Y: {Y}";
                     break;
-                case MouseEvent.Button:
+                case MouseEventType.Button:
                     result += $", Button: {Click.Button}";
                     if (Click.ButtonDown)
                         result += ", Pressed";
                     else
                         result += ", Released";
                     break;
-                case MouseEvent.Wheel:
+                case MouseEventType.Wheel:
                     result += $", Direction: {ScrollDirection}";
+                    break;
+                default:
                     break;
             }
 
@@ -158,27 +160,25 @@ namespace WhiteMagic.Hooks
         }
     }
 
-    public delegate bool MouseMessageHandler(MouseEventInfo Info);
-
-    public class Mouse : HookBase<MouseMessageHandler>
+    public class Mouse : HookBase<MouseEvent>
     {
         public Mouse() : base(HookType.WH_MOUSE_LL)
         {
         }
 
-        public override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
+        internal override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
         {
             if (code != 0)
                 return true;
 
-            var Event = (WM)wParam.ToInt32();
+            var WMEvent = (WM)wParam.ToInt32();
 
             var raw = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-            var EventInfo = new MouseEventInfo(Event, raw);
+            var Event = new MouseEvent(WMEvent, raw);
 
-            foreach (var Handler in Handlers)
-                if (!Handler(EventInfo))
-                    return false;
+            Dispatch(Event);
+            if (Event.Cancel)
+                return false;
 
             return true;
         }

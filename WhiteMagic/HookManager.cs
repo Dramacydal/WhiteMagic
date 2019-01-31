@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using WhiteMagic.Hooks;
 using WhiteMagic.WinAPI;
-using WhiteMagic.WinAPI.Structures.Hooks;
+using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic
 {
     public static class HookManager
     {
-        public static Keyboard KeyboardHooks { get; } = new Keyboard();
-        public static Mouse MouseHooks { get; } = new Mouse();
+        public static Keyboard KeyboardHandler { get; } = new Keyboard();
+        public static Mouse MouseHandler { get; } = new Mouse();
 
         private const string HookContainerLock = "HookContainerLock";
 
@@ -34,13 +35,13 @@ namespace WhiteMagic
             {
                 case HookType.WH_KEYBOARD_LL:
                 {
-                    if (!KeyboardHooks.Dispatch(code, wParam, lParam))
+                    if (!KeyboardHandler.Dispatch(code, wParam, lParam))
                         return 1;
                     break;
                 }
                 case HookType.WH_MOUSE_LL:
                 {
-                    if (!MouseHooks.Dispatch(code, wParam, lParam))
+                    if (!MouseHandler.Dispatch(code, wParam, lParam))
                         return 1;
                     break;
                 }
@@ -53,35 +54,41 @@ namespace WhiteMagic
 
         private static Dictionary<HookType, IntPtr> HooksHandlesByType = new Dictionary<HookType, IntPtr>();
 
-        public static void InstallHook(HookType Type)
+        internal static bool IsHookInstalled(HookType Type)
         {
             lock (HookContainerLock)
             {
-                if (!HooksHandlesByType.ContainsKey(Type))
+                return HooksHandlesByType.ContainsKey(Type);
+            }
+        }
+
+        internal static void InstallHook(HookType Type)
+        {
+            if (IsHookInstalled(Type))
+                return;
+
+            lock (HookContainerLock)
+            {
+                using (var process = Process.GetCurrentProcess())
+                using (var currentModule = process.MainModule)
                 {
-                    using (var process = Process.GetCurrentProcess())
-                    using (var currentModule = process.MainModule)
-                    {
-                        HooksHandlesByType[Type] = User32.SetWindowsHookEx(Type,
-                            GetHookDelegate(Type),
-                            Kernel32.GetModuleHandle(currentModule.ModuleName),
-                            0);
-                    }
+                    HooksHandlesByType[Type] = User32.SetWindowsHookEx(Type,
+                        GetHookDelegate(Type),
+                        Kernel32.GetModuleHandle(currentModule.ModuleName),
+                        0);
                 }
             }
         }
 
-        public static void Uninstall()
+        internal static void Uninstall(HookType Type)
         {
+            if (!IsHookInstalled(Type))
+                return;
+
             lock (HookContainerLock)
             {
-                KeyboardHooks.Remove();
-                MouseHooks.Remove();
-
-                foreach (var Handle in HooksHandlesByType)
-                    User32.UnhookWindowsHookEx(Handle.Value);
-
-                HooksHandlesByType.Clear();
+                User32.UnhookWindowsHookEx(HooksHandlesByType[Type]);
+                HooksHandlesByType.Remove(Type);
             }
         }
     }

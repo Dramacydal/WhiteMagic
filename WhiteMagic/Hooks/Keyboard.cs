@@ -2,18 +2,18 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using WhiteMagic.WinAPI;
-using WhiteMagic.WinAPI.Structures.Hooks;
+using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.Hooks
 {
-    public class KeyEventInfo
+    public class KeyboardEvent : HookEvent
     {
         private KBDLLHOOKSTRUCT Raw;
         private Keyboard Hook;
         private WM Event;
 
-        public KeyEventInfo(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook, bool WasPressed)
+        public KeyboardEvent(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook, bool WasPressed)
         {
             this.Event = Event;
             this.Hook = Hook;
@@ -35,9 +35,7 @@ namespace WhiteMagic.Hooks
         public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed} Injected: {IsInjected} ExtraInfo: {Raw.dwExtraInfo.ToInt32()}");
     }
 
-    public delegate bool KeyboardMessageHandler(KeyEventInfo Info);
-
-    public class Keyboard : HookBase<KeyboardMessageHandler>
+    public class Keyboard : HookBase<KeyboardEvent>
     {
         public Keyboard() : base(HookType.WH_KEYBOARD_LL)
         {
@@ -45,7 +43,7 @@ namespace WhiteMagic.Hooks
 
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
-        private void StoreSpecialKeyState(WM Event, KeyEventInfo info)
+        private void StoreSpecialKeyState(WM Event, KeyboardEvent info)
         {
             var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
             Modifiers Flag = Modifiers.None;
@@ -66,12 +64,12 @@ namespace WhiteMagic.Hooks
                 ModifiersState &= ~Flag;
         }
 
-        public override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
+        internal override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
         {
             if (code != 0)
                 return true;
 
-            var ev = (WM)wParam.ToUInt32();
+            var wmEvent = (WM)wParam.ToUInt32();
 
             try
             {
@@ -79,13 +77,13 @@ namespace WhiteMagic.Hooks
 
                 var state = User32.GetAsyncKeyState(str.vkCode);
 
-                var keyInfo = new KeyEventInfo(ev, str, this, (state & 0x8000) != 0);
+                var Event = new KeyboardEvent(wmEvent, str, this, (state & 0x8000) != 0);
 
-                StoreSpecialKeyState(ev, keyInfo);
+                StoreSpecialKeyState(wmEvent, Event);
 
-                foreach (var Handler in Handlers)
-                    if (!Handler(keyInfo))
-                        return false;
+                Dispatch(Event);
+                if (Event.Cancel)
+                    return false;
             }
             catch (Exception)
             {

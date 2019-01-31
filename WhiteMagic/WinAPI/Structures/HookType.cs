@@ -1,7 +1,8 @@
-﻿namespace WhiteMagic.WinAPI.Structures.Hooks
+﻿namespace WhiteMagic.WinAPI.Structures
 {
     public enum HookType : int
     {
+        None = -1,
         WH_JOURNALRECORD = 0,
         WH_JOURNALPLAYBACK = 1,
         WH_KEYBOARD = 2,

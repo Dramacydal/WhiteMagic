@@ -50,9 +50,10 @@
     <Compile Include="ContextWrapper.cs" />
     <Compile Include="HookManager.cs" />
     <Compile Include="Hooks\HookBase.cs" />
+    <Compile Include="Hooks\HookEvent.cs" />
     <Compile Include="Hooks\Keyboard.cs" />
     <Compile Include="Hooks\Mouse.cs" />
-    <Compile Include="Hooks\MouseEvent.cs" />
+    <Compile Include="Hooks\MouseEventType.cs" />
     <Compile Include="InputManager.cs" />
     <Compile Include="Input\GlobalKeyboardInput.cs" />
     <Compile Include="Input\GlobalMouseInput.cs" />
@@ -82,7 +83,7 @@
     <Compile Include="WinAPI\Structures\DebugEvent.cs" />
     <Compile Include="WinAPI\Structures\ErrorCodes.cs" />
     <Compile Include="WinAPI\Structures\FreeType.cs" />
-    <Compile Include="Hooks\HookType.cs" />
+    <Compile Include="WinAPI\Structures\HookType.cs" />
     <Compile Include="WinAPI\Structures\Input\Input.cs" />
     <Compile Include="WinAPI\Structures\Input\MapVirtualKeyMapTypes.cs" />
     <Compile Include="WinAPI\Structures\Input\Modifiers.cs" />

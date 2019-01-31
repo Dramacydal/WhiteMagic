@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 using WhiteMagic.WinAPI.Structures;
-using WhiteMagic.WinAPI.Structures.Hooks;
 using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.WinAPI

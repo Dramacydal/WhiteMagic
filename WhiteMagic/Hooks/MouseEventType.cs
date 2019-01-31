@@ -1,6 +1,6 @@
 ﻿namespace WhiteMagic.Hooks
 {
-    public enum MouseEvent
+    public enum MouseEventType
     {
         None = 0,
         Move = 1,
