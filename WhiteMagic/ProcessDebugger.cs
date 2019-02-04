@@ -174,7 +174,7 @@ namespace WhiteMagic
                                 throw new DebuggerException("Failed to open thread");
 
                             var Context = new CONTEXT();
-                            Context.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_FULL;
+                            Context.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
                             if (!Kernel32.GetThreadContext(hThread, Context))
                                 throw new DebuggerException("Failed to get thread context");
 

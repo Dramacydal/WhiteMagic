@@ -130,7 +130,7 @@ namespace WhiteMagic.WinAPI.Structures
             set { Edi = Edi & 0xFFFF0000 | value; }
         }
 
-        public uint ContextFlags; //set this to an appropriate value
+        public CONTEXT_FLAGS ContextFlags; //set this to an appropriate value
         // Retrieved by CONTEXT_DEBUG_REGISTERS
         public uint Dr0;
         public uint Dr1;

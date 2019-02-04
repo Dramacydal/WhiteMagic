@@ -129,8 +129,7 @@ namespace WhiteMagic.WinAPI
             if (pKernel32 == IntPtr.Zero)
                 throw new MemoryException("Failed to get kernel32.dll module handle");
 
-            var procAddress = GetProcAddress(pKernel32, "IsWow64Process");
-            Is32BitSystem = procAddress == IntPtr.Zero;
+            Is32BitSystem = GetProcAddress(pKernel32, "IsWow64Process") == IntPtr.Zero;
         }
 
         public static bool Is32BitProcess(IntPtr hProcess)
@@ -138,8 +137,7 @@ namespace WhiteMagic.WinAPI
             if (Is32BitSystem)
                 return true;
 
-            bool isWow64;
-            return IsWow64Process(hProcess, out isWow64) && isWow64;
+            return IsWow64Process(hProcess, out bool isWow64) && isWow64;
         }
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]

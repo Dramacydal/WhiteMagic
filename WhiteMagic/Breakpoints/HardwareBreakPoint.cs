@@ -18,8 +18,21 @@ namespace WhiteMagic.Breakpoints
         All = Bp0 | Bp1 | Bp2 | Bp3
     }
 
-    public class HardwareBreakPoint
+    public abstract class HardwareBreakPoint
     {
+        public BreakpointCondition Condition { get; }
+        public bool IsSet => Address != IntPtr.Zero;
+        public IntPtr Address { get; private set; } = IntPtr.Zero;
+
+        public ModulePointer Pointer { get; }
+
+        
+        protected MemoryHandler Memory { get; private set; }
+
+        private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();
+
+        protected readonly int Length;
+
         public HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
         {
             if (Condition == BreakpointCondition.Code)
@@ -71,12 +84,11 @@ namespace WhiteMagic.Breakpoints
             // make sure this breakpoint isn't already set
             if (AffectedThreads.ContainsKey(ThreadId))
                 return;
-                //Console.WriteLine("Thread {0} already affected", threadId);
 
             var cxt = new CONTEXT();
 
             // The only registers we care about are the debug registers
-            cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+            cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
             if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
@@ -147,7 +159,7 @@ namespace WhiteMagic.Breakpoints
         {
             var cxt = new CONTEXT();
             // The only registers we care about are the debug registers
-            cxt.ContextFlags = (uint)CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+            cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
             if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
@@ -162,24 +174,17 @@ namespace WhiteMagic.Breakpoints
                 throw new BreakPointException("Failed to set thread context");
         }
 
-        public virtual bool HandleException(ContextWrapper Wrapper) { return false; }
+        /// <summary>
+        /// Handles breakpoint trigger
+        /// </summary>
+        /// <param name="Wrapper"></param>
+        /// <returns>If true, modified context will be set to thread</returns>
+        public abstract bool HandleException(ContextWrapper Wrapper);
 
         protected static void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
         {
             var mask = (1u << bits) - 1; // e.g. 1 becomes 0001, 2 becomes 0011, 3 becomes 0111
             dw = (dw & ~(mask << lowBit)) | (newValue << lowBit);
         }
-
-        public ModulePointer Pointer { get; }
-
-        public BreakpointCondition Condition { get; }
-        protected MemoryHandler Memory { get; private set; }
-
-        public bool IsSet => Address != IntPtr.Zero;
-        public IntPtr Address { get; private set; } = IntPtr.Zero;
-
-        private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();
-
-        protected readonly int Length;
     }
 }
