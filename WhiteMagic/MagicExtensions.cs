@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using WhiteMagic.Modules;
+using WhiteMagic.Processes;
 
 namespace WhiteMagic
 {
@@ -33,7 +34,7 @@ namespace WhiteMagic
 
         public static IntPtr Subtract(this IntPtr Pointer, IntPtr Pointer2) => IntPtr.Subtract(Pointer, Pointer2.ToInt32());
 
-        public static string GetVersionInfo(this Process Process)
+        public static string GetVersionInfo(this RemoteProcess Process)
         {
             return string.Format("{0} {1}.{2}.{3} {4}",
                     Process.MainModule.FileVersionInfo.FileDescription,

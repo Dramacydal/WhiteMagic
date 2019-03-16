@@ -6,6 +6,7 @@ using System.Linq;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.Breakpoints;
+using WhiteMagic.Processes;
 
 namespace WhiteMagic
 {
@@ -20,7 +21,7 @@ namespace WhiteMagic
 
         public bool IsDebugging { get; protected set; }
         public bool IsDetached { get; protected set; }
-        public bool HasExited => Process.HasExited;
+        public bool HasExited => !Process.IsValid;
 
         public List<HardwareBreakPoint> Breakpoints { get; protected set; } = new List<HardwareBreakPoint>();
 
@@ -28,7 +29,7 @@ namespace WhiteMagic
         {
         }
 
-        public ProcessDebugger(Process process) : base(process)
+        public ProcessDebugger(RemoteProcess process) : base(process)
         {
         }
 
@@ -120,7 +121,7 @@ namespace WhiteMagic
             IsDetached = true;
 
             RefreshMemory();
-            if (Process.HasExited)
+            if (HasExited)
                 return;
 
             RemoveBreakPoints();

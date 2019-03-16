@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using WhiteMagic.Processes;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Process;
@@ -24,7 +25,7 @@ namespace WhiteMagic
         /// order not to deal with exceptions
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<Process> EnumerateProcesses()
+        public static IEnumerable<RemoteProcess> EnumerateProcesses()
         {
             var arraySize = 1024u;
             var arrayBytesSize = arraySize * sizeof(uint);
@@ -63,11 +64,11 @@ namespace WhiteMagic
                     continue;
                 }
 
-                yield return process;
+                yield return new RemoteProcess(process);
             }
         }
 
-        public static Process FindProcessById(int ProcesId)
+        public static RemoteProcess FindProcessById(int ProcesId)
         {
             Process process;
             try
@@ -82,33 +83,33 @@ namespace WhiteMagic
             if (!Kernel32.Is32BitProcess(process.Handle))
                 throw new MagicException("Can't operate with x64 processes");
 
-            return process;
+            return new RemoteProcess(process);
         }
 
         #region String parameters methods
-        public static IEnumerable<Process> FindProcessesByInternalName(string Name)
+        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(string Name)
             => FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static IEnumerable<Process> FindProcessesByProductName(string Name)
+        public static IEnumerable<RemoteProcess> FindProcessesByProductName(string Name)
             => FindProcessesByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static IEnumerable<Process> FindProcessesByName(string Name)
+        public static IEnumerable<RemoteProcess> FindProcessesByName(string Name)
             => FindProcessesByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static Process FindProcessByName(string Name)
+        public static RemoteProcess FindProcessByName(string Name)
             => FindProcessByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static Process FindProcessByInternalName(string Name)
+        public static RemoteProcess FindProcessByInternalName(string Name)
             => FindProcessByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static Process FindProcessByProductName(string Name)
+        public static RemoteProcess FindProcessByProductName(string Name)
             => FindProcessByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
 
-        public static Process SelectProcess(string Name)
+        public static RemoteProcess SelectProcess(string Name)
             => SelectProcess(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
         #endregion
 
-        public static IEnumerable<Process> FindProcessesByInternalName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(Regex Pattern)
         {
             return EnumerateProcesses().Where(process =>
             {
@@ -125,7 +126,7 @@ namespace WhiteMagic
             });
         }
 
-        public static IEnumerable<Process> FindProcessesByProductName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByProductName(Regex Pattern)
         {
             return EnumerateProcesses().Where(process =>
             {
@@ -135,25 +136,25 @@ namespace WhiteMagic
             });
         }
 
-        public static IEnumerable<Process> FindProcessesByName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByName(Regex Pattern)
         {
             return EnumerateProcesses().Where(process => 
                 {
                     return Kernel32.Is32BitProcess(process.Handle) &&
-                        Pattern.IsMatch(process.ProcessName);
+                        Pattern.IsMatch(process.Name);
                 });
         }
 
-        public static Process FindProcessByName(Regex Pattern)
+        public static RemoteProcess FindProcessByName(Regex Pattern)
             => FindProcessesByName(Pattern).FirstOrDefault();
 
-        public static Process FindProcessByInternalName(Regex Pattern)
+        public static RemoteProcess FindProcessByInternalName(Regex Pattern)
             => FindProcessesByInternalName(Pattern).FirstOrDefault();
 
-        public static Process FindProcessByProductName(Regex Pattern)
+        public static RemoteProcess FindProcessByProductName(Regex Pattern)
             => FindProcessesByProductName(Pattern).FirstOrDefault();
 
-        public static Process SelectProcess(Regex Pattern)
+        public static RemoteProcess SelectProcess(Regex Pattern)
         {
             for (; ; )
             {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using WhiteMagic.Hooks;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;

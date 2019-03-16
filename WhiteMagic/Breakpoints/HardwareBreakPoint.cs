@@ -55,13 +55,12 @@ namespace WhiteMagic.Breakpoints
         {
             this.Memory = Memory;
             Memory.RefreshMemory();
-            var process = Memory.Process;
 
             Address = Memory.GetAddress(Pointer);
             if (Address == null)
                 return false;
 
-            foreach (ProcessThread th in process.Threads)
+            foreach (var th in Memory.Process.Threads)
             {
                 if (AffectedThreads.ContainsKey(th.Id))
                     continue;
@@ -125,9 +124,8 @@ namespace WhiteMagic.Breakpoints
         public void UnSet(MemoryHandler Memory)
         {
             Memory.RefreshMemory();
-            var process = Memory.Process;
 
-            foreach (ProcessThread th in process.Threads)
+            foreach (var th in Memory.Process.Threads)
             {
                 if (!AffectedThreads.ContainsKey(th.Id))
                     continue;

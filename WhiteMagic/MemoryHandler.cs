@@ -9,6 +9,7 @@ using WhiteMagic.WinAPI;
 using WhiteMagic.Modules;
 using WhiteMagic.Pointers;
 using WhiteMagic.WinAPI.Structures;
+using WhiteMagic.Processes;
 
 namespace WhiteMagic
 {
@@ -34,7 +35,7 @@ namespace WhiteMagic
 
     public class MemoryHandler : IDisposable
     {
-        public Process Process { get; protected set; }
+        public RemoteProcess Process { get; protected set; }
         public IntPtr ProcessHandle { get; protected set; }
 
         protected volatile int threadSuspendCount = 0;
@@ -43,14 +44,14 @@ namespace WhiteMagic
         protected ModuleInfo BaseModule;
         protected Dictionary<string, ModuleInfo> Modules = new Dictionary<string, ModuleInfo>();
 
-        public MemoryHandler(Process Process)
+        public MemoryHandler(RemoteProcess Process)
         {
             SetProcess(Process);
         }
 
         public MemoryHandler(int ProcessId)
         {
-            var process = Process.GetProcessById(ProcessId);
+            var process = RemoteProcess.GetById(ProcessId);
             if (process == null)
                 throw new MemoryException("Process {0} not found", ProcessId);
             SetProcess(process);
@@ -70,7 +71,7 @@ namespace WhiteMagic
             Dispose();
         }
 
-        protected void SetProcess(Process Process)
+        protected void SetProcess(RemoteProcess Process)
         {
             if (!Kernel32.Is32BitProcess(Process.Handle))
                 throw new MemoryException("Can't operate with x64 processes");
@@ -94,7 +95,7 @@ namespace WhiteMagic
             foreach (var Module in Modules)
                 Module.Value.Invalidate();
 
-            foreach (ProcessModule ProcessModule in Process.Modules)
+            foreach (var ProcessModule in Process.Modules)
                 GetModule(ProcessModule.ModuleName, true);
         }
 
@@ -108,7 +109,7 @@ namespace WhiteMagic
 
                     RefreshMemory();
 
-                    return !Process.HasExited;
+                    return Process.IsValid;
                 }
             }
         }
@@ -132,7 +133,7 @@ namespace WhiteMagic
 
             RefreshMemory();
 
-            foreach (ProcessThread pT in Process.Threads)
+            foreach (var pT in Process.Threads)
             {
                 if (ExceptIds.Contains(pT.Id))
                     continue;
