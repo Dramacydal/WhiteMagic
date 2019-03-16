@@ -13,7 +13,16 @@ namespace WhiteMagic.Processes
 
         public IntPtr Handle => Process.Handle;
 
-        public IntPtr MainWindowHandle => Process.MainWindowHandle;
+        public IntPtr MainWindowHandle
+        {
+            get
+            {
+                if (!User32.IsWindow(Process.MainWindowHandle))
+                    Process.Refresh();
+
+                return Process.MainWindowHandle;
+            }
+        }
 
         public string Name => Process.ProcessName;
 

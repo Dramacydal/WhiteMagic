@@ -56,7 +56,7 @@ namespace WhiteMagic
         public void ClearUsedBreakpointSlots()
         {
             RefreshMemory();
-            foreach (ProcessThread th in Process.Threads)
+            foreach (var th in Process.Threads)
             {
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
                 if (hThread == IntPtr.Zero)

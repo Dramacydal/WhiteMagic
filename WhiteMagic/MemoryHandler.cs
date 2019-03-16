@@ -171,7 +171,7 @@ namespace WhiteMagic
             if (!IgnoreSuspensionCount && threadSuspendCount < 0)
                 throw new MemoryException("Wrong thread suspend/resume order. threadSuspendCount is {0}", threadSuspendCount.ToString());
 
-            foreach (ProcessThread pT in Process.Threads)
+            foreach (var pT in Process.Threads)
                 ResumeThread(pT.Id);
         }
 
