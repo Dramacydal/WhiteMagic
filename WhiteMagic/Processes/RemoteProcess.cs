@@ -13,6 +13,8 @@ namespace WhiteMagic.Processes
 
         public IntPtr Handle => Process.Handle;
 
+        public RemoteWindow MainWindow => new RemoteWindow(this, MainWindowHandle);
+
         public IntPtr MainWindowHandle
         {
             get
