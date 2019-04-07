@@ -28,7 +28,7 @@ namespace WhiteMagic.Input
                 inp.Union.mi.dy = Y;
             }
 
-            if (User32.SendInput(1, ref inp, INPUT.Size) != 1)
+            if (User32.SendInput(1, new INPUT[] { inp }, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
@@ -52,7 +52,7 @@ namespace WhiteMagic.Input
                     throw new Win32Exception($"Unsupported mouse button {Button}");
             }
 
-            if (User32.SendInput(1, ref inp, INPUT.Size) != 1)
+            if (User32.SendInput(1, new INPUT[] { inp }, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
@@ -79,7 +79,7 @@ namespace WhiteMagic.Input
                     throw new Win32Exception($"Unsupported scroll direction type '{Direction}'");
             }
 
-            if (User32.SendInput(1, ref inp, INPUT.Size) != 1)
+            if (User32.SendInput(1, new INPUT[] { inp }, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
     }

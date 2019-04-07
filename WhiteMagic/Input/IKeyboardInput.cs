@@ -6,20 +6,18 @@ namespace WhiteMagic.Input
 {
     public abstract class IKeyboardInput
     {
-        public TimeSpan KeypressTime = TimeSpan.FromMilliseconds(50);
+        public static readonly TimeSpan DefaultKeypressTime = TimeSpan.FromMilliseconds(50);
 
-        public abstract void SendKey(Keys Key, bool Up = false, int ExtraInfo = 0);
-        public abstract void KeyPress(Keys Key, TimeSpan KeyPressTime);
+        public abstract void SendKey(Keys Key, Modifiers Modifiers = Modifiers.None, bool Up = false, int ExtraInfo = 0);
+        public abstract void KeyPress(Keys Key, Modifiers Modifiers = Modifiers.None, TimeSpan KeyPressTime = default(TimeSpan));
         public abstract void SendChar(char c);
 
-        public void KeyPress(Keys Key) => KeyPress(Key, KeypressTime);
+        public void KeyPress(Keys Key, Modifiers Modifiers = Modifiers.None) => KeyPress(Key, Modifiers, DefaultKeypressTime);
 
         public void SendText(string Text)
         {
             foreach (var c in Text)
                 SendChar(c);
         }
-
-        public ModifierToggler SetModifiers(Modifiers Mask) => new ModifierToggler(this, Mask);
     }
 }

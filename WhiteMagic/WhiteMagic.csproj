@@ -59,7 +59,6 @@
     <Compile Include="Input\GlobalMouseInput.cs" />
     <Compile Include="Input\IKeyboardInput.cs" />
     <Compile Include="Input\IMouseInput.cs" />
-    <Compile Include="Input\ModifierToggler.cs" />
     <Compile Include="Input\ScreenTranslator.cs" />
     <Compile Include="Input\WindowKeyboardInput.cs" />
     <Compile Include="Input\WindowMouseInput.cs" />

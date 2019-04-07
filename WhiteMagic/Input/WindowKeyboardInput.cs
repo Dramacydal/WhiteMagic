@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Windows.Forms;
@@ -52,17 +53,31 @@ namespace WhiteMagic.Input
             }
         }
 
-        public override void SendKey(Keys Key, bool Up = false, int ExtraInfo = 0)
+        public override void SendKey(Keys Key, Modifiers Modifiers = Modifiers.None, bool Up = false, int ExtraInfo = 0)
         {
-            SendKeyToWindow(Window.Handle, Key, Up, Recursive);
+            var keys = new List<Keys>();
+            if (Modifiers.CtrlPressed())
+                keys.Add(Keys.ControlKey);
+            if (Modifiers.AltPressed())
+                keys.Add(Keys.Menu);
+            if (Modifiers.ShiftPressed())
+                keys.Add(Keys.ShiftKey);
+            if (Key != Keys.None)
+                keys.Add(Key);
+
+            if (Up)
+                keys.Reverse();
+
+            foreach (var key in keys)
+                SendKeyToWindow(Window.Handle, Key, Up, Recursive);
         }
 
-        public override void KeyPress(Keys Key, TimeSpan KeyPressTime)
+        public override void KeyPress(Keys Key, Modifiers Modifiers, TimeSpan KeyPressTime)
         {
-            SendKeyToWindow(Window.Handle, Key, false, Recursive);
-            if (!KeypressTime.IsEmpty())
-                Thread.Sleep((int)KeypressTime.TotalMilliseconds);
-            SendKeyToWindow(Window.Handle, Key, true, Recursive);
+            SendKey(Key, Modifiers, false, 0);
+            if (!DefaultKeypressTime.IsEmpty())
+                Thread.Sleep((int)DefaultKeypressTime.TotalMilliseconds);
+            SendKey(Key, Modifiers, true, 0);
         }
 
         public override void SendChar(char c)

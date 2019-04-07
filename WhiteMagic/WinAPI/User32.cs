@@ -12,7 +12,7 @@ namespace WhiteMagic.WinAPI
             bool bWaitAll, uint dwMilliseconds, WakeFlags dwWakeMask);
 
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+        public static extern uint SendInput(int nInputs, [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs, int cbSize);
 
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
