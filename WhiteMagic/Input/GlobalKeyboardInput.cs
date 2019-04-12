@@ -11,12 +11,12 @@ namespace WhiteMagic.Input
 {
     public class GlobalKeyboardInput : IKeyboardInput
     {
-        public override void KeyPress(Keys Key, Modifiers Modifiers = Modifiers.None, TimeSpan KeyPressTime = default(TimeSpan))
+        public override void KeyPress(Keys Key, Modifiers Modifiers = Modifiers.None, TimeSpan KeyPressTime = default(TimeSpan), int ExtraInfo = 0)
         {
-            SendKey(Key, Modifiers, false);
+            SendKey(Key, Modifiers, false, ExtraInfo);
             if (!DefaultKeypressTime.IsEmpty())
                 Thread.Sleep((int)DefaultKeypressTime.TotalMilliseconds);
-            SendKey(Key, Modifiers, true);
+            SendKey(Key, Modifiers, true, ExtraInfo);
         }
 
         public override void SendChar(char c)
@@ -35,6 +35,10 @@ namespace WhiteMagic.Input
 
         public override void SendKey(Keys Key, Modifiers Modifiers = Modifiers.None, bool Up = false, int ExtraInfo = 0)
         {
+            var KeyMod = KeyToModifier(Key);
+            if (KeyMod != Modifiers.None)
+                Modifiers &= ~KeyMod;
+
             var inputs = BuildModifiersInput(Modifiers, Up, ExtraInfo);
 
             if (Key != Keys.None)
@@ -58,6 +62,26 @@ namespace WhiteMagic.Input
 
             if (User32.SendInput(inputs.Count, inputs.ToArray(), INPUT.Size) != inputs.Count)
                 throw new Win32Exception();
+        }
+
+        private Modifiers KeyToModifier(Keys Key)
+        {
+            switch (Key)
+            {
+                case Keys.LMenu:
+                case Keys.RMenu:
+                    return Modifiers.Alt;
+                case Keys.LControlKey:
+                case Keys.RControlKey:
+                    return Modifiers.Ctrl;
+                case Keys.LShiftKey:
+                case Keys.RShiftKey:
+                    return Modifiers.Shift;
+                default:
+                    break;
+            }
+
+            return Modifiers.None;
         }
 
         private List<INPUT> BuildModifiersInput(Modifiers Modifiers, bool Up, int ExtraInfo)

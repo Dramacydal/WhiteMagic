@@ -72,7 +72,7 @@ namespace WhiteMagic.Input
                 SendKeyToWindow(Window.Handle, Key, Up, Recursive);
         }
 
-        public override void KeyPress(Keys Key, Modifiers Modifiers, TimeSpan KeyPressTime)
+        public override void KeyPress(Keys Key, Modifiers Modifiers, TimeSpan KeyPressTime, int ExtraInfo = 0)
         {
             SendKey(Key, Modifiers, false, 0);
             if (!DefaultKeypressTime.IsEmpty())
