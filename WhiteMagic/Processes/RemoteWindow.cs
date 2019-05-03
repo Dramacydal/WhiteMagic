@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Text;
 using WhiteMagic.Input;
+using WhiteMagic.WinAPI;
 
 namespace WhiteMagic.Processes
 {
@@ -10,6 +12,22 @@ namespace WhiteMagic.Processes
 
         public WindowKeyboardInput KeyboardInput { get; }
         public WindowMouseInput MouseInput { get; }
+
+        public string Title
+        {
+            get
+            {
+                // Allocate correct string length first
+                var length = User32.GetWindowTextLength(Handle);
+                if (length <= 0)
+                    return "";
+
+                var sb = new StringBuilder(length + 1);
+                User32.GetWindowText(Handle, sb, sb.Capacity);
+
+                return sb.ToString();
+            }
+        }
 
         public RemoteWindow(RemoteProcess Process, IntPtr WindowHandle)
         {
