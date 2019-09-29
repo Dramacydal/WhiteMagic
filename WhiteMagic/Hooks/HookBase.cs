@@ -3,42 +3,31 @@ using WhiteMagic.WinAPI.Structures;
 
 namespace WhiteMagic.Hooks
 {
-    public abstract class HookBase<T> where T : HookEvent
+    public abstract class HookBase
     {
-        private HookType Type;
+        private readonly HookType _type;
 
         internal HookBase(HookType Type)
         {
-            this.Type = Type;
+            _type = Type;
         }
 
         internal abstract bool Dispatch(int code, IntPtr wParam, IntPtr lParam);
 
-        public bool IsInstalled => HookManager.IsHookInstalled(Type);
+        public bool IsInstalled => HookManager.IsHookInstalled(_type);
 
         public void Install()
         {
-            HookManager.InstallHook(Type);
+            HookManager.InstallHook(_type);
         }
 
         public void Uninstall(bool RemoveHandlers = true)
         {
-            HookManager.Uninstall(Type);
+            HookManager.Uninstall(_type);
             if (RemoveHandlers)
                 this.RemoveHandlers();
         }
 
-        protected void Dispatch(T e)
-        {
-            Handlers(e);
-        }
-
-        public event Action<T> Handlers;
-
-        private void RemoveHandlers()
-        {
-            foreach (var d in Handlers.GetInvocationList())
-                Handlers -= (Action<T>)d;
-        }
+        public abstract void RemoveHandlers();
     }
 }

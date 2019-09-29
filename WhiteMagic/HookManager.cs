@@ -9,8 +9,8 @@ namespace WhiteMagic
 {
     public static class HookManager
     {
-        public static Keyboard KeyboardHandler { get; } = new Keyboard();
-        public static Mouse MouseHandler { get; } = new Mouse();
+        public static KeyboardHook KeyboardHookHandler { get; } = new KeyboardHook();
+        public static MouseHook MouseHookHandler { get; } = new MouseHook();
 
         private const string HookContainerLock = "HookContainerLock";
 
@@ -19,10 +19,7 @@ namespace WhiteMagic
         {
             if (!Delegates.ContainsKey(Type))
             {
-                Delegates[Type] = (int code, IntPtr wParam, IntPtr lParam) =>
-                {
-                    return GlobalHookCallback(Type, code, wParam, lParam);
-                };
+                Delegates[Type] = (int code, IntPtr wParam, IntPtr lParam) => GlobalHookCallback(Type, code, wParam, lParam);
             }
 
             return Delegates[Type];
@@ -34,24 +31,22 @@ namespace WhiteMagic
             {
                 case HookType.WH_KEYBOARD_LL:
                 {
-                    if (!KeyboardHandler.Dispatch(code, wParam, lParam))
+                    if (!KeyboardHookHandler.Dispatch(code, wParam, lParam))
                         return 1;
                     break;
                 }
                 case HookType.WH_MOUSE_LL:
                 {
-                    if (!MouseHandler.Dispatch(code, wParam, lParam))
+                    if (!MouseHookHandler.Dispatch(code, wParam, lParam))
                         return 1;
                     break;
                 }
-                default:
-                    break;
             }
 
             return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
         }
 
-        private static Dictionary<HookType, IntPtr> HooksHandlesByType = new Dictionary<HookType, IntPtr>();
+        private static readonly Dictionary<HookType, IntPtr> HooksHandlesByType = new Dictionary<HookType, IntPtr>();
 
         internal static bool IsHookInstalled(HookType Type)
         {

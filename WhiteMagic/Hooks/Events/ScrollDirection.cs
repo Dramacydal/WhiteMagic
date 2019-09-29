@@ -1,8 +1,7 @@
-﻿namespace WhiteMagic.WinAPI.Structures.Input
+﻿namespace WhiteMagic.Hooks.Events
 {
     public enum ScrollDirection
     {
-        None = 0,
         Up = 1,
         Down = 2,
         Left = 3,

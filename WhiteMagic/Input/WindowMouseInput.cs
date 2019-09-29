@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
+using WhiteMagic.Hooks.Events;
 using WhiteMagic.Processes;
-using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.Input
 {

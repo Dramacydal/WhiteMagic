@@ -43,18 +43,26 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Breakpoints\BreakpointException.cs" />
     <Compile Include="Breakpoints\CodeBreakpoint.cs" />
     <Compile Include="ContextWrapper.cs" />
     <Compile Include="HookManager.cs" />
+    <Compile Include="Hooks\Events\MouseClickEvent.cs" />
+    <Compile Include="Hooks\Events\MouseMoveEvent.cs" />
+    <Compile Include="Hooks\Events\MouseScrollEvent.cs" />
+    <Compile Include="Hooks\Events\ScrollDirection.cs" />
     <Compile Include="Hooks\HookBase.cs" />
     <Compile Include="Hooks\HookEvent.cs" />
-    <Compile Include="Hooks\Keyboard.cs" />
-    <Compile Include="Hooks\Mouse.cs" />
+    <Compile Include="Hooks\Events\KeyboardEvent.cs" />
+    <Compile Include="Hooks\KeyboardHook.cs" />
+    <Compile Include="Hooks\Events\MouseEvent.cs" />
+    <Compile Include="Hooks\MouseHook.cs" />
     <Compile Include="Hooks\MouseEventType.cs" />
     <Compile Include="InputManager.cs" />
+    <Compile Include="Input\ClickState.cs" />
     <Compile Include="Input\GlobalKeyboardInput.cs" />
     <Compile Include="Input\GlobalMouseInput.cs" />
     <Compile Include="Input\IKeyboardInput.cs" />
@@ -85,12 +93,11 @@
     <Compile Include="WinAPI\Structures\HookType.cs" />
     <Compile Include="WinAPI\Structures\Input\Input.cs" />
     <Compile Include="WinAPI\Structures\Input\MapVirtualKeyMapTypes.cs" />
-    <Compile Include="WinAPI\Structures\Input\Modifiers.cs" />
+    <Compile Include="Input\Modifiers.cs" />
     <Compile Include="WinAPI\Structures\Input\Msg.cs" />
     <Compile Include="WinAPI\Structures\Input\PeekMessageParams.cs" />
     <Compile Include="WinAPI\Structures\Input\QueueStatusFlags.cs" />
     <Compile Include="WinAPI\Structures\Input\ScanCodeShort.cs" />
-    <Compile Include="WinAPI\Structures\Input\ScrollDirection.cs" />
     <Compile Include="WinAPI\Structures\Input\WindowsMessage.cs" />
     <Compile Include="WinAPI\Structures\Input\WinEvent.cs" />
     <Compile Include="WinAPI\Structures\Luid.cs" />

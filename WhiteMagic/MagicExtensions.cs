@@ -1,8 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using WhiteMagic.Hooks;
+using WhiteMagic.Hooks.Events;
 using WhiteMagic.Modules;
 using WhiteMagic.Processes;
+using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic
 {
@@ -45,5 +48,32 @@ namespace WhiteMagic
         }
 
         public static bool IsEmpty(this TimeSpan TimeSpan) => TimeSpan.Ticks <= 0;
+
+        public static MouseEventType GetEventType(this WM message)
+        {
+            switch (message)
+            {
+                case WM.MOUSEMOVE:
+                    return MouseEventType.Move;
+                case WM.LBUTTONDOWN:
+                case WM.LBUTTONUP:
+                case WM.LBUTTONDBLCLK:
+                case WM.RBUTTONDOWN:
+                case WM.RBUTTONUP:
+                case WM.RBUTTONDBLCLK:
+                case WM.MBUTTONDOWN:
+                case WM.MBUTTONUP:
+                case WM.MBUTTONDBLCLK:
+                case WM.XBUTTONDOWN:
+                case WM.XBUTTONUP:
+                case WM.XBUTTONDBLCLK:
+                    return MouseEventType.Button;
+                case WM.MOUSEWHEEL:
+                case WM.MOUSEHWHEEL:
+                    return MouseEventType.Scroll;
+            }
+
+            return MouseEventType.None;
+        }
     }
 }

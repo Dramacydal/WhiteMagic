@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WhiteMagic.WinAPI.Structures.Input
+namespace WhiteMagic.Input
 {
     [Flags]
     public enum Modifiers

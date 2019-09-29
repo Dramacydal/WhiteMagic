@@ -1,43 +1,17 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using WhiteMagic.Hooks.Events;
+using WhiteMagic.Input;
 using WhiteMagic.WinAPI;
 using WhiteMagic.WinAPI.Structures;
 using WhiteMagic.WinAPI.Structures.Input;
 
 namespace WhiteMagic.Hooks
 {
-    public class KeyboardEvent : HookEvent
+    public class KeyboardHook : HookBase
     {
-        private KBDLLHOOKSTRUCT Raw;
-        private Keyboard Hook;
-        private WM Event;
-
-        public KeyboardEvent(WM Event, KBDLLHOOKSTRUCT Raw, Keyboard Hook, bool WasPressed)
-        {
-            this.Event = Event;
-            this.Hook = Hook;
-            this.Raw = Raw;
-            this.PreviouslyPressed = WasPressed;
-        }
-
-        public Keys VirtualKey => (Keys)Raw.vkCode;
-        public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
-        public bool IsKeyUp => Event == WM.KEYUP || Event == WM.SYSKEYUP;
-        public bool IsKeyDown => !IsKeyUp;
-        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED) != 0;
-        public bool IsInjected => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & (KBDLLHOOKSTRUCT.LLFlags.LLKHF_INJECTED)) != 0;
-        public int ExtraInfo => Raw.dwExtraInfo.ToInt32();
-        public bool PreviouslyPressed { get; } = false;
-
-        public Modifiers ModifiersState => Hook.ModifiersState;
-        
-        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed} Injected: {IsInjected} ExtraInfo: {Raw.dwExtraInfo.ToInt32()}");
-    }
-
-    public class Keyboard : HookBase<KeyboardEvent>
-    {
-        public Keyboard() : base(HookType.WH_KEYBOARD_LL)
+        public KeyboardHook() : base(HookType.WH_KEYBOARD_LL)
         {
         }
 
@@ -46,7 +20,7 @@ namespace WhiteMagic.Hooks
         private void StoreSpecialKeyState(WM Event, KeyboardEvent info)
         {
             var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
-            Modifiers Flag = Modifiers.None;
+            Modifiers Flag;
             switch (info.VirtualKey)
             {
                 case Keys.LMenu: Flag = Modifiers.LAlt; break;
@@ -81,7 +55,8 @@ namespace WhiteMagic.Hooks
 
                 StoreSpecialKeyState(wmEvent, Event);
 
-                Dispatch(Event);
+                OnKey?.Invoke(Event);
+
                 if (Event.Cancel)
                     return false;
             }
@@ -90,6 +65,16 @@ namespace WhiteMagic.Hooks
             }
 
             return true;
+        }
+
+        public delegate void KeyboardEventHandler(KeyboardEvent e);
+
+        public event KeyboardEventHandler OnKey;
+
+        public override void RemoveHandlers()
+        {
+            foreach (var d in OnKey?.GetInvocationList() ?? new Delegate[] { })
+                OnKey -= (KeyboardEventHandler) d;
         }
     }
 }
