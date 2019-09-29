@@ -115,7 +115,7 @@ namespace WhiteMagic
             {
                 try
                 {
-                    return Kernel32.Is32BitProcess(process.Handle) &&
+                    return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
                         process.MainModule.FileVersionInfo.InternalName != null &&
                         Pattern.IsMatch(process.MainModule.FileVersionInfo.InternalName);
                 }
@@ -130,7 +130,7 @@ namespace WhiteMagic
         {
             return EnumerateProcesses().Where(process =>
             {
-                return Kernel32.Is32BitProcess(process.Handle) &&
+                return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.ProductName != null &&
                     Pattern.IsMatch(process.MainModule.FileVersionInfo.ProductName);
             });
@@ -140,7 +140,7 @@ namespace WhiteMagic
         {
             return EnumerateProcesses().Where(process => 
                 {
-                    return Kernel32.Is32BitProcess(process.Handle) &&
+                    return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
                         Pattern.IsMatch(process.Name);
                 });
         }

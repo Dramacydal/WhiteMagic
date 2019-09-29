@@ -63,5 +63,10 @@ namespace WhiteMagic.Processes
         {
             this.Process = Process;
         }
+
+        public override string ToString()
+        {
+            return $"{Name} [{Id}]";
+        }
     }
 }
