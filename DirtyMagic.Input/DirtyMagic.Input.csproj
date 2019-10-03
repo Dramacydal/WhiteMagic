@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5EB474B0-7859-41B8-A6F0-CC50338F0DCA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DirtyMagic</RootNamespace>
+    <AssemblyName>DirtyMagic.Input</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="HookManager.cs" />
+    <Compile Include="Hooks\Events\KeyboardEvent.cs" />
+    <Compile Include="Hooks\Events\MouseClickEvent.cs" />
+    <Compile Include="Hooks\Events\MouseEvent.cs" />
+    <Compile Include="Hooks\Events\MouseMoveEvent.cs" />
+    <Compile Include="Hooks\Events\MouseScrollEvent.cs" />
+    <Compile Include="Hooks\Events\ScrollDirection.cs" />
+    <Compile Include="Hooks\HookBase.cs" />
+    <Compile Include="Hooks\HookEvent.cs" />
+    <Compile Include="Hooks\KeyboardHook.cs" />
+    <Compile Include="Hooks\MouseEventType.cs" />
+    <Compile Include="Hooks\MouseHook.cs" />
+    <Compile Include="InputExtensions.cs" />
+    <Compile Include="InputManager.cs" />
+    <Compile Include="Input\ClickState.cs" />
+    <Compile Include="Input\GlobalKeyboardInput.cs" />
+    <Compile Include="Input\GlobalMouseInput.cs" />
+    <Compile Include="Input\IKeyboardInput.cs" />
+    <Compile Include="Input\IMouseInput.cs" />
+    <Compile Include="Input\Modifiers.cs" />
+    <Compile Include="Input\ScreenTranslator.cs" />
+    <Compile Include="Input\WindowKeyboardInput.cs" />
+    <Compile Include="Input\WindowMouseInput.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WinAPI\Input\ScanCodeShort.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\DirtyMagic.Shared\DirtyMagic.Shared.csproj">
+      <Project>{c09dfdbf-08ee-4ac7-b35e-bc17eb49fd75}</Project>
+      <Name>DirtyMagic.Shared</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
