@@ -7,29 +7,29 @@ namespace DirtyMagic.Hooks.Events
 {
     public class KeyboardEvent : HookEvent
     {
-        private KBDLLHOOKSTRUCT Raw;
-        private KeyboardHook Hook;
-        private WM Event;
+        private readonly KBDLLHOOKSTRUCT _raw;
+        private readonly KeyboardHook _hook;
+        private readonly WM _event;
 
-        public KeyboardEvent(WM Event, KBDLLHOOKSTRUCT Raw, KeyboardHook Hook, bool WasPressed)
+        public KeyboardEvent(WM @event, KBDLLHOOKSTRUCT raw, KeyboardHook hook, bool wasPressed)
         {
-            this.Event = Event;
-            this.Hook = Hook;
-            this.Raw = Raw;
-            this.PreviouslyPressed = WasPressed;
+            this._event = @event;
+            this._hook = hook;
+            this._raw = raw;
+            this.PreviouslyPressed = wasPressed;
         }
 
-        public Keys VirtualKey => (Keys)Raw.vkCode;
-        public ScanCodeShort ScanCode => (ScanCodeShort)Raw.scanCode;
-        public bool IsKeyUp => Event == WM.KEYUP || Event == WM.SYSKEYUP;
+        public Keys VirtualKey => (Keys)_raw.vkCode;
+        public ScanCodeShort ScanCode => (ScanCodeShort)_raw.scanCode;
+        public bool IsKeyUp => _event == WM.KEYUP || _event == WM.SYSKEYUP;
         public bool IsKeyDown => !IsKeyUp;
-        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED) != 0;
-        public bool IsInjected => ((KBDLLHOOKSTRUCT.LLFlags)Raw.flags & (KBDLLHOOKSTRUCT.LLFlags.LLKHF_INJECTED)) != 0;
-        public int ExtraInfo => Raw.dwExtraInfo.ToInt32();
+        public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)_raw.flags & KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED) != 0;
+        public bool IsInjected => ((KBDLLHOOKSTRUCT.LLFlags)_raw.flags & (KBDLLHOOKSTRUCT.LLFlags.LLKHF_INJECTED)) != 0;
+        public int ExtraInfo => _raw.dwExtraInfo.ToInt32();
         public bool PreviouslyPressed { get; } = false;
 
-        public Modifiers ModifiersState => Hook.ModifiersState;
+        public Modifiers ModifiersState => _hook.ModifiersState;
         
-        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed} Injected: {IsInjected} ExtraInfo: {Raw.dwExtraInfo.ToInt32()}");
+        public override string ToString() => string.Format($"VirtualKey: {VirtualKey} Scancode: {ScanCode} Extended: {IsExtended} Up: {IsKeyUp} WasPressed: {PreviouslyPressed} Injected: {IsInjected} ExtraInfo: {_raw.dwExtraInfo.ToInt32()}");
     }
 }

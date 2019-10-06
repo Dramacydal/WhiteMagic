@@ -9,29 +9,29 @@ namespace DirtyMagic.Input
         public IntPtr Window { get; }
         public bool Recursive { get; set; }
 
-        public WindowMouseInput(IntPtr Window, bool Recursive = true)
+        public WindowMouseInput(IntPtr window, bool recursive = true)
         {
-            this.Window = Window;
-            this.Recursive = Recursive;
+            this.Window = window;
+            this.Recursive = recursive;
         }
 
-        public WindowMouseInput SetRecursive(bool On)
+        public WindowMouseInput SetRecursive(bool on)
         {
-            Recursive = On;
+            Recursive = on;
             return this;
         }
 
-        public override void Move(int X, int Y, bool Absolute)
+        public override void Move(int x, int y, bool absolute)
         {
             throw new NotImplementedException();
         }
 
-        public override void SendButton(MouseButtons Button, bool Up = false)
+        public override void SendButton(MouseButtons button, bool up = false)
         {
             throw new NotImplementedException();
         }
 
-        public override void SendScroll(ScrollDirection Direction)
+        public override void SendScroll(ScrollDirection direction)
         {
             throw new NotImplementedException();
         }

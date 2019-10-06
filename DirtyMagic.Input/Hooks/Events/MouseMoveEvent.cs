@@ -5,16 +5,18 @@ namespace DirtyMagic.Hooks.Events
 {
     public class MouseMoveEvent : MouseEvent
     {
-        public Point Position { get; }
+        public MousePosition Position { get; }
+        public MousePosition LastPosition { get; }
 
-        public MouseMoveEvent(WM Event, MSLLHOOKSTRUCT Raw) : base(MouseEventType.Move)
+        internal MouseMoveEvent(WM @event, MSLLHOOKSTRUCT raw, MousePosition previousPosition) : base(MouseEventType.Move)
         {
-            Position = new Point(Raw.ptX, Raw.ptY);
+            Position = new MousePosition(raw.ptX, raw.ptY);
+            LastPosition = previousPosition;
         }
 
         public override string ToString()
         {
-            return $"Event: {Type}, X: {Position.X}, Y: {Position.Y}";
+            return $"Event: {Type}, X: {Position.X}, Y: {Position.Y}, LastX: {LastPosition.X}, LastY: {LastPosition.Y}";
         }
     }
 }

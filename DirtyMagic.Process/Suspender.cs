@@ -4,17 +4,17 @@ namespace DirtyMagic
 {
     public class ProcessSuspender : IDisposable
     {
-        private MemoryHandler Memory;
+        private readonly MemoryHandler _memory;
 
-        public ProcessSuspender(MemoryHandler Memory)
+        public ProcessSuspender(MemoryHandler memory)
         {
-            this.Memory = Memory;
-            Memory.SuspendAllThreads();
+            _memory = memory;
+            memory.SuspendAllThreads();
         }
 
         public void Dispose()
         {
-            Memory.ResumeAllThreads();
+            _memory.ResumeAllThreads();
         }
     }
 }

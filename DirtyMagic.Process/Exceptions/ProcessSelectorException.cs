@@ -1,6 +1,6 @@
 using System;
 
-namespace DirtyMagic
+namespace DirtyMagic.Exceptions
 {
     public class ProcessSelectorException : Exception
     {

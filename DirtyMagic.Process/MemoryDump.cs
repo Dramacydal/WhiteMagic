@@ -9,29 +9,29 @@ namespace DirtyMagic
     {
         private const int readCount = 256;
 
-        public MemoryDump(IntPtr StartAddress, long Length)
+        public MemoryDump(IntPtr startAddress, long length)
         {
-            this.StartAddress = StartAddress;
-            this.Length = Length;
+            this.StartAddress = startAddress;
+            this.Length = length;
         }
 
-        public MemoryDump(IntPtr StartAddress, byte[] Data)
-            : this(StartAddress, Data.LongLength)
+        public MemoryDump(IntPtr startAddress, byte[] data)
+            : this(startAddress, data.LongLength)
         {
-            this.Data = Data;
+            this.Data = data;
         }
 
-        public MemoryDump(MemoryHandler Memory, IntPtr Address, long Length)
-            : this(Address, Length)
+        public MemoryDump(MemoryHandler memory, IntPtr address, long length)
+            : this(address, length)
         {
-            Read(Memory);
+            Read(memory);
         }
 
-        public void Read(MemoryHandler Memory)
+        public void Read(MemoryHandler memory)
         {
             var bytes = new List<byte>();
             for (long i = 0; i < Length; i += readCount)
-                bytes.AddRange(Memory.ReadBytes(IntPtr.Add(StartAddress, (int)i), i + readCount >= Length ? (int)(Length - i) : readCount));
+                bytes.AddRange(memory.ReadBytes(IntPtr.Add(StartAddress, (int)i), i + readCount >= Length ? (int)(Length - i) : readCount));
 
             Data = bytes.ToArray();
         }
@@ -39,18 +39,18 @@ namespace DirtyMagic
         public IntPtr StartAddress { get; }
         public long Length { get; }
 
-        private byte[] _data { get; set; } = null;
+        private byte[] _data = null;
         public byte[] Data
         {
-            get { return _data; }
+            get => _data;
             private set { _data = value; StringDump = PatternHelper.BytesToString(_data); }
         }
         protected string StringDump { get; private set; }
 
         public int Size => Data.Length;
 
-        public Match Match(MemoryPattern Pattern) => Pattern.Match(StringDump);
+        public Match Match(MemoryPattern pattern) => pattern.Match(StringDump);
 
-        public MatchCollection Matches(MemoryPattern Pattern) => Pattern.Matches(StringDump);
+        public MatchCollection Matches(MemoryPattern pattern) => pattern.Matches(StringDump);
     }
 }

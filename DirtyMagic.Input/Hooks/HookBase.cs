@@ -21,10 +21,10 @@ namespace DirtyMagic.Hooks
             HookManager.InstallHook(_type);
         }
 
-        public void Uninstall(bool RemoveHandlers = true)
+        public void Uninstall(bool removeHandlers = true)
         {
             HookManager.Uninstall(_type);
-            if (RemoveHandlers)
+            if (removeHandlers)
                 this.RemoveHandlers();
         }
 

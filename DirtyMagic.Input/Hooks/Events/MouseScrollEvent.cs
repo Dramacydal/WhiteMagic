@@ -7,10 +7,10 @@ namespace DirtyMagic.Hooks.Events
         public ScrollDirection Direction { get; }
         public int Delta { get; }
 
-        public MouseScrollEvent(WM Event, MSLLHOOKSTRUCT Raw) : base(MouseEventType.Scroll)
+        internal MouseScrollEvent(WM @event, MSLLHOOKSTRUCT raw) : base(MouseEventType.Scroll)
         {
-            Delta = Raw.mouseData >> 16;
-            switch (Event)
+            Delta = raw.mouseData >> 16;
+            switch (@event)
             {
                 case WM.MOUSEWHEEL:
                     Direction = Delta > 0 ? ScrollDirection.Up : ScrollDirection.Down;

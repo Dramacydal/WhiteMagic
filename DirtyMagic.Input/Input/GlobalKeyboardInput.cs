@@ -12,45 +12,44 @@ namespace DirtyMagic.Input
 {
     public class GlobalKeyboardInput : IKeyboardInput
     {
-        public override void KeyPress(Keys Key, Modifiers Modifiers = Modifiers.None, TimeSpan KeyPressTime = default(TimeSpan), int ExtraInfo = 0)
+        public override void KeyPress(Keys key, Modifiers modifiers = Modifiers.None,
+            TimeSpan keyPressTime = default(TimeSpan), int extraInfo = 0)
         {
-            SendKey(Key, Modifiers, false, ExtraInfo);
+            SendKey(key, modifiers, false, extraInfo);
             if (!DefaultKeypressTime.IsEmpty())
-                Thread.Sleep((int)DefaultKeypressTime.TotalMilliseconds);
-            SendKey(Key, Modifiers, true, ExtraInfo);
+                Thread.Sleep((int) DefaultKeypressTime.TotalMilliseconds);
+            SendKey(key, modifiers, true, extraInfo);
         }
 
         public override void SendChar(char c)
         {
-            var inp = new INPUT();
-            inp.Type = InputType.KEYBOARD;
+            var inp = new INPUT {Type = InputType.KEYBOARD};
             inp.Union.ki.dwFlags = KeyEventFlags.UNICODE;
             inp.Union.ki.wVk = 0;
             inp.Union.ki.wScan = Convert.ToInt16(c);
             inp.Union.ki.time = 0;
             inp.Union.ki.dwExtraInfo = IntPtr.Zero;
 
-            if (User32.SendInput(1, new INPUT[] { inp }, INPUT.Size) != 1)
+            if (User32.SendInput(1, new INPUT[] {inp}, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
-        public override void SendKey(Keys Key, Modifiers Modifiers = Modifiers.None, bool Up = false, int ExtraInfo = 0)
+        public override void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0)
         {
-            var KeyMod = KeyToModifier(Key);
-            if (KeyMod != Modifiers.None)
-                Modifiers &= ~KeyMod;
+            var keyMod = KeyToModifier(key);
+            if (keyMod != Modifiers.None)
+                modifiers &= ~keyMod;
 
-            var inputs = BuildModifiersInput(Modifiers, Up, ExtraInfo).ToList();
+            var inputs = BuildModifiersInput(modifiers, up, extraInfo).ToList();
 
-            if (Key != Keys.None)
+            if (key != Keys.None)
             {
-                var inp = new INPUT();
-                inp.Type = InputType.KEYBOARD;
-                inp.Union.ki.dwFlags = Up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
-                inp.Union.ki.wVk = (short)Key;
+                var inp = new INPUT {Type = InputType.KEYBOARD};
+                inp.Union.ki.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
+                inp.Union.ki.wVk = (short) key;
                 inp.Union.ki.wScan = 0;
                 inp.Union.ki.time = 0;
-                inp.Union.ki.dwExtraInfo = new IntPtr(ExtraInfo);
+                inp.Union.ki.dwExtraInfo = new IntPtr(extraInfo);
 
                 inputs.Add(inp);
             }
@@ -58,16 +57,16 @@ namespace DirtyMagic.Input
             if (inputs.Count == 0)
                 return;
 
-            if (Up)
+            if (up)
                 inputs.Reverse();
 
             if (User32.SendInput(inputs.Count, inputs.ToArray(), INPUT.Size) != inputs.Count)
                 throw new Win32Exception();
         }
 
-        private Modifiers KeyToModifier(Keys Key)
+        private Modifiers KeyToModifier(Keys key)
         {
-            switch (Key)
+            switch (key)
             {
                 case Keys.LMenu:
                 case Keys.RMenu:
@@ -83,41 +82,40 @@ namespace DirtyMagic.Input
             return Modifiers.None;
         }
 
-        private IEnumerable<INPUT> BuildModifiersInput(Modifiers Modifiers, bool Up, int ExtraInfo)
+        private IEnumerable<INPUT> BuildModifiersInput(Modifiers modifiers, bool up, int extraInfo)
         {
             var keys = new List<Keys>();
-            if (Modifiers.CtrlPressed())
+            if (modifiers.CtrlPressed())
                 keys.Add(Keys.ControlKey);
-            if (Modifiers.AltPressed())
+            if (modifiers.AltPressed())
                 keys.Add(Keys.Menu);
-            if (Modifiers.ShiftPressed())
+            if (modifiers.ShiftPressed())
                 keys.Add(Keys.ShiftKey);
 
             return keys.Select(key =>
             {
                 var input = new INPUT();
                 input.Type = InputType.KEYBOARD;
-                input.Union.ki.dwFlags = Up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
-                input.Union.ki.wVk = (short)key;
+                input.Union.ki.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
+                input.Union.ki.wVk = (short) key;
                 input.Union.ki.wScan = 0;
                 input.Union.ki.time = 0;
-                input.Union.ki.dwExtraInfo = new IntPtr(ExtraInfo);
+                input.Union.ki.dwExtraInfo = new IntPtr(extraInfo);
 
                 return input;
             });
         }
 
-        public void SendScanCode(ScanCodeShort ScanCode, bool Up = false)
+        public void SendScanCode(ScanCodeShort scanCode, bool up = false)
         {
-            var inp = new INPUT();
-            inp.Type = InputType.KEYBOARD;
-            inp.Union.ki.dwFlags = (Up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE) | KeyEventFlags.SCANCODE;
+            var inp = new INPUT {Type = InputType.KEYBOARD};
+            inp.Union.ki.dwFlags = (up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE) | KeyEventFlags.SCANCODE;
             inp.Union.ki.wVk = 0;
-            inp.Union.ki.wScan = (short)ScanCode;
+            inp.Union.ki.wScan = (short) scanCode;
             inp.Union.ki.time = 0;
             inp.Union.ki.dwExtraInfo = IntPtr.Zero;
 
-            if (User32.SendInput(1, new INPUT[] { inp }, INPUT.Size) != 1)
+            if (User32.SendInput(1, new[] {inp}, INPUT.Size) != 1)
                 throw new Win32Exception();
         }
     }

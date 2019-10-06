@@ -4,12 +4,12 @@ namespace DirtyMagic.Modules
     {
         protected ModuleInfo Module { get; }
 
-        public ModuleDump(ModuleInfo Module)
-            : base(Module.BaseAddress, Module.MemorySize)
+        public ModuleDump(ModuleInfo module)
+            : base(module.BaseAddress, module.MemorySize)
         {
-            this.Module = Module;
+            this.Module = module;
         }
 
-        public bool Initialized  => Data != null && Data.Length > 0;
+        public bool IsInitialized  => Data != null && Data.Length > 0;
     }
 }

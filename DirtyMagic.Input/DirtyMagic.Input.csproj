@@ -48,6 +48,7 @@
     <Compile Include="Hooks\Events\MouseClickEvent.cs" />
     <Compile Include="Hooks\Events\MouseEvent.cs" />
     <Compile Include="Hooks\Events\MouseMoveEvent.cs" />
+    <Compile Include="Hooks\Events\MousePosition.cs" />
     <Compile Include="Hooks\Events\MouseScrollEvent.cs" />
     <Compile Include="Hooks\Events\ScrollDirection.cs" />
     <Compile Include="Hooks\HookBase.cs" />

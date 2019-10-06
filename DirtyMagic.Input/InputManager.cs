@@ -14,11 +14,11 @@ namespace DirtyMagic
 
         public static class Window
         {
-            public static WindowKeyboardInput GetKeyboard(IntPtr Window, bool Recursive)
-                => new WindowKeyboardInput(Window, Recursive);
+            public static WindowKeyboardInput GetKeyboard(IntPtr window, bool recursive)
+                => new WindowKeyboardInput(window, recursive);
 
-            public static WindowMouseInput GetMouse(IntPtr Window, bool Recursive)
-                => new WindowMouseInput(Window, Recursive);
+            public static WindowMouseInput GetMouse(IntPtr window, bool recursive)
+                => new WindowMouseInput(window, recursive);
         }
     }
 }

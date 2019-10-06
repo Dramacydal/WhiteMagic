@@ -29,10 +29,10 @@ namespace DirtyMagic.Processes
             }
         }
 
-        public RemoteWindow(RemoteProcess Process, IntPtr WindowHandle)
+        public RemoteWindow(RemoteProcess process, IntPtr windowHandle)
         {
-            Handle = WindowHandle;
-            this.Process = Process;
+            Handle = windowHandle;
+            this.Process = process;
 
             //KeyboardInput = new WindowKeyboardInput(this);
             //MouseInput = new WindowMouseInput(this);

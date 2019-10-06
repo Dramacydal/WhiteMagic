@@ -16,25 +16,25 @@ namespace DirtyMagic.Hooks
 
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
-        private void StoreSpecialKeyState(WM Event, KeyboardEvent info)
+        private void StoreSpecialKeyState(WM @event, KeyboardEvent info)
         {
-            var toggle = Event == WM.KEYDOWN || Event == WM.SYSKEYDOWN;
-            Modifiers Flag;
+            var toggle = @event == WM.KEYDOWN || @event == WM.SYSKEYDOWN;
+            Modifiers flag;
             switch (info.VirtualKey)
             {
-                case Keys.LMenu: Flag = Modifiers.LAlt; break;
-                case Keys.RMenu: Flag = Modifiers.RAlt; break;
-                case Keys.LControlKey: Flag = Modifiers.LCtrl; break;
-                case Keys.RControlKey: Flag = Modifiers.RCtrl; break;
-                case Keys.LShiftKey: Flag = Modifiers.LShift; break;
-                case Keys.RShiftKey: Flag = Modifiers.RShift; break;
+                case Keys.LMenu: flag = Modifiers.LAlt; break;
+                case Keys.RMenu: flag = Modifiers.RAlt; break;
+                case Keys.LControlKey: flag = Modifiers.LCtrl; break;
+                case Keys.RControlKey: flag = Modifiers.RCtrl; break;
+                case Keys.LShiftKey: flag = Modifiers.LShift; break;
+                case Keys.RShiftKey: flag = Modifiers.RShift; break;
                 default: return;
             }
 
             if (toggle)
-                ModifiersState |= Flag;
+                ModifiersState |= flag;
             else
-                ModifiersState &= ~Flag;
+                ModifiersState &= ~flag;
         }
 
         internal override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)

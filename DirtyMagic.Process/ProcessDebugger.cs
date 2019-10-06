@@ -6,20 +6,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using DirtyMagic.Exceptions;
 
 namespace DirtyMagic
 {
     public class ProcessDebugger : MemoryHandler
     {
-        protected Thread debugThread = null;
+        private Thread _debugThread = null;
 
-        public bool IsDebugging { get; protected set; }
-        public bool IsDetached { get; protected set; }
+        public bool IsDebugging { get; private set; }
+        public bool IsDetached { get; private set; }
         public bool HasExited => !Process.IsValid;
 
-        public List<HardwareBreakPoint> Breakpoints { get; protected set; } = new List<HardwareBreakPoint>();
+        public List<HardwareBreakPoint> Breakpoints { get; private set; } = new List<HardwareBreakPoint>();
 
-        public ProcessDebugger(int ProcessId) : base(ProcessId)
+        public ProcessDebugger(int processId) : base(processId)
         {
         }
 
@@ -29,7 +30,7 @@ namespace DirtyMagic
 
         private void Attach()
         {
-            bool res = false;
+            var res = false;
             if (!Kernel32.CheckRemoteDebuggerPresent(Process.Handle, ref res))
                 throw new DebuggerException("Failed to check if remote process is already being debugged");
 
@@ -63,7 +64,7 @@ namespace DirtyMagic
             }
         }
 
-        public void AddBreakPoint(HardwareBreakPoint Breakpoint)
+        public void AddBreakPoint(HardwareBreakPoint breakpoint)
         {
             if (Breakpoints.Count >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new DebuggerException("Can't set any more breakpoints");
@@ -72,8 +73,8 @@ namespace DirtyMagic
             {
                 using (var suspender = MakeSuspender())
                 {
-                    Breakpoint.Set(this);
-                    Breakpoints.Add(Breakpoint);
+                    breakpoint.Set(this);
+                    Breakpoints.Add(breakpoint);
                 }
             }
             catch (BreakPointException e)
@@ -104,8 +105,7 @@ namespace DirtyMagic
 
         public void Join()
         {
-            if (debugThread != null)
-                debugThread.Join();
+            _debugThread?.Join();
         }
 
         protected void Detach()
@@ -124,12 +124,12 @@ namespace DirtyMagic
                 throw new DebuggerException("Failed to stop process debugging");
         }
 
-        private void StartListener(uint WaitInterval = 200)
+        private void StartListener(uint waitInterval = 200)
         {
-            var DebugEvent = new DEBUG_EVENT();
+            var debugEvent = new DEBUG_EVENT();
             for (; IsDebugging;)
             {
-                if (!Kernel32.WaitForDebugEvent(ref DebugEvent, WaitInterval))
+                if (!Kernel32.WaitForDebugEvent(ref debugEvent, waitInterval))
                 {
                     if (!IsDebugging)
                         break;
@@ -138,23 +138,30 @@ namespace DirtyMagic
 
                 //Console.WriteLine("Debug Event Code: {0} ", DebugEvent.dwDebugEventCode);
 
-                bool okEvent = false;
-                switch (DebugEvent.dwDebugEventCode)
+                var okEvent = false;
+                switch (debugEvent.dwDebugEventCode)
                 {
                     case DebugEventType.RIP_EVENT:
                     case DebugEventType.EXIT_PROCESS_DEBUG_EVENT:
+                    {
                         //Console.WriteLine("Process has exited");
                         IsDebugging = false;
                         IsDetached = true;
 
-                        if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                        if (!Kernel32.ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId,
+                            okEvent
+                                ? (uint) DebugContinueStatus.DBG_CONTINUE
+                                : (uint) DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                             throw new DebuggerException("Failed to continue debug event");
                         if (!Kernel32.DebugActiveProcessStop(Process.Id))
                             throw new DebuggerException("Failed to stop process debugging");
                         return;
+                    }
                     case DebugEventType.EXCEPTION_DEBUG_EVENT:
+                    {
                         //Console.WriteLine("Exception Code: {0:X}", DebugEvent.Exception.ExceptionRecord.ExceptionCode);
-                        if (DebugEvent.Exception.ExceptionRecord.ExceptionCode == (uint)ExceptonStatus.STATUS_SINGLE_STEP)
+                        if (debugEvent.Exception.ExceptionRecord.ExceptionCode ==
+                            (uint) ExceptonStatus.STATUS_SINGLE_STEP)
                         {
                             okEvent = true;
 
@@ -164,7 +171,8 @@ namespace DirtyMagic
                                 break;
                             }*/
 
-                            var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, DebugEvent.dwThreadId);
+                            var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false,
+                                debugEvent.dwThreadId);
                             if (hThread == IntPtr.Zero)
                                 throw new DebuggerException("Failed to open thread");
 
@@ -175,7 +183,8 @@ namespace DirtyMagic
 
                             if (!Breakpoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
                                 break;
-                            var bp = Breakpoints.First(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
+                            var bp = Breakpoints.First(e =>
+                                e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
 
                             var ContextWrapper = new ContextWrapper(this, Context);
                             if (bp.HandleException(ContextWrapper))
@@ -184,21 +193,23 @@ namespace DirtyMagic
                                     throw new DebuggerException("Failed to set thread context");
                             }
                         }
+
                         break;
+                    }
+
                     case DebugEventType.CREATE_THREAD_DEBUG_EVENT:
-                        {
-                            foreach (var bp in Breakpoints)
-                                bp.SetToThread(DebugEvent.CreateThread.hThread, DebugEvent.dwThreadId);
-                            break;
-                        }
-                    case DebugEventType.EXIT_THREAD_DEBUG_EVENT:
-                        {
-                            foreach (var bp in Breakpoints)
-                                bp.UnregisterThread(DebugEvent.dwThreadId);
-                            break;
-                        }
-                    default:
+                    {
+                        foreach (var bp in Breakpoints)
+                            bp.SetToThread(debugEvent.CreateThread.hThread, debugEvent.dwThreadId);
                         break;
+                    }
+
+                    case DebugEventType.EXIT_THREAD_DEBUG_EVENT:
+                    {
+                        foreach (var bp in Breakpoints)
+                            bp.UnregisterThread(debugEvent.dwThreadId);
+                        break;
+                    }
                 }
 
                 if (!IsDebugging)
@@ -206,14 +217,14 @@ namespace DirtyMagic
                     IsDetached = true;
 
                     RemoveBreakPoints();
-                    if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                    if (!Kernel32.ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                         throw new DebuggerException("Failed to continue debug event");
                     if (!Kernel32.DebugActiveProcessStop(Process.Id))
                         throw new DebuggerException("Failed to stop process debugging");
                     return;
                 }
 
-                if (!Kernel32.ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
+                if (!Kernel32.ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, okEvent ? (uint)DebugContinueStatus.DBG_CONTINUE : (uint)DebugContinueStatus.DBG_EXCEPTION_NOT_HANDLED))
                     throw new DebuggerException("Failed to continue debug event");
             }
 
@@ -222,7 +233,7 @@ namespace DirtyMagic
 
         public void Run()
         {
-            debugThread = new Thread(() =>
+            _debugThread = new Thread(() =>
                 {
                     try
                     {
@@ -250,40 +261,37 @@ namespace DirtyMagic
                         Console.WriteLine("Exception occured: {0}", e.Message);
                     }
                 });
-            debugThread.Start();
+            _debugThread.Start();
         }
 
-        public bool WaitForComeUp(int WaitTime)
+        public bool WaitForComeUp(int waitTime)
         {
             if (IsDebugging)
                 return true;
 
-            Thread.Sleep(WaitTime);
+            Thread.Sleep(waitTime);
             return IsDebugging;
         }
 
-        public bool WaitForComeUp(int WaitTime, int RepeatCount)
+        public bool WaitForComeUp(int waitTime, int repeatCount)
         {
-            for (int i = 0; i < RepeatCount; ++i)
+            for (int i = 0; i < repeatCount; ++i)
             {
-                if (WaitForComeUp(WaitTime))
+                if (WaitForComeUp(waitTime))
                     return true;
             }
 
             return IsDebugging;
         }
 
-        private bool _CatchSigInt = false;
+        private bool _catchSigInt;
         public bool CatchSigInt
         {
-            get
-            {
-                return _CatchSigInt;
-            }
+            get => _catchSigInt;
             set
             {
-                _CatchSigInt = value;
-                if (_CatchSigInt)
+                _catchSigInt = value;
+                if (_catchSigInt)
                     SigIntHandler.AddInstance(this);
                 else
                     SigIntHandler.RemoveInstance(this);
@@ -293,11 +301,11 @@ namespace DirtyMagic
 
     public static class SigIntHandler
     {
-        private static List<ProcessDebugger> AffectedInstances = new List<ProcessDebugger>();
+        private static readonly List<ProcessDebugger> AffectedInstances = new List<ProcessDebugger>();
 
         static SigIntHandler()
         {
-            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) =>
+            Console.CancelKeyPress += (sender, e) =>
             {
                 if (AffectedInstances.Count > 0)
                 {
@@ -309,8 +317,8 @@ namespace DirtyMagic
             };
         }
 
-        public static void AddInstance(ProcessDebugger Debugger) => AffectedInstances.Add(Debugger);
+        public static void AddInstance(ProcessDebugger debugger) => AffectedInstances.Add(debugger);
 
-        public static void RemoveInstance(ProcessDebugger Debugger) => AffectedInstances.Remove(Debugger);
+        public static void RemoveInstance(ProcessDebugger debugger) => AffectedInstances.Remove(debugger);
     }
 }

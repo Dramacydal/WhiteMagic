@@ -22,12 +22,11 @@ namespace DirtyMagic
         /// <returns></returns>
         public static IEnumerable<RemoteProcess> EnumerateProcesses()
         {
-            var arraySize = 1024u;
+            const uint arraySize = 1024u;
             var arrayBytesSize = arraySize * sizeof(uint);
             var processIds = new int[arraySize];
-            uint bytesCopied;
 
-            if (!Psapi.EnumProcesses(processIds, arrayBytesSize, out bytesCopied))
+            if (!Psapi.EnumProcesses(processIds, arrayBytesSize, out var bytesCopied))
                 yield break;
 
             if (bytesCopied == 0)
@@ -41,11 +40,11 @@ namespace DirtyMagic
             {
                 var id = processIds[i];
 
-                var Handle = Kernel32.OpenProcess(ProcessAccess.QueryInformation, false, id);
-                if (Handle == IntPtr.Zero)
+                var handle = Kernel32.OpenProcess(ProcessAccess.QueryInformation, false, id);
+                if (handle == IntPtr.Zero)
                     continue;
 
-                Kernel32.CloseHandle(Handle);
+                Kernel32.CloseHandle(handle);
 
                 Process process = null;
                 try
@@ -63,12 +62,12 @@ namespace DirtyMagic
             }
         }
 
-        public static RemoteProcess FindProcessById(int ProcesId)
+        public static RemoteProcess FindProcessById(int processId)
         {
             Process process;
             try
             {
-                process = Process.GetProcessById(ProcesId);
+                process = Process.GetProcessById(processId);
             }
             catch (Exception)
             {
@@ -82,29 +81,29 @@ namespace DirtyMagic
         }
 
         #region String parameters methods
-        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(string Name)
-            => FindProcessesByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(string name)
+            => FindProcessesByInternalName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static IEnumerable<RemoteProcess> FindProcessesByProductName(string Name)
-            => FindProcessesByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static IEnumerable<RemoteProcess> FindProcessesByProductName(string name)
+            => FindProcessesByProductName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static IEnumerable<RemoteProcess> FindProcessesByName(string Name)
-            => FindProcessesByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static IEnumerable<RemoteProcess> FindProcessesByName(string name)
+            => FindProcessesByName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static RemoteProcess FindProcessByName(string Name)
-            => FindProcessByName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static RemoteProcess FindProcessByName(string name)
+            => FindProcessByName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static RemoteProcess FindProcessByInternalName(string Name)
-            => FindProcessByInternalName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static RemoteProcess FindProcessByInternalName(string name)
+            => FindProcessByInternalName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static RemoteProcess FindProcessByProductName(string Name)
-            => FindProcessByProductName(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static RemoteProcess FindProcessByProductName(string name)
+            => FindProcessByProductName(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
 
-        public static RemoteProcess SelectProcess(string Name)
-            => SelectProcess(new Regex(Regex.Escape(Name), RegexOptions.IgnoreCase));
+        public static RemoteProcess SelectProcess(string name)
+            => SelectProcess(new Regex(Regex.Escape(name), RegexOptions.IgnoreCase));
         #endregion
 
-        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByInternalName(Regex pattern)
         {
             return EnumerateProcesses().Where(process =>
             {
@@ -112,7 +111,7 @@ namespace DirtyMagic
                 {
                     return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
                         process.MainModule.FileVersionInfo.InternalName != null &&
-                        Pattern.IsMatch(process.MainModule.FileVersionInfo.InternalName);
+                        pattern.IsMatch(process.MainModule.FileVersionInfo.InternalName);
                 }
                 catch (Win32Exception)
                 {
@@ -121,74 +120,70 @@ namespace DirtyMagic
             });
         }
 
-        public static IEnumerable<RemoteProcess> FindProcessesByProductName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByProductName(Regex pattern)
         {
             return EnumerateProcesses().Where(process =>
             {
                 return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
                     process.MainModule.FileVersionInfo.ProductName != null &&
-                    Pattern.IsMatch(process.MainModule.FileVersionInfo.ProductName);
+                    pattern.IsMatch(process.MainModule.FileVersionInfo.ProductName);
             });
         }
 
-        public static IEnumerable<RemoteProcess> FindProcessesByName(Regex Pattern)
+        public static IEnumerable<RemoteProcess> FindProcessesByName(Regex pattern)
         {
             return EnumerateProcesses().Where(process => 
                 {
                     return process.IsValid && Kernel32.Is32BitProcess(process.Handle) &&
-                        Pattern.IsMatch(process.Name);
+                        pattern.IsMatch(process.Name);
                 });
         }
 
-        public static RemoteProcess FindProcessByName(Regex Pattern)
-            => FindProcessesByName(Pattern).FirstOrDefault();
+        public static RemoteProcess FindProcessByName(Regex pattern)
+            => FindProcessesByName(pattern).FirstOrDefault();
 
-        public static RemoteProcess FindProcessByInternalName(Regex Pattern)
-            => FindProcessesByInternalName(Pattern).FirstOrDefault();
+        public static RemoteProcess FindProcessByInternalName(Regex pattern)
+            => FindProcessesByInternalName(pattern).FirstOrDefault();
 
-        public static RemoteProcess FindProcessByProductName(Regex Pattern)
-            => FindProcessesByProductName(Pattern).FirstOrDefault();
+        public static RemoteProcess FindProcessByProductName(Regex pattern)
+            => FindProcessesByProductName(pattern).FirstOrDefault();
 
-        public static RemoteProcess SelectProcess(Regex Pattern)
+        public static RemoteProcess SelectProcess(Regex pattern)
         {
             for (; ; )
             {
-                var processList = FindProcessesByInternalName(Pattern).ToList();
+                var processList = FindProcessesByInternalName(pattern).ToList();
                 if (processList.Count == 0)
                     throw new ProcessSelectorException("No processes found");
 
                 try
                 {
-                    int index = 0;
-                    if (processList.Count != 1)
-                    {
-                        Console.WriteLine("Select process:");
-                        for (var i = 0; i < processList.Count; ++i)
-                        {
-                            var debugging = false;
-                            Kernel32.CheckRemoteDebuggerPresent(processList[i].Handle, ref debugging);
-
-                            Console.WriteLine("[{0}] {1} PID: {2} {3}",
-                                i,
-                                processList[i].GetVersionInfo(),
-                                processList[i].Id,
-                                debugging ? "(Already debugging)" : "");
-                        }
-
-                        Console.WriteLine();
-                        Console.Write("> ");
-                        index = Convert.ToInt32(Console.ReadLine());
-
-                        return processList[index];
-                    }
-                    else
+                    if (processList.Count == 1)
                         return processList[0];
+
+                    Console.WriteLine("Select process:");
+                    for (var i = 0; i < processList.Count; ++i)
+                    {
+                        var debugging = false;
+                        Kernel32.CheckRemoteDebuggerPresent(processList[i].Handle, ref debugging);
+
+                        Console.WriteLine("[{0}] {1} PID: {2} {3}",
+                            i,
+                            processList[i].GetVersionInfo(),
+                            processList[i].Id,
+                            debugging ? "(Already debugging)" : "");
+                    }
+
+                    Console.WriteLine();
+                    Console.Write("> ");
+                    var index = Convert.ToInt32(Console.ReadLine());
+
+                    return processList[index];
                 }
                 catch (Exception ex)
                 {
                     if (processList.Count == 1)
                         throw new ProcessSelectorException(ex.Message);
-                    continue;
                 }
             }
         }
@@ -201,19 +196,16 @@ namespace DirtyMagic
         /// <returns>Internal name of a process</returns>
         public static bool SetDebugPrivileges()
         {
-            IntPtr hToken;
-            LUID luidSEDebugNameValue;
-            TOKEN_PRIVILEGES tkpPrivileges;
-
-            if (!Advapi32.OpenProcessToken(Kernel32.GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out hToken))
+            if (!Advapi32.OpenProcessToken(Kernel32.GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out var hToken))
                 return false;
 
-            if (!Advapi32.LookupPrivilegeValue(null, SE_DEBUG_NAME, out luidSEDebugNameValue))
+            if (!Advapi32.LookupPrivilegeValue(null, SE_DEBUG_NAME, out var luidSEDebugNameValue))
             {
                 Kernel32.CloseHandle(hToken);
                 return false;
             }
 
+            TOKEN_PRIVILEGES tkpPrivileges;
             tkpPrivileges.PrivilegeCount = 1;
             tkpPrivileges.Luid = luidSEDebugNameValue;
             tkpPrivileges.Attributes = PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
@@ -242,12 +234,12 @@ namespace DirtyMagic
             public int MainThreadId;
         }
 
-        public static ProcessStartResult StartProcess(string FilePath, string Arguments = "", ProcessStartFlags StartFlags = ProcessStartFlags.None)
+        public static ProcessStartResult StartProcess(string filePath, string arguments = "",
+            ProcessStartFlags startFlags = ProcessStartFlags.None)
         {
-            if (!File.Exists(FilePath))
-                throw new MagicException($"No such file '{FilePath}'");
+            if (!File.Exists(filePath))
+                throw new MagicException($"No such file '{filePath}'");
 
-            var pInfo = new PROCESS_INFORMATION();
             var sInfo = new STARTUPINFO();
             var pSec = new SECURITY_ATTRIBUTES();
             var tSec = new SECURITY_ATTRIBUTES();
@@ -255,23 +247,23 @@ namespace DirtyMagic
             tSec.nLength = Marshal.SizeOf(tSec);
 
             var flags = CreateProcessFlags.DETACHED_PROCESS;
-            if (StartFlags.HasFlag(ProcessStartFlags.NoWindow))
+            if (startFlags.HasFlag(ProcessStartFlags.NoWindow))
                 flags |= CreateProcessFlags.CREATE_NO_WINDOW;
-            if (StartFlags.HasFlag(ProcessStartFlags.Suspended))
+            if (startFlags.HasFlag(ProcessStartFlags.Suspended))
                 flags |= CreateProcessFlags.CREATE_SUSPENDED;
 
-            if (!Kernel32.CreateProcess(FilePath, Arguments,
+            if (!Kernel32.CreateProcess(filePath, arguments,
                 ref pSec, ref tSec, false, flags,
-                IntPtr.Zero, null, ref sInfo, out pInfo))
+                IntPtr.Zero, null, ref sInfo, out var pInfo))
                 throw new MagicException("Failed to start process");
 
             return new ProcessStartResult()
-                {
-                    ProcessId = pInfo.dwProcessId,
-                    ProcessHandle = pInfo.hProcess,
-                    MainThreadId = pInfo.dwThreadId,
-                    MainThreadHandle= pInfo.hThread
-                };
+            {
+                ProcessId = pInfo.dwProcessId,
+                ProcessHandle = pInfo.hProcess,
+                MainThreadId = pInfo.dwThreadId,
+                MainThreadHandle = pInfo.hThread
+            };
         }
     }
 }

@@ -8,32 +8,32 @@ namespace DirtyMagic
         /// <summary>
         /// Converts byte array into space-separated hex string
         /// </summary>
-        /// <param name="Data"></param>
-        /// <param name="Reverse"></param>
+        /// <param name="data"></param>
+        /// <param name="reverse"></param>
         /// <returns></returns>
-        public static string AsHexString(this byte[] Data, bool Reverse = false, string Separator = " ")
+        public static string AsHexString(this byte[] data, bool reverse = false, string separator = " ")
         {
-            if (Data.Length == 0)
+            if (data.Length == 0)
                 return string.Empty;
 
-            return string.Join(Separator,
-                (Reverse ? Data.Reverse() : Data).Select(_ => string.Format("{0:X2}", _)));
+            return string.Join(separator,
+                (reverse ? data.Reverse() : data).Select(_ => $"{_:X2}"));
         }
 
-        public static uint ToUInt32(this IntPtr Pointer) => (uint) Pointer.ToInt32();
+        public static uint ToUInt32(this IntPtr pointer) => (uint) pointer.ToInt32();
 
-        public static IntPtr Add(this IntPtr Pointer, int Offset) => IntPtr.Add(Pointer, Offset);
+        public static IntPtr Add(this IntPtr pointer, int offset) => IntPtr.Add(pointer, offset);
 
-        public static IntPtr Add(this IntPtr Pointer, uint Offset) => IntPtr.Add(Pointer, (int) Offset);
+        public static IntPtr Add(this IntPtr pointer, uint offset) => IntPtr.Add(pointer, (int) offset);
 
-        public static IntPtr Add(this IntPtr Pointer, IntPtr Pointer2) =>
-            IntPtr.Add(Pointer, Pointer2.ToInt32());
+        public static IntPtr Add(this IntPtr pointer, IntPtr pointer2) =>
+            IntPtr.Add(pointer, pointer2.ToInt32());
 
-        public static IntPtr Subtract(this IntPtr Pointer, int Offset) => IntPtr.Subtract(Pointer, Offset);
+        public static IntPtr Subtract(this IntPtr pointer, int offset) => IntPtr.Subtract(pointer, offset);
 
-        public static IntPtr Subtract(this IntPtr Pointer, IntPtr Pointer2) =>
-            IntPtr.Subtract(Pointer, Pointer2.ToInt32());
+        public static IntPtr Subtract(this IntPtr pointer, IntPtr pointer2) =>
+            IntPtr.Subtract(pointer, pointer2.ToInt32());
 
-        public static bool IsEmpty(this TimeSpan TimeSpan) => TimeSpan.Ticks <= 0;
+        public static bool IsEmpty(this TimeSpan timeSpan) => timeSpan.Ticks <= 0;
     }
 }

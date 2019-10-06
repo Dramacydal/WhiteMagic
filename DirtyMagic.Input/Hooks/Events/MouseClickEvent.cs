@@ -11,17 +11,17 @@ namespace DirtyMagic.Hooks.Events
         public MouseButtons Button { get; }
         public Point Position { get; }
 
-        public MouseClickEvent(WM Event, MSLLHOOKSTRUCT Raw) : base(MouseEventType.Button)
+        internal MouseClickEvent(WM @event, MSLLHOOKSTRUCT raw) : base(MouseEventType.Button)
         {
-            Position = new Point(Raw.ptX, Raw.ptY);
+            Position = new Point(raw.ptX, raw.ptY);
 
-            switch (Event)
+            switch (@event)
             {
                 case WM.LBUTTONDOWN:
                 case WM.LBUTTONUP:
                 case WM.LBUTTONDBLCLK:
                     Button = MouseButtons.Left;
-                    switch (Event)
+                    switch (@event)
                     {
                         case WM.LBUTTONDOWN:
                             State = ClickState.Down;
@@ -39,7 +39,7 @@ namespace DirtyMagic.Hooks.Events
                 case WM.RBUTTONUP:
                 case WM.RBUTTONDBLCLK:
                     Button = MouseButtons.Right;
-                    switch (Event)
+                    switch (@event)
                     {
                         case WM.RBUTTONDOWN:
                             State = ClickState.Down;
@@ -57,7 +57,7 @@ namespace DirtyMagic.Hooks.Events
                 case WM.MBUTTONUP:
                 case WM.MBUTTONDBLCLK:
                     Button = MouseButtons.Middle;
-                    switch (Event)
+                    switch (@event)
                     {
                         case WM.MBUTTONDOWN:
                             State = ClickState.Down;
@@ -75,13 +75,13 @@ namespace DirtyMagic.Hooks.Events
                 case WM.XBUTTONUP:
                 case WM.XBUTTONDBLCLK:
                 {
-                    var xButtonIndex = Raw.mouseData >> 16;
+                    var xButtonIndex = raw.mouseData >> 16;
                     if (xButtonIndex == 1)
                         Button = MouseButtons.XButton1;
                     else if (xButtonIndex == 2)
                         Button = MouseButtons.XButton2;
 
-                    switch (Event)
+                    switch (@event)
                     {
                         case WM.XBUTTONDOWN:
                             State = ClickState.Down;

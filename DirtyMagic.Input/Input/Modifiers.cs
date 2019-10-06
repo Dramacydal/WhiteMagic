@@ -20,8 +20,8 @@ namespace DirtyMagic.Input
 
     public static class ModifiersExtension
     {
-        public static bool AltPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Alt) != Modifiers.None;
-        public static bool CtrlPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Ctrl) != Modifiers.None;
-        public static bool ShiftPressed(this Modifiers Modifiers) => (Modifiers & Modifiers.Shift) != Modifiers.None;
+        public static bool AltPressed(this Modifiers modifiers) => (modifiers & Modifiers.Alt) != Modifiers.None;
+        public static bool CtrlPressed(this Modifiers modifiers) => (modifiers & Modifiers.Ctrl) != Modifiers.None;
+        public static bool ShiftPressed(this Modifiers modifiers) => (modifiers & Modifiers.Shift) != Modifiers.None;
     }
 }

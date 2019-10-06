@@ -7,19 +7,19 @@ namespace DirtyMagic.Input
 {
     public abstract class IMouseInput
     {
-        public abstract void Move(int X, int Y, bool Absolute);
-        public abstract void SendButton(MouseButtons Button, bool Up = false);
+        public abstract void Move(int x, int y, bool absolute);
+        public abstract void SendButton(MouseButtons button, bool up = false);
 
-        public void Click(MouseButtons Button, TimeSpan PressTime)
+        public void Click(MouseButtons button, TimeSpan keyPressTime)
         {
-            SendButton(Button, false);
-            if (!PressTime.IsEmpty())
-                Thread.Sleep((int)PressTime.TotalMilliseconds);
-            SendButton(Button, true);
+            SendButton(button, false);
+            if (!keyPressTime.IsEmpty())
+                Thread.Sleep((int)keyPressTime.TotalMilliseconds);
+            SendButton(button, true);
         }
 
-        public void Click(MouseButtons Button) => Click(Button, new TimeSpan());
+        public void Click(MouseButtons button) => Click(button, new TimeSpan());
 
-        public abstract void SendScroll(ScrollDirection Direction);
+        public abstract void SendScroll(ScrollDirection direction);
     }
 }

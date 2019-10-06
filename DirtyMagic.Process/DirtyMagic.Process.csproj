@@ -46,14 +46,16 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Breakpoints\BreakpointException.cs" />
+    <Compile Include="Exceptions\BreakpointException.cs" />
     <Compile Include="Breakpoints\CodeBreakpoint.cs" />
     <Compile Include="ContextWrapper.cs" />
     <Compile Include="Exceptions\DebuggerException.cs" />
+    <Compile Include="MagicConvention.cs" />
     <Compile Include="MemoryDump.cs" />
     <Compile Include="MemoryHelpers.cs" />
     <Compile Include="Modules\ModuleInfo.cs" />
     <Compile Include="Patterns\MemoryPattern.cs" />
+    <Compile Include="Patterns\PatternHelper.cs" />
     <Compile Include="Patterns\RegexExtensions.cs" />
     <Compile Include="Processes\RemoteProcess.cs" />
     <Compile Include="Processes\RemoteWindow.cs" />

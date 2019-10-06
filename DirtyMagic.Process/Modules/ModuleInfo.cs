@@ -5,31 +5,31 @@ namespace DirtyMagic.Modules
 {
     public class ModuleInfo
     {
-        public ModuleInfo(ProcessModule Module)
+        public ModuleInfo(ProcessModule module)
         {
-            Update(Module);
+            Update(module);
         }
 
-        public void Update(ProcessModule Module)
+        public void Update(ProcessModule module)
         {
-            Invalidated = false;
+            IsInvalidated = false;
 
-            if (BaseAddress == Module.BaseAddress && MemorySize == Module.ModuleMemorySize)
+            if (BaseAddress == module.BaseAddress && MemorySize == module.ModuleMemorySize)
                 return;
 
-            ModuleName = Module.ModuleName;
-            BaseAddress = Module.BaseAddress;
-            MemorySize = Module.ModuleMemorySize;
+            ModuleName = module.ModuleName;
+            BaseAddress = module.BaseAddress;
+            MemorySize = module.ModuleMemorySize;
 
             Dump = new ModuleDump(this);
         }
 
-        public void Invalidate() => Invalidated = true;
+        public void Invalidate() => IsInvalidated = true;
 
         public string ModuleName { get; private set; }
         public IntPtr BaseAddress { get; private set; }
         public int MemorySize { get; private set; }
         public ModuleDump Dump { get; private set; }
-        public bool Invalidated { get; private set; }
+        public bool IsInvalidated { get; private set; }
     }
 }

@@ -5,6 +5,6 @@ namespace DirtyMagic.Breakpoints
 {
     public abstract class CodeBreakpoint : HardwareBreakPoint
     {
-        public CodeBreakpoint(ModulePointer Pointer) : base(Pointer, BreakpointCondition.Code, 1) { }
+        protected CodeBreakpoint(ModulePointer pointer) : base(pointer, BreakpointCondition.Code, 1) { }
     }
 }

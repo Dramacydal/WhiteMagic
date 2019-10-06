@@ -13,70 +13,70 @@ namespace DirtyMagic.Input
         public IntPtr Window { get; }
         public bool Recursive { get; set; }
 
-        public WindowKeyboardInput(IntPtr Window, bool Recursive = true)
+        public WindowKeyboardInput(IntPtr window, bool recursive = true)
         {
-            this.Window = Window;
-            this.Recursive = Recursive;
+            this.Window = window;
+            this.Recursive = recursive;
         }
 
-        public WindowKeyboardInput SetRecursive(bool On)
+        public WindowKeyboardInput SetRecursive(bool on)
         {
-            Recursive = On;
+            Recursive = on;
             return this;
         }
 
-        private static void SendKeyToWindow(IntPtr Window, Keys Key, bool Up, bool Recursive = false)
+        private static void SendKeyToWindow(IntPtr window, Keys key, bool up, bool recursive = false)
         {
             var lParam = 0u;
-            lParam |= Up ? 1u : 0;
+            lParam |= up ? 1u : 0;
 
-            var scanCode = User32.MapVirtualKey((uint)Key, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC);
+            var scanCode = User32.MapVirtualKey((uint)key, MapVirtualKeyMapTypes.MAPVK_VK_TO_VSC);
             lParam |= (uint)scanCode << 16;
 
-            if (Up)
+            if (up)
             {
                 lParam |= 1u << 30;
                 lParam |= 1u << 31;
             }
 
-            if (!User32.PostMessage(Window, Up ? WM.KEYUP : WM.KEYDOWN, (uint)Key, lParam))
+            if (!User32.PostMessage(window, up ? WM.KEYUP : WM.KEYDOWN, (uint)key, lParam))
                 throw new Win32Exception();
 
-            if (Recursive)
+            if (recursive)
             {
-                User32.EnumChildWindows(Window, (IntPtr hwnd, IntPtr param) =>
+                User32.EnumChildWindows(window, (hwnd, param) =>
                 {
-                    SendKeyToWindow(hwnd, Key, Up, false);
+                    SendKeyToWindow(hwnd, key, up, false);
                     return true;
                 }, IntPtr.Zero);
             }
         }
 
-        public override void SendKey(Keys Key, Modifiers Modifiers = Modifiers.None, bool Up = false, int ExtraInfo = 0)
+        public override void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0)
         {
-            var keys = new List<Keys>();
-            if (Modifiers.CtrlPressed())
-                keys.Add(Keys.ControlKey);
-            if (Modifiers.AltPressed())
-                keys.Add(Keys.Menu);
-            if (Modifiers.ShiftPressed())
-                keys.Add(Keys.ShiftKey);
-            if (Key != Keys.None)
-                keys.Add(Key);
+            var keyPresses = new List<Keys>();
+            if (modifiers.CtrlPressed())
+                keyPresses.Add(Keys.ControlKey);
+            if (modifiers.AltPressed())
+                keyPresses.Add(Keys.Menu);
+            if (modifiers.ShiftPressed())
+                keyPresses.Add(Keys.ShiftKey);
+            if (key != Keys.None)
+                keyPresses.Add(key);
 
-            if (Up)
-                keys.Reverse();
+            if (up)
+                keyPresses.Reverse();
 
-            foreach (var key in keys)
-                SendKeyToWindow(Window, Key, Up, Recursive);
+            foreach (var keyPress in keyPresses)
+                SendKeyToWindow(Window, keyPress, up, Recursive);
         }
 
-        public override void KeyPress(Keys Key, Modifiers Modifiers, TimeSpan KeyPressTime, int ExtraInfo = 0)
+        public override void KeyPress(Keys key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0)
         {
-            SendKey(Key, Modifiers, false, 0);
+            SendKey(key, modifiers, false, 0);
             if (!DefaultKeypressTime.IsEmpty())
                 Thread.Sleep((int)DefaultKeypressTime.TotalMilliseconds);
-            SendKey(Key, Modifiers, true, 0);
+            SendKey(key, modifiers, true, 0);
         }
 
         public override void SendChar(char c)

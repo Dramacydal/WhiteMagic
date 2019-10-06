@@ -8,7 +8,7 @@ namespace DirtyMagic.WinAPI
     {
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool OpenProcessToken(IntPtr ProcessHandle,
+        public static extern bool OpenProcessToken(IntPtr processHandle,
             TokenObject DesiredAccess, out IntPtr TokenHandle);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -18,11 +18,11 @@ namespace DirtyMagic.WinAPI
 
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool AdjustTokenPrivileges(IntPtr TokenHandle,
-           [MarshalAs(UnmanagedType.Bool)]bool DisableAllPrivileges,
-           ref TOKEN_PRIVILEGES NewState,
-           uint Zero,
-           IntPtr Null1,
-           IntPtr Null2);
+        public static extern bool AdjustTokenPrivileges(IntPtr tokenHandle,
+           [MarshalAs(UnmanagedType.Bool)]bool disableAllPrivileges,
+           ref TOKEN_PRIVILEGES newState,
+           uint zero,
+           IntPtr null1,
+           IntPtr null2);
     }
 }

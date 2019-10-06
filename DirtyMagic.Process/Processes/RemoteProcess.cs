@@ -7,7 +7,7 @@ namespace DirtyMagic.Processes
 {
     public class RemoteProcess
     {
-        public Process Process { get; private set; }
+        public Process Process { get; }
 
         public int Id => Process.Id;
 
@@ -54,14 +54,14 @@ namespace DirtyMagic.Processes
             }
         }
 
-        public static RemoteProcess GetById(int ProcessId)
+        public static RemoteProcess GetById(int processId)
         {
-            return ProcessHelpers.FindProcessById(ProcessId);
+            return ProcessHelpers.FindProcessById(processId);
         }
 
-        public RemoteProcess(Process Process)
+        public RemoteProcess(Process process)
         {
-            this.Process = Process;
+            this.Process = process;
         }
 
         public override string ToString()

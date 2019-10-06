@@ -1,6 +1,4 @@
-using DirtyMagic.Exceptions;
-
-namespace DirtyMagic
+namespace DirtyMagic.Exceptions
 {
     public class DebuggerException : MagicException
     {

@@ -25,35 +25,35 @@ namespace DirtyMagic.Input
         /// <summary>
         /// Translates absolute screen coordinates to normalized coordinates between 0 and 65535
         /// </summary>
-        /// <param name="X"></param>
-        /// <param name="Y"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         /// <returns></returns>
-        public POINT NormalizeVirtual(int X, int Y)
+        public POINT NormalizeVirtual(int x, int y)
         {
-            if (X < 0) X = 0;
-            if (Y < 0) Y = 0;
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
 
-            if (X > VirtualScreenX) X = VirtualScreenX;
-            if (Y > VirtualScreenY) Y = VirtualScreenY;
+            if (x > VirtualScreenX) x = VirtualScreenX;
+            if (y > VirtualScreenY) y = VirtualScreenY;
 
-            X = (int)(X * 1.0f / VirtualScreenX * NormalBase);
-            Y = (int)(Y * 1.0f / VirtualScreenY * NormalBase);
+            x = (int)(x * 1.0f / VirtualScreenX * NormalBase);
+            y = (int)(y * 1.0f / VirtualScreenY * NormalBase);
 
-            return new POINT(X, Y);
+            return new POINT(x, y);
         }
 
-        public POINT DenormalizeVirtual(int X, int Y)
+        public POINT DenormalizeVirtual(int x, int y)
         {
-            if (X < 0) X = 0;
-            if (Y < 0) Y = 0;
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
 
-            if (X > NormalBase) X = NormalBase;
-            if (Y > NormalBase) Y = NormalBase;
+            if (x > NormalBase) x = NormalBase;
+            if (y > NormalBase) y = NormalBase;
 
-            X = (int)(X * 1.0f / NormalBase * VirtualScreenX);
-            Y = (int)(Y * 1.0f / NormalBase * VirtualScreenY);
+            x = (int)(x * 1.0f / NormalBase * VirtualScreenX);
+            y = (int)(y * 1.0f / NormalBase * VirtualScreenY);
 
-            return new POINT(X, Y);
+            return new POINT(x, y);
         }
     }
 }

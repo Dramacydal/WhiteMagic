@@ -8,16 +8,16 @@ namespace DirtyMagic
         public ProcessDebugger Debugger { get; }
         public CONTEXT Context { get; }
 
-        public ContextWrapper(ProcessDebugger Debugger, CONTEXT Context)
+        public ContextWrapper(ProcessDebugger debugger, CONTEXT context)
         {
-            this.Debugger = Debugger;
-            this.Context = Context;
+            this.Debugger = debugger;
+            this.Context = context;
         }
 
-        public void Push(uint Value)
+        public void Push(uint value)
         {
             Context.Esp -= 4;
-            Debugger.WriteUInt(new IntPtr(Context.Esp), Value);
+            Debugger.WriteUInt(new IntPtr(Context.Esp), value);
         }
 
         public uint Pop()

@@ -3,10 +3,10 @@ namespace DirtyMagic.Pointers
 {
     public class ValuePointer<T> : ModulePointer where T : struct
     {
-        public ValuePointer(string ModuleName, int Offset) : base(ModuleName, Offset) { }
+        public ValuePointer(string moduleName, int offset) : base(moduleName, offset) { }
 
-        public T Read(MemoryHandler Memory) => Memory.Read<T>(this);
+        public T Read(MemoryHandler memory) => memory.Read<T>(this);
 
-        public void Write(MemoryHandler Memory, T Value) => Memory.Write<T>(this, Value);
+        public void Write(MemoryHandler memory, T malue) => memory.Write<T>(this, malue);
     }
 }

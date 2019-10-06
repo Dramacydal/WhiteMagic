@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using DirtyMagic.Exceptions;
 using DirtyMagic.Pointers;
 using DirtyMagic.WinAPI;
 using DirtyMagic.WinAPI.Structures;
@@ -29,11 +29,11 @@ namespace DirtyMagic.Breakpoints
         
         protected MemoryHandler Memory { get; private set; }
 
-        private Dictionary<int, int> AffectedThreads = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _affectedThreads = new Dictionary<int, int>();
 
         protected readonly int Length;
 
-        public HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
+        protected HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
         {
             if (Condition == BreakpointCondition.Code)
                 Length = 1;
@@ -47,22 +47,22 @@ namespace DirtyMagic.Breakpoints
                 case 2: this.Length = 1; break;
                 case 4: this.Length = 3; break;
                 case 8: this.Length = 2; break;
-                default: throw new BreakPointException("Invalid length!");
+                default: throw new BreakPointException($"Invalid breakpoint length! ({Length})");
             }
         }
 
-        public bool Set(MemoryHandler Memory)
+        public bool Set(MemoryHandler memory)
         {
-            this.Memory = Memory;
-            Memory.RefreshMemory();
+            this.Memory = memory;
+            memory.RefreshMemory();
 
-            Address = Memory.GetAddress(Pointer);
+            Address = memory.GetAddress(Pointer);
             if (Address == null)
                 return false;
 
-            foreach (var th in Memory.Process.Threads)
+            foreach (var th in memory.Process.Threads)
             {
-                if (AffectedThreads.ContainsKey(th.Id))
+                if (_affectedThreads.ContainsKey(th.Id))
                     continue;
 
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
@@ -78,10 +78,10 @@ namespace DirtyMagic.Breakpoints
             return true;
         }
 
-        public void SetToThread(IntPtr ThreadHandle, int ThreadId)
+        public void SetToThread(IntPtr threadHandle, int threadId)
         {
             // make sure this breakpoint isn't already set
-            if (AffectedThreads.ContainsKey(ThreadId))
+            if (_affectedThreads.ContainsKey(threadId))
                 return;
 
             var cxt = new CONTEXT();
@@ -90,7 +90,7 @@ namespace DirtyMagic.Breakpoints
             cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
+            if (!Kernel32.GetThreadContext(threadHandle, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             // Find an available hardware register
@@ -113,21 +113,21 @@ namespace DirtyMagic.Breakpoints
             SetBits(ref cxt.Dr7, index * 2, 1, 1);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(ThreadHandle, cxt))
+            if (!Kernel32.SetThreadContext(threadHandle, cxt))
                 throw new BreakPointException("Failed to set thread context");
 
-            AffectedThreads[ThreadId] = index;
+            _affectedThreads[threadId] = index;
         }
 
-        public void UnregisterThread(int ThreadId) => AffectedThreads.Remove(ThreadId);
+        public void UnregisterThread(int ThreadId) => _affectedThreads.Remove(ThreadId);
 
-        public void UnSet(MemoryHandler Memory)
+        public void UnSet(MemoryHandler memory)
         {
-            Memory.RefreshMemory();
+            memory.RefreshMemory();
 
-            foreach (var th in Memory.Process.Threads)
+            foreach (var th in memory.Process.Threads)
             {
-                if (!AffectedThreads.ContainsKey(th.Id))
+                if (!_affectedThreads.ContainsKey(th.Id))
                     continue;
 
                 var hThread = Kernel32.OpenThread(ThreadAccess.THREAD_ALL_ACCESS, false, th.Id);
@@ -140,44 +140,44 @@ namespace DirtyMagic.Breakpoints
                     throw new BreakPointException("Failed to close thread handle");
             }
 
-            AffectedThreads.Clear();
+            _affectedThreads.Clear();
         }
 
-        public void UnsetFromThread(IntPtr ThreadHandle, int ThreadId)
+        public void UnsetFromThread(IntPtr threadHandle, int threadId)
         {
-            var index = AffectedThreads[ThreadId];
+            var index = _affectedThreads[threadId];
             // Zero out the debug register settings for this breakpoint
             if (index >= Kernel32.MaxHardwareBreakpointsCount)
                 throw new BreakPointException("Bogus breakpoints index");
 
-            UnsetSlotsFromThread(ThreadHandle, (SlotFlags)(1 << index));
+            UnsetSlotsFromThread(threadHandle, (SlotFlags)(1 << index));
         }
 
-        public static void UnsetSlotsFromThread(IntPtr ThreadHandle, SlotFlags SlotMask)
+        public static void UnsetSlotsFromThread(IntPtr threadHandle, SlotFlags slotMask)
         {
             var cxt = new CONTEXT();
             // The only registers we care about are the debug registers
             cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
 
             // Read the register values
-            if (!Kernel32.GetThreadContext(ThreadHandle, cxt))
+            if (!Kernel32.GetThreadContext(threadHandle, cxt))
                 throw new BreakPointException("Failed to get thread context");
 
             for (var i = 0; i < Kernel32.MaxHardwareBreakpointsCount; ++i)
-                if (SlotMask.HasFlag((SlotFlags)(1 << i)))
+                if (slotMask.HasFlag((SlotFlags)(1 << i)))
                     SetBits(ref cxt.Dr7, i * 2, 1, 0);
 
             // Write out the new debug registers
-            if (!Kernel32.SetThreadContext(ThreadHandle, cxt))
+            if (!Kernel32.SetThreadContext(threadHandle, cxt))
                 throw new BreakPointException("Failed to set thread context");
         }
 
         /// <summary>
         /// Handles breakpoint trigger
         /// </summary>
-        /// <param name="Wrapper"></param>
+        /// <param name="wrapper"></param>
         /// <returns>If true, modified context will be set to thread</returns>
-        public abstract bool HandleException(ContextWrapper Wrapper);
+        public abstract bool HandleException(ContextWrapper wrapper);
 
         protected static void SetBits(ref uint dw, int lowBit, int bits, uint newValue)
         {

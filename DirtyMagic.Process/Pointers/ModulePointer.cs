@@ -8,20 +8,20 @@ namespace DirtyMagic.Pointers
         /// <summary>
         /// Pointer to named module
         /// </summary>
-        /// <param name="ModuleName"></param>
-        /// <param name="Offset"></param>
-        public ModulePointer(string ModuleName, int Offset)
+        /// <param name="moduleName"></param>
+        /// <param name="offset"></param>
+        public ModulePointer(string moduleName, int offset)
         {
-            this.ModuleName = ModuleName;
-            this.Offset = Offset;
+            this.ModuleName = moduleName;
+            this.Offset = offset;
         }
 
         /// <summary>
         /// Pointer to main module
         /// </summary>
-        /// <param name="Offset"></param>
-        public ModulePointer(int Offset)
-            : this(string.Empty, Offset)
+        /// <param name="offset"></param>
+        public ModulePointer(int offset)
+            : this(string.Empty, offset)
         { }
 
         public static ModulePointer operator +(ModulePointer pointer, int modOffs)

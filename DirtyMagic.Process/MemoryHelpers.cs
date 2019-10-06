@@ -4,9 +4,9 @@ namespace DirtyMagic
 {
     public static class MemoryHelpers
     {
-        public static T ReinterpretObject<T>(object Object) where T : struct
+        public static T ReinterpretObject<T>(object @object) where T : struct
         {
-            var h = GCHandle.Alloc(Object, GCHandleType.Pinned);
+            var h = GCHandle.Alloc(@object, GCHandleType.Pinned);
             var t = (T)Marshal.PtrToStructure(h.AddrOfPinnedObject(), typeof(T));
             h.Free();
 
