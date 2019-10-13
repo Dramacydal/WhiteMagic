@@ -25,7 +25,6 @@ namespace DirtyMagic
 
         private static int GlobalHookCallback(HookType type, int code, IntPtr wParam, IntPtr lParam)
         {
-            return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
             switch (type)
             {
                 case HookType.WH_KEYBOARD_LL:
