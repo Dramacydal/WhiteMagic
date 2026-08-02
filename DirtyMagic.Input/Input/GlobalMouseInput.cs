@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
-using System.Windows.Forms;
 using DirtyMagic.Hooks.Events;
 using DirtyMagic.WinAPI;
+using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Input
@@ -32,19 +32,19 @@ namespace DirtyMagic.Input
                 throw new Win32Exception();
         }
 
-        public override void SendButton(MouseButtons button, bool up = false)
+        public override void SendButton(MouseButton button, bool up = false)
         {
             var inp = new INPUT {Type = InputType.MOUSE};
 
             switch (button)
             {
-                case MouseButtons.Left:
+                case MouseButton.Left:
                     inp.Union.mi.dwFlags = up ? MouseEventFlag.LEFTUP : MouseEventFlag.LEFTDOWN;
                     break;
-                case MouseButtons.Right:
+                case MouseButton.Right:
                     inp.Union.mi.dwFlags = up ? MouseEventFlag.RIGHTUP : MouseEventFlag.RIGHTDOWN;
                     break;
-                case MouseButtons.Middle:
+                case MouseButton.Middle:
                     inp.Union.mi.dwFlags = up ? MouseEventFlag.MIDDLEUP : MouseEventFlag.MIDDLEDOWN;
                     break;
                 default:

@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Windows.Forms;
 using DirtyMagic.Hooks.Events;
+using DirtyMagic.WinAPI.Input;
 
 namespace DirtyMagic.Input
 {
@@ -26,7 +26,7 @@ namespace DirtyMagic.Input
             throw new NotImplementedException();
         }
 
-        public override void SendButton(MouseButtons button, bool up = false)
+        public override void SendButton(MouseButton button, bool up = false)
         {
             throw new NotImplementedException();
         }

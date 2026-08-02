@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
-using System.Windows.Forms;
 using DirtyMagic.WinAPI;
+using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Input
@@ -25,7 +25,7 @@ namespace DirtyMagic.Input
             return this;
         }
 
-        private static void SendKeyToWindow(IntPtr window, Keys key, bool up, bool recursive = false)
+        private static void SendKeyToWindow(IntPtr window, VirtualKey key, bool up, bool recursive = false)
         {
             var lParam = 0u;
             lParam |= up ? 1u : 0;
@@ -52,16 +52,16 @@ namespace DirtyMagic.Input
             }
         }
 
-        public override void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0)
+        public override void SendKey(VirtualKey key, Modifiers modifiers, bool up, int extraInfo = 0)
         {
-            var keyPresses = new List<Keys>();
+            var keyPresses = new List<VirtualKey>();
             if (modifiers.CtrlPressed())
-                keyPresses.Add(Keys.ControlKey);
+                keyPresses.Add(VirtualKey.ControlKey);
             if (modifiers.AltPressed())
-                keyPresses.Add(Keys.Menu);
+                keyPresses.Add(VirtualKey.Menu);
             if (modifiers.ShiftPressed())
-                keyPresses.Add(Keys.ShiftKey);
-            if (key != Keys.None)
+                keyPresses.Add(VirtualKey.ShiftKey);
+            if (key != VirtualKey.None)
                 keyPresses.Add(key);
 
             if (up)
@@ -71,7 +71,7 @@ namespace DirtyMagic.Input
                 SendKeyToWindow(Window, keyPress, up, Recursive);
         }
 
-        public override void KeyPress(Keys key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0)
+        public override void KeyPress(VirtualKey key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0)
         {
             SendKey(key, modifiers, false, 0);
             if (!DefaultKeypressTime.IsEmpty())

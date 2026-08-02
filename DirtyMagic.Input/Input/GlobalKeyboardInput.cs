@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
-using System.Windows.Forms;
 using DirtyMagic.Hooks;
 using DirtyMagic.WinAPI;
 using DirtyMagic.WinAPI.Input;
@@ -13,7 +12,7 @@ namespace DirtyMagic.Input
 {
     public class GlobalKeyboardInput : IKeyboardInput
     {
-        public override void KeyPress(Keys key, Modifiers modifiers = Modifiers.None,
+        public override void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None,
             TimeSpan keyPressTime = default(TimeSpan), int extraInfo = 0)
         {
             SendKey(key, modifiers, false, extraInfo);
@@ -35,14 +34,14 @@ namespace DirtyMagic.Input
                 throw new Win32Exception();
         }
 
-        public override void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0)
+        public override void SendKey(VirtualKey key, Modifiers modifiers, bool up, int extraInfo = 0)
         {
             if (KeyboardHook.ModifierToKeyMap.TryGetValue(key, out var val))
                 modifiers &= ~val;
 
             var inputs = BuildModifiersInput(modifiers, up, extraInfo);
 
-            if (key != Keys.None)
+            if (key != VirtualKey.None)
             {
                 var inp = new INPUT {Type = InputType.KEYBOARD};
                 inp.Union.ki.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
@@ -66,7 +65,7 @@ namespace DirtyMagic.Input
 
         private List<INPUT> BuildModifiersInput(Modifiers modifiers, bool up, int extraInfo)
         {
-            var keys = new List<Keys>();
+            var keys = new List<VirtualKey>();
             foreach (var pair in KeyboardHook.ModifierToKeyMap)
             {
                 if (modifiers.HasFlag(pair.Value))

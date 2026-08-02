@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Windows.Forms;
+using DirtyMagic.WinAPI.Input;
 
 namespace DirtyMagic.Input
 {
@@ -7,11 +7,11 @@ namespace DirtyMagic.Input
     {
         public static readonly TimeSpan DefaultKeypressTime = TimeSpan.FromMilliseconds(50);
 
-        public abstract void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0);
-        public abstract void KeyPress(Keys key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0);
+        public abstract void SendKey(VirtualKey key, Modifiers modifiers, bool up, int extraInfo = 0);
+        public abstract void KeyPress(VirtualKey key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0);
         public abstract void SendChar(char c);
 
-        public void KeyPress(Keys key, Modifiers modifiers = Modifiers.None) => KeyPress(key, modifiers, default(TimeSpan));
+        public void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None) => KeyPress(key, modifiers, default(TimeSpan));
 
         public void SendText(string text)
         {

@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using DirtyMagic.Hooks.Events;
 using DirtyMagic.Input;
 using DirtyMagic.WinAPI;
+using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Hooks
@@ -18,14 +18,14 @@ namespace DirtyMagic.Hooks
 
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
-        public static readonly ConcurrentDictionary<Keys, Modifiers> ModifierToKeyMap = new ConcurrentDictionary<Keys, Modifiers>()
+        public static readonly ConcurrentDictionary<VirtualKey, Modifiers> ModifierToKeyMap = new ConcurrentDictionary<VirtualKey, Modifiers>()
         {
-            [Keys.LMenu] = Modifiers.LAlt,
-            [Keys.RMenu] = Modifiers.RAlt,
-            [Keys.LControlKey] = Modifiers.LCtrl,
-            [Keys.RControlKey] = Modifiers.RCtrl,
-            [Keys.LShiftKey] = Modifiers.LShift,
-            [Keys.RShiftKey] = Modifiers.RShift,
+            [VirtualKey.LMenu] = Modifiers.LAlt,
+            [VirtualKey.RMenu] = Modifiers.RAlt,
+            [VirtualKey.LControlKey] = Modifiers.LCtrl,
+            [VirtualKey.RControlKey] = Modifiers.RCtrl,
+            [VirtualKey.LShiftKey] = Modifiers.LShift,
+            [VirtualKey.RShiftKey] = Modifiers.RShift,
         };
 
         private void StoreSpecialKeyState(KeyboardEvent info)

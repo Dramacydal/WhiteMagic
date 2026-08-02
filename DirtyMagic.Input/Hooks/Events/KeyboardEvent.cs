@@ -1,5 +1,4 @@
-﻿using System.Windows.Forms;
-using DirtyMagic.Input;
+﻿using DirtyMagic.Input;
 using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
 
@@ -19,7 +18,7 @@ namespace DirtyMagic.Hooks.Events
             this.PreviouslyPressed = wasPressed;
         }
 
-        public Keys VirtualKey => (Keys)_raw.vkCode;
+        public VirtualKey VirtualKey => (VirtualKey)_raw.vkCode;
         public ScanCodeShort ScanCode => (ScanCodeShort)_raw.scanCode;
         public bool IsKeyUp => _event == WM.KEYUP || _event == WM.SYSKEYUP;
         public bool IsKeyDown => _event == WM.KEYDOWN || _event == WM.SYSKEYDOWN;

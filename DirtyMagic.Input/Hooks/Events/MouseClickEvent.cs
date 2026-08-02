@@ -1,5 +1,5 @@
-﻿using System.Windows.Forms;
-using DirtyMagic.Input;
+﻿using DirtyMagic.Input;
+using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Hooks.Events
@@ -7,7 +7,7 @@ namespace DirtyMagic.Hooks.Events
     public class MouseClickEvent : MouseEvent
     {
         public ClickState State { get; }
-        public MouseButtons Button { get; }
+        public MouseButton Button { get; }
         public MousePosition Position { get; }
 
         internal MouseClickEvent(WM @event, MSLLHOOKSTRUCT raw) : base(MouseEventType.Button)
@@ -19,7 +19,7 @@ namespace DirtyMagic.Hooks.Events
                 case WM.LBUTTONDOWN:
                 case WM.LBUTTONUP:
                 case WM.LBUTTONDBLCLK:
-                    Button = MouseButtons.Left;
+                    Button = MouseButton.Left;
                     switch (@event)
                     {
                         case WM.LBUTTONDOWN:
@@ -37,7 +37,7 @@ namespace DirtyMagic.Hooks.Events
                 case WM.RBUTTONDOWN:
                 case WM.RBUTTONUP:
                 case WM.RBUTTONDBLCLK:
-                    Button = MouseButtons.Right;
+                    Button = MouseButton.Right;
                     switch (@event)
                     {
                         case WM.RBUTTONDOWN:
@@ -55,7 +55,7 @@ namespace DirtyMagic.Hooks.Events
                 case WM.MBUTTONDOWN:
                 case WM.MBUTTONUP:
                 case WM.MBUTTONDBLCLK:
-                    Button = MouseButtons.Middle;
+                    Button = MouseButton.Middle;
                     switch (@event)
                     {
                         case WM.MBUTTONDOWN:
@@ -76,9 +76,9 @@ namespace DirtyMagic.Hooks.Events
                 {
                     var xButtonIndex = raw.mouseData >> 16;
                     if (xButtonIndex == 1)
-                        Button = MouseButtons.XButton1;
+                        Button = MouseButton.XButton1;
                     else if (xButtonIndex == 2)
-                        Button = MouseButtons.XButton2;
+                        Button = MouseButton.XButton2;
 
                     switch (@event)
                     {
