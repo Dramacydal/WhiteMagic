@@ -21,7 +21,7 @@ namespace DirtyMagic
         public IntPtr ProcessHandle { get; protected set; }
 
         private volatile int _threadSuspendCount = 0;
-        private volatile List<int> _remoteThreads = new List<int>();
+        private volatile List<int> _remoteThreads = [];
 
         protected ModuleInfo BaseModule;
         protected Dictionary<string, ModuleInfo> Modules = new Dictionary<string, ModuleInfo>();
@@ -324,9 +324,9 @@ namespace DirtyMagic
 
         public void WriteLong(IntPtr address, long value) => WriteBytes(address, BitConverter.GetBytes(value));
 
-        public void WriteByte(IntPtr address, byte value) => WriteBytes(address, new[] { value });
+        public void WriteByte(IntPtr address, byte value) => WriteBytes(address, [value]);
 
-        public void WriteSByte(IntPtr address, sbyte value) => WriteBytes(address, new[] { unchecked((byte)value) });
+        public void WriteSByte(IntPtr address, sbyte value) => WriteBytes(address, [unchecked((byte)value)]);
 
         public void WriteSingle(IntPtr address, float value) => WriteBytes(address, BitConverter.GetBytes(value));
 
@@ -433,7 +433,7 @@ namespace DirtyMagic
 
         private sealed class ByteListCodeWriter : CodeWriter
         {
-            public List<byte> Bytes { get; } = new List<byte>();
+            public List<byte> Bytes { get; } = [];
             public override void WriteByte(byte value) => Bytes.Add(value);
         }
 

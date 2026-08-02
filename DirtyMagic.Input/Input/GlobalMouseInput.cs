@@ -28,7 +28,7 @@ namespace DirtyMagic.Input
                 inp.Union.mi.dy = y;
             }
 
-            if (User32.SendInput(1, new[] { inp }, INPUT.Size) != 1)
+            if (User32.SendInput(1, [inp], INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
@@ -51,7 +51,7 @@ namespace DirtyMagic.Input
                     throw new Win32Exception($"Unsupported mouse button {button}");
             }
 
-            if (User32.SendInput(1, new[] { inp }, INPUT.Size) != 1)
+            if (User32.SendInput(1, [inp], INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 
@@ -77,7 +77,7 @@ namespace DirtyMagic.Input
                     throw new Win32Exception($"Unsupported scroll direction type '{direction}'");
             }
 
-            if (User32.SendInput(1, new[] { inp }, INPUT.Size) != 1)
+            if (User32.SendInput(1, [inp], INPUT.Size) != 1)
                 throw new Win32Exception();
         }
     }

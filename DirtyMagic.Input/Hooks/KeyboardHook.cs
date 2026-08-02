@@ -71,7 +71,7 @@ namespace DirtyMagic.Hooks
 
         public override void RemoveHandlers()
         {
-            foreach (var d in OnKey?.GetInvocationList() ?? new Delegate[] { })
+            foreach (var d in OnKey?.GetInvocationList() ?? [])
                 OnKey -= (KeyboardEventHandler) d;
         }
     }

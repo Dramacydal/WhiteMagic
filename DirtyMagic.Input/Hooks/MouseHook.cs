@@ -63,13 +63,13 @@ namespace DirtyMagic.Hooks
 
         public override void RemoveHandlers()
         {
-            foreach (var d in OnClick?.GetInvocationList() ?? new Delegate[] { })
+            foreach (var d in OnClick?.GetInvocationList() ?? [])
                 OnClick -= (MouseClickEventHandler)d;
 
-            foreach (var d in OnMove?.GetInvocationList() ?? new Delegate[] { })
+            foreach (var d in OnMove?.GetInvocationList() ?? [])
                 OnMove -= (MouseMoveEventHandler)d;
 
-            foreach (var d in OnScroll?.GetInvocationList() ?? new Delegate[] { })
+            foreach (var d in OnScroll?.GetInvocationList() ?? [])
                 OnScroll -= (MouseScrollEventHandler)d;
         }
     }

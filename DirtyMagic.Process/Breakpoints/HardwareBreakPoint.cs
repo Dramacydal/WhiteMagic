@@ -84,10 +84,11 @@ namespace DirtyMagic.Breakpoints
             if (_affectedThreads.ContainsKey(threadId))
                 return;
 
-            var cxt = new CONTEXT();
-
-            // The only registers we care about are the debug registers
-            cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+            var cxt = new CONTEXT
+            {
+                // The only registers we care about are the debug registers
+                ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS
+            };
 
             // Read the register values
             if (!Kernel32.GetThreadContext(threadHandle, cxt))
@@ -155,9 +156,11 @@ namespace DirtyMagic.Breakpoints
 
         public static void UnsetSlotsFromThread(IntPtr threadHandle, SlotFlags slotMask)
         {
-            var cxt = new CONTEXT();
-            // The only registers we care about are the debug registers
-            cxt.ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS;
+            var cxt = new CONTEXT
+            {
+                // The only registers we care about are the debug registers
+                ContextFlags = CONTEXT_FLAGS.CONTEXT_DEBUG_REGISTERS
+            };
 
             // Read the register values
             if (!Kernel32.GetThreadContext(threadHandle, cxt))

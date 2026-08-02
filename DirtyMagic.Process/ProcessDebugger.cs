@@ -18,7 +18,7 @@ namespace DirtyMagic
         public bool IsDetached { get; private set; }
         public bool HasExited => !Process.IsValid;
 
-        public List<HardwareBreakPoint> Breakpoints { get; private set; } = new List<HardwareBreakPoint>();
+        public List<HardwareBreakPoint> Breakpoints { get; } = [];
 
         public ProcessDebugger(int processId) : base(processId)
         {
@@ -176,8 +176,10 @@ namespace DirtyMagic
                             if (hThread == IntPtr.Zero)
                                 throw new DebuggerException("Failed to open thread");
 
-                            var context = new CONTEXT();
-                            context.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
+                            var context = new CONTEXT
+                            {
+                                ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL
+                            };
                             if (!Kernel32.GetThreadContext(hThread, context))
                                 throw new DebuggerException("Failed to get thread context");
 
@@ -301,7 +303,7 @@ namespace DirtyMagic
 
     public static class SigIntHandler
     {
-        private static readonly List<ProcessDebugger> AffectedInstances = new List<ProcessDebugger>();
+        private static readonly List<ProcessDebugger> AffectedInstances = [];
 
         static SigIntHandler()
         {

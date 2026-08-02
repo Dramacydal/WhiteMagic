@@ -8,10 +8,12 @@ namespace DirtyMagic.Input
         public static readonly TimeSpan DefaultKeypressTime = TimeSpan.FromMilliseconds(50);
 
         public abstract void SendKey(VirtualKey key, Modifiers modifiers, bool up, int extraInfo = 0);
-        public abstract void KeyPress(VirtualKey key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0);
+
         public abstract void SendChar(char c);
 
-        public void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None) => KeyPress(key, modifiers, TimeSpan.Zero);
+        public abstract void KeyPress(VirtualKey key, TimeSpan keyPressTime, Modifiers modifiers = Modifiers.None, int extraInfo = 0);
+
+        public void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None) => KeyPress(key, DefaultKeypressTime, modifiers);
 
         public void SendText(string text)
         {

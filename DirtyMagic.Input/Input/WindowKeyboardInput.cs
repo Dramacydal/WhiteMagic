@@ -65,11 +65,11 @@ namespace DirtyMagic.Input
                 SendKeyToWindow(Window, keyPress, up, Recursive);
         }
 
-        public override void KeyPress(VirtualKey key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0)
+        public override void KeyPress(VirtualKey key, TimeSpan keyPressTime, Modifiers modifiers = Modifiers.None, int extraInfo = 0)
         {
             SendKey(key, modifiers, false, 0);
-            if (!DefaultKeypressTime.IsEmpty())
-                Thread.Sleep((int)DefaultKeypressTime.TotalMilliseconds);
+            if (!keyPressTime.IsEmpty())
+                Thread.Sleep((int)keyPressTime.TotalMilliseconds);
             SendKey(key, modifiers, true, 0);
         }
 

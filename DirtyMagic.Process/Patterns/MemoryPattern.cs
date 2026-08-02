@@ -18,7 +18,7 @@ namespace DirtyMagic.Patterns
         {
             return new MemoryPattern(
                 string.Concat(
-                pattern.Split(new char[] { '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(_ =>
+                pattern.Split(['\n', '\r', ' '], StringSplitOptions.RemoveEmptyEntries).Select(_ =>
                     {
                         if (_.Contains('?'))
                             return ".";

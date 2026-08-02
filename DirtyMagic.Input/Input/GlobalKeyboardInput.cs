@@ -12,12 +12,12 @@ namespace DirtyMagic.Input
 {
     public class GlobalKeyboardInput : KeyboardInput
     {
-        public override void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None,
-            TimeSpan keyPressTime = default, int extraInfo = 0)
+        public override void KeyPress(VirtualKey key, TimeSpan keyPressTime, Modifiers modifiers = Modifiers.None,
+            int extraInfo = 0)
         {
             SendKey(key, modifiers, false, extraInfo);
-            if (!DefaultKeypressTime.IsEmpty())
-                Thread.Sleep((int) DefaultKeypressTime.TotalMilliseconds);
+            if (!keyPressTime.IsEmpty())
+                Thread.Sleep((int) keyPressTime.TotalMilliseconds);
             SendKey(key, modifiers, true, extraInfo);
         }
 
@@ -74,8 +74,10 @@ namespace DirtyMagic.Input
 
             return keys.Select(key =>
             {
-                var input = new INPUT();
-                input.Type = InputType.KEYBOARD;
+                var input = new INPUT
+                {
+                    Type = InputType.KEYBOARD
+                };
                 input.Union.ki.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
                 input.Union.ki.wVk = (short)key;
                 input.Union.ki.wScan = 0;
@@ -95,7 +97,7 @@ namespace DirtyMagic.Input
             inp.Union.ki.time = 0;
             inp.Union.ki.dwExtraInfo = IntPtr.Zero;
 
-            if (User32.SendInput(1, new[] {inp}, INPUT.Size) != 1)
+            if (User32.SendInput(1, [inp], INPUT.Size) != 1)
                 throw new Win32Exception();
         }
     }
