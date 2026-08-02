@@ -188,7 +188,7 @@ namespace DirtyMagic
             }
         }
 
-        private const string SE_DEBUG_NAME = "SeDebugPrivilege";
+        private const string SeDebugName = "SeDebugPrivilege";
 
         /// <summary>
         /// Sets debug privileges for running program.
@@ -199,7 +199,7 @@ namespace DirtyMagic
             if (!Advapi32.OpenProcessToken(Kernel32.GetCurrentProcess(), TokenObject.TOKEN_ADJUST_PRIVILEGES | TokenObject.TOKEN_QUERY, out var hToken))
                 return false;
 
-            if (!Advapi32.LookupPrivilegeValue(null, SE_DEBUG_NAME, out var luidSEDebugNameValue))
+            if (!Advapi32.LookupPrivilegeValue(null, SeDebugName, out var luidSeDebugNameValue))
             {
                 Kernel32.CloseHandle(hToken);
                 return false;
@@ -207,7 +207,7 @@ namespace DirtyMagic
 
             TOKEN_PRIVILEGES tkpPrivileges;
             tkpPrivileges.PrivilegeCount = 1;
-            tkpPrivileges.Luid = luidSEDebugNameValue;
+            tkpPrivileges.Luid = luidSeDebugNameValue;
             tkpPrivileges.Attributes = PrivilegeAttributes.SE_PRIVILEGE_ENABLED;
 
             if (!Advapi32.AdjustTokenPrivileges(hToken, false, ref tkpPrivileges, 0, IntPtr.Zero, IntPtr.Zero))

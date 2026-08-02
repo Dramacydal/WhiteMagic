@@ -7,7 +7,7 @@ namespace DirtyMagic.Modules
         public ModuleDump(ModuleInfo module)
             : base(module.BaseAddress, module.MemorySize)
         {
-            this.Module = module;
+            Module = module;
         }
 
         public bool IsInitialized  => Data != null && Data.Length > 0;

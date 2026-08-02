@@ -176,20 +176,20 @@ namespace DirtyMagic
                             if (hThread == IntPtr.Zero)
                                 throw new DebuggerException("Failed to open thread");
 
-                            var Context = new CONTEXT();
-                            Context.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
-                            if (!Kernel32.GetThreadContext(hThread, Context))
+                            var context = new CONTEXT();
+                            context.ContextFlags = CONTEXT_FLAGS.CONTEXT_FULL;
+                            if (!Kernel32.GetThreadContext(hThread, context))
                                 throw new DebuggerException("Failed to get thread context");
 
-                            if (!Breakpoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip))
+                            if (!Breakpoints.Any(e => e != null && e.IsSet && e.Address.ToUInt32() == context.Eip))
                                 break;
                             var bp = Breakpoints.First(e =>
-                                e != null && e.IsSet && e.Address.ToUInt32() == Context.Eip);
+                                e != null && e.IsSet && e.Address.ToUInt32() == context.Eip);
 
-                            var ContextWrapper = new ContextWrapper(this, Context);
-                            if (bp.HandleException(ContextWrapper))
+                            var contextWrapper = new ContextWrapper(this, context);
+                            if (bp.HandleException(contextWrapper))
                             {
-                                if (!Kernel32.SetThreadContext(hThread, ContextWrapper.Context))
+                                if (!Kernel32.SetThreadContext(hThread, contextWrapper.Context))
                                     throw new DebuggerException("Failed to set thread context");
                             }
                         }
@@ -311,8 +311,8 @@ namespace DirtyMagic
                 {
                     e.Cancel = true;
 
-                    foreach (var Debugger in AffectedInstances)
-                        Debugger.StopDebugging();
+                    foreach (var debugger in AffectedInstances)
+                        debugger.StopDebugging();
                 }
             };
         }

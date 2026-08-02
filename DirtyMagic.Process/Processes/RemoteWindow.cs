@@ -32,7 +32,7 @@ namespace DirtyMagic.Processes
         public RemoteWindow(RemoteProcess process, IntPtr windowHandle)
         {
             Handle = windowHandle;
-            this.Process = process;
+            Process = process;
 
             //KeyboardInput = new WindowKeyboardInput(this);
             //MouseInput = new WindowMouseInput(this);

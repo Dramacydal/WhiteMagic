@@ -8,7 +8,7 @@ namespace DirtyMagic.Pointers
         public FunctionPointer(string moduleName, int offset, MagicConvention callingConvention)
             : base(moduleName, offset)
         {
-            this.CallingConvention = callingConvention;
+            CallingConvention = callingConvention;
         }
 
         public void Call(MemoryHandler memory, params object[] args) => memory.Call(this, CallingConvention, args);

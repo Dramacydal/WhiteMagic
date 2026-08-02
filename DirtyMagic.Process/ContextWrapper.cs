@@ -10,8 +10,8 @@ namespace DirtyMagic
 
         public ContextWrapper(ProcessDebugger debugger, CONTEXT context)
         {
-            this.Debugger = debugger;
-            this.Context = context;
+            Debugger = debugger;
+            Context = context;
         }
 
         public void Push(uint value)

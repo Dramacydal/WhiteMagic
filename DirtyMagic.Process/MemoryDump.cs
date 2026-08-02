@@ -7,18 +7,18 @@ namespace DirtyMagic
 {
     public class MemoryDump
     {
-        private const int readCount = 256;
+        private const int ReadCount = 256;
 
         public MemoryDump(IntPtr startAddress, long length)
         {
-            this.StartAddress = startAddress;
-            this.Length = length;
+            StartAddress = startAddress;
+            Length = length;
         }
 
         public MemoryDump(IntPtr startAddress, byte[] data)
             : this(startAddress, data.LongLength)
         {
-            this.Data = data;
+            Data = data;
         }
 
         public MemoryDump(MemoryHandler memory, IntPtr address, long length)
@@ -30,8 +30,8 @@ namespace DirtyMagic
         public void Read(MemoryHandler memory)
         {
             var bytes = new List<byte>();
-            for (long i = 0; i < Length; i += readCount)
-                bytes.AddRange(memory.ReadBytes(IntPtr.Add(StartAddress, (int)i), i + readCount >= Length ? (int)(Length - i) : readCount));
+            for (long i = 0; i < Length; i += ReadCount)
+                bytes.AddRange(memory.ReadBytes(IntPtr.Add(StartAddress, (int)i), i + ReadCount >= Length ? (int)(Length - i) : ReadCount));
 
             Data = bytes.ToArray();
         }

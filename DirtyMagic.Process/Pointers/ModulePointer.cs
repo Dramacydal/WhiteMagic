@@ -12,8 +12,8 @@ namespace DirtyMagic.Pointers
         /// <param name="offset"></param>
         public ModulePointer(string moduleName, int offset)
         {
-            this.ModuleName = moduleName;
-            this.Offset = offset;
+            ModuleName = moduleName;
+            Offset = offset;
         }
 
         /// <summary>

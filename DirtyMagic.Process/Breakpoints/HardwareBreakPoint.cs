@@ -33,27 +33,27 @@ namespace DirtyMagic.Breakpoints
 
         protected readonly int Length;
 
-        protected HardwareBreakPoint(ModulePointer Pointer, BreakpointCondition Condition, int Length)
+        protected HardwareBreakPoint(ModulePointer pointer, BreakpointCondition condition, int length)
         {
-            if (Condition == BreakpointCondition.Code)
-                Length = 1;
+            if (condition == BreakpointCondition.Code)
+                length = 1;
 
-            this.Pointer = Pointer;
-            this.Condition = Condition;
+            Pointer = pointer;
+            Condition = condition;
 
-            switch (Length)
+            switch (length)
             {
-                case 1: this.Length = 0; break;
-                case 2: this.Length = 1; break;
-                case 4: this.Length = 3; break;
-                case 8: this.Length = 2; break;
-                default: throw new BreakPointException($"Invalid breakpoint length! ({Length})");
+                case 1: Length = 0; break;
+                case 2: Length = 1; break;
+                case 4: Length = 3; break;
+                case 8: Length = 2; break;
+                default: throw new BreakPointException($"Invalid breakpoint length! ({length})");
             }
         }
 
         public bool Set(MemoryHandler memory)
         {
-            this.Memory = memory;
+            Memory = memory;
             memory.RefreshMemory();
 
             Address = memory.GetAddress(Pointer);
@@ -119,7 +119,7 @@ namespace DirtyMagic.Breakpoints
             _affectedThreads[threadId] = index;
         }
 
-        public void UnregisterThread(int ThreadId) => _affectedThreads.Remove(ThreadId);
+        public void UnregisterThread(int threadId) => _affectedThreads.Remove(threadId);
 
         public void UnSet(MemoryHandler memory)
         {

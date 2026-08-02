@@ -61,7 +61,7 @@ namespace DirtyMagic.Processes
 
         public RemoteProcess(Process process)
         {
-            this.Process = process;
+            Process = process;
         }
 
         public override string ToString()

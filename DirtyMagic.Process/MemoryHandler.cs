@@ -58,7 +58,7 @@ namespace DirtyMagic
             if (!Kernel32.Is32BitProcess(process.Handle))
                 throw new MemoryException("Can't operate with x64 processes");
 
-            this.Process = process;
+            Process = process;
 
             if (ProcessHandle != IntPtr.Zero)
                 Kernel32.CloseHandle(ProcessHandle);
@@ -238,16 +238,16 @@ namespace DirtyMagic
             return bytes.ToArray();
         }
 
-        public string ReadASCIIString(IntPtr address, int length = 0)
+        public string ReadAsciiString(IntPtr address, int length = 0)
             => Encoding.ASCII.GetString(length == 0 ? ReadNullTerminatedBytes(address) : ReadBytes(address, length));
 
-        public string ReadUTF8String(IntPtr address, int length = 0)
+        public string ReadUtf8String(IntPtr address, int length = 0)
             => Encoding.UTF8.GetString(length == 0 ? ReadNullTerminatedBytes(address) : ReadBytes(address, length));
 
-        public string ReadUTF16String(IntPtr address, int length = 0)
+        public string ReadUtf16String(IntPtr address, int length = 0)
             => Encoding.Unicode.GetString(length == 0 ? ReadNullTerminatedBytes(address, 2) : ReadBytes(address, length));
 
-        public string ReadUTF32String(IntPtr address, int length = 0)
+        public string ReadUtf32String(IntPtr address, int length = 0)
             => Encoding.UTF32.GetString(length == 0 ? ReadNullTerminatedBytes(address, 4) : ReadBytes(address, length));
 
         public T Read<T>(ModulePointer pointer) where T : struct => Read<T>(GetAddress(pointer));
@@ -300,13 +300,13 @@ namespace DirtyMagic
         public void WriteCString(IntPtr address, string @string, bool nullTerminated = true)
             => WriteBytes(address, Encoding.ASCII.GetBytes(nullTerminated ? @string + '\0' : @string));
 
-        public void WriteUTF8String(IntPtr address, string @string, bool nullTerminated = true)
+        public void WriteUtf8String(IntPtr address, string @string, bool nullTerminated = true)
             => WriteBytes(address, Encoding.UTF8.GetBytes(nullTerminated ? @string + '\0' : @string));
 
-        public void WriteUTF16String(IntPtr address, string @string, bool nullTerminated = true)
+        public void WriteUtf16String(IntPtr address, string @string, bool nullTerminated = true)
             => WriteBytes(address, Encoding.Unicode.GetBytes(nullTerminated ? @string + '\0' : @string));
 
-        public void WriteUTF32String(IntPtr address, string @string, bool nullTerminated = true)
+        public void WriteUtf32String(IntPtr address, string @string, bool nullTerminated = true)
             => WriteBytes(address, Encoding.UTF32.GetBytes(nullTerminated ? @string + '\0' : @string));
 
         public void Write<T>(ModulePointer pointer, T value) where T : struct => Write<T>(GetAddress(pointer), value);
@@ -352,11 +352,11 @@ namespace DirtyMagic
 
         public IntPtr AllocateCString(string @string) => AllocateBytes(Encoding.ASCII.GetBytes(@string));
 
-        public IntPtr AllocateUTF8String(string @string) => AllocateBytes(Encoding.UTF8.GetBytes(@string));
+        public IntPtr AllocateUtf8String(string @string) => AllocateBytes(Encoding.UTF8.GetBytes(@string));
 
-        public IntPtr AllocateUTF16String(string @string) => AllocateBytes(Encoding.Unicode.GetBytes(@string));
+        public IntPtr AllocateUtf16String(string @string) => AllocateBytes(Encoding.Unicode.GetBytes(@string));
 
-        public IntPtr AllocateUTF32String(string @string) => AllocateBytes(Encoding.UTF32.GetBytes(@string));
+        public IntPtr AllocateUtf32String(string @string) => AllocateBytes(Encoding.UTF32.GetBytes(@string));
 
         public IntPtr AllocateBytes(byte[] data)
         {
@@ -558,24 +558,24 @@ namespace DirtyMagic
 
         public ModuleInfo GetModule(string name, bool refresh = false)
         {
-            var NameKey = name.ToLower();
-            var Module = Modules.ContainsKey(NameKey) ? Modules[NameKey] : null;
+            var nameKey = name.ToLower();
+            var module = Modules.ContainsKey(nameKey) ? Modules[nameKey] : null;
             if (!refresh)
-                return Module;
+                return module;
 
             try
             {
-                var ModuleSource = Process.Modules.Cast<ProcessModule>().First(_ => _.ModuleName.Equals(NameKey, StringComparison.InvariantCultureIgnoreCase));
+                var moduleSource = Process.Modules.Cast<ProcessModule>().First(_ => _.ModuleName.Equals(nameKey, StringComparison.InvariantCultureIgnoreCase));
 
-                if (Module != null)
-                    Module.Update(ModuleSource);
+                if (module != null)
+                    module.Update(moduleSource);
                 else
                 {
-                    Module = new ModuleInfo(ModuleSource);
-                    Modules[NameKey] = Module;
+                    module = new ModuleInfo(moduleSource);
+                    Modules[nameKey] = module;
                 }
 
-                return Module;
+                return module;
             }
             catch
             {
@@ -592,15 +592,15 @@ namespace DirtyMagic
             if (moduleName == string.Empty)
                 moduleName = Process.MainModule.ModuleName;
 
-            var Module = GetModule(moduleName);
-            if (Module != null)
-                return Module.BaseAddress;
+            var module = GetModule(moduleName);
+            if (module != null)
+                return module.BaseAddress;
 
             lock ("process refresh")
             {
-                Module = GetModule(moduleName, true);
-                if (Module != null)
-                    return Module.BaseAddress;
+                module = GetModule(moduleName, true);
+                if (module != null)
+                    return module.BaseAddress;
 
                 return LoadModule(moduleName);
             }
