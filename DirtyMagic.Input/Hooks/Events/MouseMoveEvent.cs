@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using DirtyMagic.WinAPI.Structures;
+﻿using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Hooks.Events
 {

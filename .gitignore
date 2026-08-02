@@ -1,7 +1,7 @@
 *.suo
 .vs/
-WhiteMagic/bin/
-WhiteMagic/obj/
+bin/
+obj/
 
 audit/
 .claude-docs/

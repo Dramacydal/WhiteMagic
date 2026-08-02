@@ -10,7 +10,8 @@ using DirtyMagic.Pointers;
 using DirtyMagic.Processes;
 using DirtyMagic.WinAPI;
 using DirtyMagic.WinAPI.Structures;
-using Fasm;
+using Iced.Intel;
+using static Iced.Intel.AssemblerRegisters;
 
 namespace DirtyMagic
 {
@@ -323,9 +324,9 @@ namespace DirtyMagic
 
         public void WriteLong(IntPtr address, long value) => WriteBytes(address, BitConverter.GetBytes(value));
 
-        public void WriteByte(IntPtr address, byte value) => WriteBytes(address, BitConverter.GetBytes(value));
+        public void WriteByte(IntPtr address, byte value) => WriteBytes(address, new[] { value });
 
-        public void WriteSByte(IntPtr address, sbyte value) => WriteBytes(address, BitConverter.GetBytes(value));
+        public void WriteSByte(IntPtr address, sbyte value) => WriteBytes(address, new[] { unchecked((byte)value) });
 
         public void WriteSingle(IntPtr address, float value) => WriteBytes(address, BitConverter.GetBytes(value));
 
@@ -414,84 +415,107 @@ namespace DirtyMagic
         public void Call(IntPtr address, MagicConvention callingConvention, params object[] arguments)
             => Call<int>(address, callingConvention, arguments);
 
+        // Marshals an argument into the 32-bit immediate value pushed/moved by the generated
+        // shellcode below; the library only targets x86 (see Shared/WinAPI/Structures/Context.cs),
+        // so every argument and the callee address must fit into 32 bits.
+        private static int ToImmediate32(object value)
+        {
+            switch (value)
+            {
+                case IntPtr ip: return ip.ToInt32();
+                case UIntPtr up: return unchecked((int)up.ToUInt32());
+                case bool b: return b ? 1 : 0;
+                case int i: return i;
+                case uint ui: return unchecked((int)ui);
+                default: return unchecked((int)Convert.ToInt64(value));
+            }
+        }
+
+        private sealed class ByteListCodeWriter : CodeWriter
+        {
+            public List<byte> Bytes { get; } = new List<byte>();
+            public override void WriteByte(byte value) => Bytes.Add(value);
+        }
+
         public T Call<T>(IntPtr address, MagicConvention callingConvention, params object[] arguments) where T : struct
         {
-            using (var asm = new ManagedFasm())
+            var addr = ToImmediate32(address);
+            var asm = new Assembler(32);
+
+            switch (callingConvention)
             {
-                asm.Clear();
-
-                switch (callingConvention)
+                case MagicConvention.Cdecl:
                 {
-                    case MagicConvention.Cdecl:
-                    {
-                        asm.AddLine("push ebp");
-                        for (var i = arguments.Length - 1; i >= 0; --i)
-                            asm.AddLine("push {0}", arguments[i]);
-                        asm.AddLine("mov eax, {0}", address);
-                        asm.AddLine("call eax");
-                        for (var i = 0; i < arguments.Length; ++i)
-                            asm.AddLine("pop ebp");
-                        asm.AddLine("pop ebp");
+                    asm.push(ebp);
+                    for (var i = arguments.Length - 1; i >= 0; --i)
+                        asm.push(ToImmediate32(arguments[i]));
+                    asm.mov(eax, addr);
+                    asm.call(eax);
+                    for (var i = 0; i < arguments.Length; ++i)
+                        asm.pop(ebp);
+                    asm.pop(ebp);
 
-                        asm.AddLine("retn");
-                        break;
-                    }
-                    case MagicConvention.StdCall:
-                    {
-                        for (var i = arguments.Length - 1; i >= 0; --i)
-                            asm.AddLine("push {0}", arguments[i]);
-                        asm.AddLine("mov eax, {0}", address);
-                        asm.AddLine("call eax");
-                        asm.AddLine("retn");
-                        break;
-                    }
-                    case MagicConvention.FastCall:
-                    {
-                        if (arguments.Length > 0)
-                            asm.AddLine("mov ecx, {0}", arguments[0]);
-                        if (arguments.Length > 1)
-                            asm.AddLine("mov edx, {0}", arguments[1]);
-                        for (var i = arguments.Length - 1; i >= 2; --i)
-                            asm.AddLine("push {0}", arguments[i]);
-                        asm.AddLine("mov eax, {0}", address);
-                        asm.AddLine("call eax");
-                        asm.AddLine("retn");
-                        break;
-                    }
-                    case MagicConvention.Register:
-                    {
-                        if (arguments.Length > 0)
-                            asm.AddLine("mov eax, {0}", arguments[0]);
-                        if (arguments.Length > 1)
-                            asm.AddLine("mov edx, {0}", arguments[1]);
-                        if (arguments.Length > 2)
-                            asm.AddLine("mov ecx, {0}", arguments[2]);
-                        for (var i = 3; i < arguments.Length; ++i)
-                            asm.AddLine("push {0}", arguments[i]);
-                        asm.AddLine("mov ebx, {0}", address);
-                        asm.AddLine("call ebx");
-                        asm.AddLine("retn");
-                        break;
-                    }
-                    case MagicConvention.ThisCall:
-                    {
-                        if (arguments.Length > 0)
-                            asm.AddLine("mov ecx, {0}", arguments[0]);
-                        for (var i = arguments.Length - 1; i >= 1; --i)
-                            asm.AddLine("push {0}", arguments[i]);
-                        asm.AddLine("mov eax, {0}", address);
-                        asm.AddLine("call eax");
-                        asm.AddLine("retn");
-                        break;
-                    }
-                    default:
-                    {
-                        throw new MemoryException($"Unhandled calling convention '{callingConvention}'");
-                    }
+                    asm.ret();
+                    break;
                 }
-
-                return ExecuteRemoteCode<T>(asm.Assemble());
+                case MagicConvention.StdCall:
+                {
+                    for (var i = arguments.Length - 1; i >= 0; --i)
+                        asm.push(ToImmediate32(arguments[i]));
+                    asm.mov(eax, addr);
+                    asm.call(eax);
+                    asm.ret();
+                    break;
+                }
+                case MagicConvention.FastCall:
+                {
+                    if (arguments.Length > 0)
+                        asm.mov(ecx, ToImmediate32(arguments[0]));
+                    if (arguments.Length > 1)
+                        asm.mov(edx, ToImmediate32(arguments[1]));
+                    for (var i = arguments.Length - 1; i >= 2; --i)
+                        asm.push(ToImmediate32(arguments[i]));
+                    asm.mov(eax, addr);
+                    asm.call(eax);
+                    asm.ret();
+                    break;
+                }
+                case MagicConvention.Register:
+                {
+                    if (arguments.Length > 0)
+                        asm.mov(eax, ToImmediate32(arguments[0]));
+                    if (arguments.Length > 1)
+                        asm.mov(edx, ToImmediate32(arguments[1]));
+                    if (arguments.Length > 2)
+                        asm.mov(ecx, ToImmediate32(arguments[2]));
+                    for (var i = arguments.Length - 1; i >= 3; --i)
+                        asm.push(ToImmediate32(arguments[i]));
+                    asm.mov(ebx, addr);
+                    asm.call(ebx);
+                    asm.ret();
+                    break;
+                }
+                case MagicConvention.ThisCall:
+                {
+                    if (arguments.Length > 0)
+                        asm.mov(ecx, ToImmediate32(arguments[0]));
+                    for (var i = arguments.Length - 1; i >= 1; --i)
+                        asm.push(ToImmediate32(arguments[i]));
+                    asm.mov(eax, addr);
+                    asm.call(eax);
+                    asm.ret();
+                    break;
+                }
+                default:
+                {
+                    throw new MemoryException($"Unhandled calling convention '{callingConvention}'");
+                }
             }
+
+            var writer = new ByteListCodeWriter();
+            asm.Assemble(writer, 0);
+
+            return ExecuteRemoteCode<T>(writer.Bytes.ToArray());
         }
 
         public IntPtr GetThreadStartAddress(int threadId)

@@ -1,5 +1,4 @@
-﻿using System.Windows;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using DirtyMagic.Input;
 using DirtyMagic.WinAPI.Structures;
 
@@ -9,11 +8,11 @@ namespace DirtyMagic.Hooks.Events
     {
         public ClickState State { get; }
         public MouseButtons Button { get; }
-        public Point Position { get; }
+        public MousePosition Position { get; }
 
         internal MouseClickEvent(WM @event, MSLLHOOKSTRUCT raw) : base(MouseEventType.Button)
         {
-            Position = new Point(raw.ptX, raw.ptY);
+            Position = new MousePosition(raw.ptX, raw.ptY);
 
             switch (@event)
             {

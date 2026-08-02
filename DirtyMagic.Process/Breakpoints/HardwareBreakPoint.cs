@@ -57,7 +57,7 @@ namespace DirtyMagic.Breakpoints
             memory.RefreshMemory();
 
             Address = memory.GetAddress(Pointer);
-            if (Address == null)
+            if (Address == IntPtr.Zero)
                 return false;
 
             foreach (var th in memory.Process.Threads)
