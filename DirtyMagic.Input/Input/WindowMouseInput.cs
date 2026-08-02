@@ -4,16 +4,10 @@ using DirtyMagic.WinAPI.Input;
 
 namespace DirtyMagic.Input
 {
-    public class WindowMouseInput : IMouseInput
+    public class WindowMouseInput(IntPtr window, bool recursive = true) : MouseInput
     {
-        public IntPtr Window { get; }
-        public bool Recursive { get; set; }
-
-        public WindowMouseInput(IntPtr window, bool recursive = true)
-        {
-            this.Window = window;
-            this.Recursive = recursive;
-        }
+        public IntPtr Window { get; } = window;
+        public bool Recursive { get; set; } = recursive;
 
         public WindowMouseInput SetRecursive(bool on)
         {

@@ -8,16 +8,10 @@ using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Input
 {
-    public class WindowKeyboardInput : IKeyboardInput
+    public class WindowKeyboardInput(IntPtr window, bool recursive = true) : KeyboardInput
     {
-        public IntPtr Window { get; }
-        public bool Recursive { get; set; }
-
-        public WindowKeyboardInput(IntPtr window, bool recursive = true)
-        {
-            this.Window = window;
-            this.Recursive = recursive;
-        }
+        public IntPtr Window { get; } = window;
+        public bool Recursive { get; set; } = recursive;
 
         public WindowKeyboardInput SetRecursive(bool on)
         {

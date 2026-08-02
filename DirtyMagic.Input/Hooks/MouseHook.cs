@@ -6,12 +6,8 @@ using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Hooks
 {
-    public class MouseHook : HookBase
+    public class MouseHook() : HookBase(HookType.WH_MOUSE_LL)
     {
-        public MouseHook() : base(HookType.WH_MOUSE_LL)
-        {
-        }
-
         public delegate void MouseClickEventHandler(MouseClickEvent e);
         public delegate void MouseMoveEventHandler(MouseMoveEvent e);
         public delegate void MouseScrollEventHandler(MouseScrollEvent e);

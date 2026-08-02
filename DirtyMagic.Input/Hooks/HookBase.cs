@@ -7,9 +7,9 @@ namespace DirtyMagic.Hooks
     {
         private readonly HookType _type;
 
-        internal HookBase(HookType Type)
+        internal HookBase(HookType type)
         {
-            _type = Type;
+            _type = type;
         }
 
         internal abstract bool Dispatch(int code, IntPtr wParam, IntPtr lParam);
@@ -25,7 +25,7 @@ namespace DirtyMagic.Hooks
         {
             HookManager.Uninstall(_type);
             if (removeHandlers)
-                this.RemoveHandlers();
+                RemoveHandlers();
         }
 
         public abstract void RemoveHandlers();

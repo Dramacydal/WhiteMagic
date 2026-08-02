@@ -3,7 +3,7 @@ using DirtyMagic.WinAPI.Input;
 
 namespace DirtyMagic.Input
 {
-    public abstract class IKeyboardInput
+    public abstract class KeyboardInput
     {
         public static readonly TimeSpan DefaultKeypressTime = TimeSpan.FromMilliseconds(50);
 
@@ -11,7 +11,7 @@ namespace DirtyMagic.Input
         public abstract void KeyPress(VirtualKey key, Modifiers modifiers, TimeSpan keyPressTime, int extraInfo = 0);
         public abstract void SendChar(char c);
 
-        public void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None) => KeyPress(key, modifiers, default(TimeSpan));
+        public void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None) => KeyPress(key, modifiers, TimeSpan.Zero);
 
         public void SendText(string text)
         {

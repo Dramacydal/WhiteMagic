@@ -10,10 +10,10 @@ using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Input
 {
-    public class GlobalKeyboardInput : IKeyboardInput
+    public class GlobalKeyboardInput : KeyboardInput
     {
         public override void KeyPress(VirtualKey key, Modifiers modifiers = Modifiers.None,
-            TimeSpan keyPressTime = default(TimeSpan), int extraInfo = 0)
+            TimeSpan keyPressTime = default, int extraInfo = 0)
         {
             SendKey(key, modifiers, false, extraInfo);
             if (!DefaultKeypressTime.IsEmpty())
@@ -30,7 +30,7 @@ namespace DirtyMagic.Input
             inp.Union.ki.time = 0;
             inp.Union.ki.dwExtraInfo = IntPtr.Zero;
 
-            if (User32.SendInput(1, new INPUT[] {inp}, INPUT.Size) != 1)
+            if (User32.SendInput(1, [inp], INPUT.Size) != 1)
                 throw new Win32Exception();
         }
 

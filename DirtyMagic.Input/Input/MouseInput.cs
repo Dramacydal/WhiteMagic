@@ -5,7 +5,7 @@ using DirtyMagic.WinAPI.Input;
 
 namespace DirtyMagic.Input
 {
-    public abstract class IMouseInput
+    public abstract class MouseInput
     {
         public abstract void Move(int x, int y, bool absolute);
         public abstract void SendButton(MouseButton button, bool up = false);
@@ -18,7 +18,7 @@ namespace DirtyMagic.Input
             SendButton(button, true);
         }
 
-        public void Click(MouseButton button) => Click(button, new TimeSpan());
+        public void Click(MouseButton button) => Click(button, TimeSpan.Zero);
 
         public abstract void SendScroll(ScrollDirection direction);
     }

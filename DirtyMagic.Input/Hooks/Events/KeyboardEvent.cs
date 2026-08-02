@@ -12,10 +12,10 @@ namespace DirtyMagic.Hooks.Events
 
         public KeyboardEvent(WM @event, KBDLLHOOKSTRUCT raw, KeyboardHook hook, bool wasPressed)
         {
-            this._event = @event;
-            this._hook = hook;
-            this._raw = raw;
-            this.PreviouslyPressed = wasPressed;
+            _event = @event;
+            _hook = hook;
+            _raw = raw;
+            PreviouslyPressed = wasPressed;
         }
 
         public VirtualKey VirtualKey => (VirtualKey)_raw.vkCode;

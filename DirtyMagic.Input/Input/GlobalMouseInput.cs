@@ -6,7 +6,7 @@ using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Input
 {
-    public class GlobalMouseInput : IMouseInput
+    public class GlobalMouseInput : MouseInput
     {
         public override void Move(int x, int y, bool absolute = true)
         {

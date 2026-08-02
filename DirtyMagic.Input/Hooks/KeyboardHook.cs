@@ -10,12 +10,8 @@ using DirtyMagic.WinAPI.Structures;
 
 namespace DirtyMagic.Hooks
 {
-    public class KeyboardHook : HookBase
+    public class KeyboardHook() : HookBase(HookType.WH_KEYBOARD_LL)
     {
-        public KeyboardHook() : base(HookType.WH_KEYBOARD_LL)
-        {
-        }
-
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
         public static readonly ConcurrentDictionary<VirtualKey, Modifiers> ModifierToKeyMap = new ConcurrentDictionary<VirtualKey, Modifiers>()
