@@ -11,8 +11,8 @@ namespace DirtyMagic.Patterns
         {
         }
 
-        public static MemoryPattern FromRegex(string pattern, RegexOptions options = RegexOptions.None)
-            => new MemoryPattern(pattern, options);
+        public static MemoryPattern FromRegex(string pattern, RegexOptions options = RegexOptions.None) =>
+            new(pattern, options);
 
         public static MemoryPattern FromBinary(string pattern)
         {
@@ -27,6 +27,6 @@ namespace DirtyMagic.Patterns
                     })));
         }
 
-        public static MemoryPattern FromBinary(byte[] pattern) => new MemoryPattern(PatternHelper.ToBinaryRegex(pattern));
+        public static MemoryPattern FromBinary(byte[] pattern) => new(PatternHelper.ToBinaryRegex(pattern));
     }
 }

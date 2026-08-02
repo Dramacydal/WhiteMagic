@@ -25,9 +25,9 @@ namespace DirtyMagic.Pointers
         { }
 
         public static ModulePointer operator +(ModulePointer pointer, int modOffs)
-            => new ModulePointer(pointer.ModuleName, pointer.Offset + modOffs);
+            => new(pointer.ModuleName, pointer.Offset + modOffs);
 
         public static ModulePointer operator +(ModulePointer pointer, uint modOffs)
-            => new ModulePointer(pointer.ModuleName, pointer.Offset + (int)modOffs);
+            => new(pointer.ModuleName, pointer.Offset + (int)modOffs);
     }
 }

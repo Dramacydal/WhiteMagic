@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using DirtyMagic.Exceptions;
 using DirtyMagic.Modules;
 using DirtyMagic.Pointers;
@@ -20,11 +22,15 @@ namespace DirtyMagic
         public RemoteProcess Process { get; protected set; }
         public IntPtr ProcessHandle { get; protected set; }
 
-        private volatile int _threadSuspendCount = 0;
-        private volatile List<int> _remoteThreads = [];
+        private int _threadSuspendCount = 0;
+        private readonly ConcurrentDictionary<int, byte> _remoteThreads = new();
+
+        private readonly object _processRefreshLock = new();
+        private readonly object _codeExecutionLock = new();
+        private readonly object _moduleLoadLock = new();
 
         protected ModuleInfo BaseModule;
-        protected Dictionary<string, ModuleInfo> Modules = new Dictionary<string, ModuleInfo>();
+        protected Dictionary<string, ModuleInfo> Modules = new();
 
         public MemoryHandler(RemoteProcess process)
         {
@@ -101,7 +107,7 @@ namespace DirtyMagic
             if (Process == null)
                 return;
 
-            lock ("process refresh")
+            lock (_processRefreshLock)
             {
                 Process.Refresh();
                 RefreshModules();
@@ -110,7 +116,7 @@ namespace DirtyMagic
 
         public void SuspendAllThreads(params int[] exceptIds)
         {
-            if (++_threadSuspendCount > 1)
+            if (Interlocked.Increment(ref _threadSuspendCount) > 1)
                 return;
 
             RefreshMemory();
@@ -120,7 +126,7 @@ namespace DirtyMagic
                 if (exceptIds.Contains(pT.Id))
                     continue;
 
-                if (_remoteThreads.Contains(pT.Id))
+                if (_remoteThreads.ContainsKey(pT.Id))
                     continue;
 
                 SuspendThread(pT.Id);
@@ -147,11 +153,17 @@ namespace DirtyMagic
 
         public void ResumeAllThreads(bool ignoreSuspensionCount = false)
         {
-            if (--_threadSuspendCount > 0)
+            var count = Interlocked.Decrement(ref _threadSuspendCount);
+            if (count > 0)
                 return;
 
-            if (!ignoreSuspensionCount && _threadSuspendCount < 0)
-                throw new MemoryException($"Wrong thread suspend/resume order. threadSuspendCount is {_threadSuspendCount}");
+            if (!ignoreSuspensionCount && count < 0)
+            {
+                // roll back to a sane state, otherwise every future suspend/resume call on
+                // this instance stays permanently unbalanced after this throw
+                Interlocked.Exchange(ref _threadSuspendCount, 0);
+                throw new MemoryException($"Wrong thread suspend/resume order. threadSuspendCount is {count}");
+            }
 
             foreach (var pT in Process.Threads)
                 ResumeThread(pT.Id);
@@ -273,7 +285,7 @@ namespace DirtyMagic
 
         public double ReadDouble(IntPtr address) => BitConverter.ToDouble(ReadBytes(address, Marshal.SizeOf(typeof(float))), 0);
 
-        public IntPtr ReadPointer(IntPtr address) => new IntPtr(ReadInt(address));
+        public IntPtr ReadPointer(IntPtr address) => new(ReadInt(address));
 
         #endregion
         #endregion
@@ -386,19 +398,19 @@ namespace DirtyMagic
 
         public T ExecuteRemoteCode<T>(IntPtr address) where T : struct
         {
-            lock ("codeExecution")
+            lock (_codeExecutionLock)
             {
                 var h = Kernel32.CreateRemoteThread(ProcessHandle, IntPtr.Zero, 0, address, IntPtr.Zero, 0, out var threadId);
                 if (h == IntPtr.Zero)
                     throw new MemoryException("Failed to create remote thread");
 
-                _remoteThreads.Add(threadId);
+                _remoteThreads.TryAdd(threadId, 0);
 
                 if (Kernel32.WaitForSingleObject(h, (uint)WaitResult.INFINITE) != WaitResult.WAIT_OBJECT_0)
                     throw new MemoryException("Failed to wait for remote thread");
 
-                _remoteThreads.Remove(threadId);
-
+                _remoteThreads.TryRemove(threadId, out _);
+                
                 if (!Kernel32.GetExitCodeThread(h, out var exitCode))
                     throw new MemoryException("Failed to obtain exit code");
 
@@ -583,7 +595,7 @@ namespace DirtyMagic
             }
         }
 
-        public ProcessSuspender MakeSuspender() => new ProcessSuspender(this);
+        public ProcessSuspender MakeSuspender() => new(this);
 
         public IntPtr GetAddress(ModulePointer pointer) => GetModuleAddress(pointer.ModuleName).Add(pointer.Offset);
 
@@ -596,7 +608,7 @@ namespace DirtyMagic
             if (module != null)
                 return module.BaseAddress;
 
-            lock ("process refresh")
+            lock (_processRefreshLock)
             {
                 module = GetModule(moduleName, true);
                 if (module != null)
@@ -608,7 +620,7 @@ namespace DirtyMagic
 
         public IntPtr LoadModule(string moduleName)
         {
-            lock ("moduleLoad")
+            lock (_moduleLoadLock)
             {
                 var hModule = Kernel32.LoadLibraryA(moduleName);
                 if (hModule == IntPtr.Zero)

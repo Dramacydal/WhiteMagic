@@ -13,7 +13,7 @@ namespace DirtyMagic.Processes
 
         public IntPtr Handle => Process.Handle;
 
-        public RemoteWindow MainWindow => new RemoteWindow(this, MainWindowHandle);
+        public RemoteWindow MainWindow => new(this, MainWindowHandle);
 
         public IntPtr MainWindowHandle
         {

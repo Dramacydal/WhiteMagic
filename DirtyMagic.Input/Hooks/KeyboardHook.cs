@@ -14,7 +14,7 @@ namespace DirtyMagic.Hooks
     {
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
-        public static readonly ConcurrentDictionary<VirtualKey, Modifiers> ModifierToKeyMap = new ConcurrentDictionary<VirtualKey, Modifiers>()
+        public static readonly ConcurrentDictionary<VirtualKey, Modifiers> ModifierToKeyMap = new()
         {
             [VirtualKey.LMenu] = Modifiers.LAlt,
             [VirtualKey.RMenu] = Modifiers.RAlt,

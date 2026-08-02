@@ -16,7 +16,7 @@ namespace DirtyMagic.Hooks
         public event MouseMoveEventHandler OnMove;
         public event MouseScrollEventHandler OnScroll;
 
-        private static MousePosition _lastPosition = new MousePosition(-1, -1);
+        private static MousePosition _lastPosition = new(-1, -1);
 
         internal override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
         {

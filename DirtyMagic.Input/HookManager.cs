@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using DirtyMagic.Hooks;
 using DirtyMagic.WinAPI;
@@ -9,13 +10,13 @@ namespace DirtyMagic
 {
     public static class HookManager
     {
-        public static KeyboardHook KeyboardHookHandler { get; } = new KeyboardHook();
-        public static MouseHook MouseHookHandler { get; } = new MouseHook();
+        public static KeyboardHook KeyboardHookHandler { get; } = new();
+        public static MouseHook MouseHookHandler { get; } = new();
 
-        private const string HookContainerLock = "HookContainerLock";
+        private static readonly object HookContainerLock = new();
 
         // store delegates to prevent their garbage collection
-        private static Dictionary<HookType, User32.HookProc> Delegates { get; } = new Dictionary<HookType, User32.HookProc>();
+        private static Dictionary<HookType, User32.HookProc> Delegates { get; } = new();
 
         private static User32.HookProc GetHookDelegate(HookType type)
         {
@@ -46,7 +47,7 @@ namespace DirtyMagic
             return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
         }
 
-        private static readonly Dictionary<HookType, IntPtr> HooksHandlesByType = new Dictionary<HookType, IntPtr>();
+        private static readonly Dictionary<HookType, IntPtr> HooksHandlesByType = new();
 
         internal static bool IsHookInstalled(HookType type)
         {
@@ -58,32 +59,42 @@ namespace DirtyMagic
 
         internal static void InstallHook(HookType type)
         {
-            if (IsHookInstalled(type))
-                return;
-
             lock (HookContainerLock)
             {
+                if (HooksHandlesByType.ContainsKey(type))
+                    return;
+
                 using (var process = Process.GetCurrentProcess())
                 using (var currentModule = process.MainModule)
                 {
-                    if (currentModule != null)
-                        HooksHandlesByType[type] = User32.SetWindowsHookEx(type,
-                            GetHookDelegate(type),
-                            Kernel32.GetModuleHandle(currentModule.ModuleName),
-                            0);
+                    if (currentModule == null)
+                        return;
+
+                    var handle = User32.SetWindowsHookEx(type,
+                        GetHookDelegate(type),
+                        Kernel32.GetModuleHandle(currentModule.ModuleName),
+                        0);
+                    if (handle == IntPtr.Zero)
+                    {
+                        Delegates.Remove(type);
+                        throw new Win32Exception();
+                    }
+
+                    HooksHandlesByType[type] = handle;
                 }
             }
         }
 
         internal static void Uninstall(HookType type)
         {
-            if (!IsHookInstalled(type))
-                return;
-
             lock (HookContainerLock)
             {
-                User32.UnhookWindowsHookEx(HooksHandlesByType[type]);
+                if (!HooksHandlesByType.TryGetValue(type, out var handle))
+                    return;
+
+                User32.UnhookWindowsHookEx(handle);
                 HooksHandlesByType.Remove(type);
+                Delegates.Remove(type);
             }
         }
     }

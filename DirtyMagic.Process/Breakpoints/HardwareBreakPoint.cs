@@ -29,7 +29,7 @@ namespace DirtyMagic.Breakpoints
         
         protected MemoryHandler Memory { get; private set; }
 
-        private readonly Dictionary<int, int> _affectedThreads = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _affectedThreads = new();
 
         protected readonly int Length;
 
