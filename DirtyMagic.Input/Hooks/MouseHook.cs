@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DirtyMagic.Hooks.Events;
 using DirtyMagic.WinAPI.Structures;
@@ -28,31 +29,38 @@ namespace DirtyMagic.Hooks
 
             var wmEvent = (WM)wParam.ToInt32();
 
-            var raw = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-
-            MouseEvent e;
-
-            switch (wmEvent.GetEventType())
+            try
             {
-                case MouseEventType.Button:
-                    e = new MouseClickEvent(wmEvent, raw);
-                    OnClick?.Invoke((MouseClickEvent) e);
-                    break;
-                case MouseEventType.Move:
-                    e = new MouseMoveEvent(wmEvent, raw, _lastPosition);
-                    _lastPosition = ((MouseMoveEvent) e).Position;
-                    OnMove?.Invoke((MouseMoveEvent) e);
-                    break;
-                case MouseEventType.Scroll:
-                    e = new MouseScrollEvent(wmEvent, raw);
-                    OnScroll?.Invoke((MouseScrollEvent) e);
-                    break;
-                default:
-                    return true;
-            }
+                var raw = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
 
-            if (e.Cancel)
-                return false;
+                MouseEvent e;
+
+                switch (wmEvent.GetEventType())
+                {
+                    case MouseEventType.Button:
+                        e = new MouseClickEvent(wmEvent, raw);
+                        OnClick?.Invoke((MouseClickEvent) e);
+                        break;
+                    case MouseEventType.Move:
+                        e = new MouseMoveEvent(wmEvent, raw, _lastPosition);
+                        _lastPosition = ((MouseMoveEvent) e).Position;
+                        OnMove?.Invoke((MouseMoveEvent) e);
+                        break;
+                    case MouseEventType.Scroll:
+                        e = new MouseScrollEvent(wmEvent, raw);
+                        OnScroll?.Invoke((MouseScrollEvent) e);
+                        break;
+                    default:
+                        return true;
+                }
+
+                if (e.Cancel)
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"MouseHook.Dispatch: unhandled exception from subscriber: {ex}");
+            }
 
             return true;
         }

@@ -22,7 +22,7 @@ namespace DirtyMagic.Hooks.Events
         public Keys VirtualKey => (Keys)_raw.vkCode;
         public ScanCodeShort ScanCode => (ScanCodeShort)_raw.scanCode;
         public bool IsKeyUp => _event == WM.KEYUP || _event == WM.SYSKEYUP;
-        public bool IsKeyDown => !IsKeyUp;
+        public bool IsKeyDown => _event == WM.KEYDOWN || _event == WM.SYSKEYDOWN;
         public bool IsExtended => ((KBDLLHOOKSTRUCT.LLFlags)_raw.flags & KBDLLHOOKSTRUCT.LLFlags.LLKHF_EXTENDED) != 0;
         public bool IsInjected => ((KBDLLHOOKSTRUCT.LLFlags)_raw.flags & (KBDLLHOOKSTRUCT.LLFlags.LLKHF_INJECTED)) != 0;
         public int ExtraInfo => _raw.dwExtraInfo.ToInt32();

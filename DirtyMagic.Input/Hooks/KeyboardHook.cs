@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using DirtyMagic.Hooks.Events;
@@ -16,25 +18,25 @@ namespace DirtyMagic.Hooks
 
         public Modifiers ModifiersState { get; private set; } = Modifiers.None;
 
-        private void StoreSpecialKeyState(WM @event, KeyboardEvent info)
+        public static readonly ConcurrentDictionary<Keys, Modifiers> ModifierToKeyMap = new ConcurrentDictionary<Keys, Modifiers>()
         {
-            var toggle = @event == WM.KEYDOWN || @event == WM.SYSKEYDOWN;
-            Modifiers flag;
-            switch (info.VirtualKey)
-            {
-                case Keys.LMenu: flag = Modifiers.LAlt; break;
-                case Keys.RMenu: flag = Modifiers.RAlt; break;
-                case Keys.LControlKey: flag = Modifiers.LCtrl; break;
-                case Keys.RControlKey: flag = Modifiers.RCtrl; break;
-                case Keys.LShiftKey: flag = Modifiers.LShift; break;
-                case Keys.RShiftKey: flag = Modifiers.RShift; break;
-                default: return;
-            }
+            [Keys.LMenu] = Modifiers.LAlt,
+            [Keys.RMenu] = Modifiers.RAlt,
+            [Keys.LControlKey] = Modifiers.LCtrl,
+            [Keys.RControlKey] = Modifiers.RCtrl,
+            [Keys.LShiftKey] = Modifiers.LShift,
+            [Keys.RShiftKey] = Modifiers.RShift,
+        };
 
-            if (toggle)
-                ModifiersState |= flag;
-            else
-                ModifiersState &= ~flag;
+        private void StoreSpecialKeyState(KeyboardEvent info)
+        {
+            if (ModifierToKeyMap.TryGetValue(info.VirtualKey, out var mod))
+            {
+                if (info.IsKeyDown)
+                    ModifiersState |= mod;
+                else
+                    ModifiersState &= ~mod;
+            }
         }
 
         internal override bool Dispatch(int code, IntPtr wParam, IntPtr lParam)
@@ -52,15 +54,16 @@ namespace DirtyMagic.Hooks
 
                 var Event = new KeyboardEvent(wmEvent, str, this, (state & 0x8000) != 0);
 
-                StoreSpecialKeyState(wmEvent, Event);
+                StoreSpecialKeyState(Event);
 
                 OnKey?.Invoke(Event);
 
                 if (Event.Cancel)
                     return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Trace.WriteLine($"KeyboardHook.Dispatch: unhandled exception from OnKey subscriber: {ex}");
             }
 
             return true;

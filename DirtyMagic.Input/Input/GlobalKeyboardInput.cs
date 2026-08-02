@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
+using DirtyMagic.Hooks;
 using DirtyMagic.WinAPI;
 using DirtyMagic.WinAPI.Input;
 using DirtyMagic.WinAPI.Structures;
@@ -36,11 +37,10 @@ namespace DirtyMagic.Input
 
         public override void SendKey(Keys key, Modifiers modifiers, bool up, int extraInfo = 0)
         {
-            var keyMod = KeyToModifier(key);
-            if (keyMod != Modifiers.None)
-                modifiers &= ~keyMod;
+            if (KeyboardHook.ModifierToKeyMap.TryGetValue(key, out var val))
+                modifiers &= ~val;
 
-            var inputs = BuildModifiersInput(modifiers, up, extraInfo).ToList();
+            var inputs = BuildModifiersInput(modifiers, up, extraInfo);
 
             if (key != Keys.None)
             {
@@ -64,46 +64,27 @@ namespace DirtyMagic.Input
                 throw new Win32Exception();
         }
 
-        private Modifiers KeyToModifier(Keys key)
-        {
-            switch (key)
-            {
-                case Keys.LMenu:
-                case Keys.RMenu:
-                    return Modifiers.Alt;
-                case Keys.LControlKey:
-                case Keys.RControlKey:
-                    return Modifiers.Ctrl;
-                case Keys.LShiftKey:
-                case Keys.RShiftKey:
-                    return Modifiers.Shift;
-            }
-
-            return Modifiers.None;
-        }
-
-        private IEnumerable<INPUT> BuildModifiersInput(Modifiers modifiers, bool up, int extraInfo)
+        private List<INPUT> BuildModifiersInput(Modifiers modifiers, bool up, int extraInfo)
         {
             var keys = new List<Keys>();
-            if (modifiers.CtrlPressed())
-                keys.Add(Keys.ControlKey);
-            if (modifiers.AltPressed())
-                keys.Add(Keys.Menu);
-            if (modifiers.ShiftPressed())
-                keys.Add(Keys.ShiftKey);
+            foreach (var pair in KeyboardHook.ModifierToKeyMap)
+            {
+                if (modifiers.HasFlag(pair.Value))
+                    keys.Add(pair.Key);
+            }
 
             return keys.Select(key =>
             {
                 var input = new INPUT();
                 input.Type = InputType.KEYBOARD;
                 input.Union.ki.dwFlags = up ? KeyEventFlags.KEYUP : KeyEventFlags.NONE;
-                input.Union.ki.wVk = (short) key;
+                input.Union.ki.wVk = (short)key;
                 input.Union.ki.wScan = 0;
                 input.Union.ki.time = 0;
                 input.Union.ki.dwExtraInfo = new IntPtr(extraInfo);
 
                 return input;
-            });
+            }).ToList();
         }
 
         public void SendScanCode(ScanCodeShort scanCode, bool up = false)

@@ -14,7 +14,9 @@ namespace DirtyMagic
 
         private const string HookContainerLock = "HookContainerLock";
 
+        // store delegates to prevent their garbage collection
         private static Dictionary<HookType, User32.HookProc> Delegates { get; } = new Dictionary<HookType, User32.HookProc>();
+
         private static User32.HookProc GetHookDelegate(HookType type)
         {
             if (!Delegates.ContainsKey(type))
@@ -25,7 +27,6 @@ namespace DirtyMagic
 
         private static int GlobalHookCallback(HookType type, int code, IntPtr wParam, IntPtr lParam)
         {
-            return User32.CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
             switch (type)
             {
                 case HookType.WH_KEYBOARD_LL:

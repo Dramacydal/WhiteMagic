@@ -2,3 +2,6 @@
 .vs/
 WhiteMagic/bin/
 WhiteMagic/obj/
+
+audit/
+.claude-docs/
