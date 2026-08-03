@@ -458,15 +458,13 @@ namespace DirtyMagic
             {
                 case MagicConvention.Cdecl:
                 {
-                    asm.push(ebp);
                     for (var i = arguments.Length - 1; i >= 0; --i)
                         asm.push(ToImmediate32(arguments[i]));
                     asm.mov(eax, addr);
                     asm.call(eax);
-                    for (var i = 0; i < arguments.Length; ++i)
-                        asm.pop(ebp);
-                    asm.pop(ebp);
-
+                    // cdecl: the callee doesn't clean up its own arguments, caller must
+                    if (arguments.Length > 0)
+                        asm.add(esp, arguments.Length * 4);
                     asm.ret();
                     break;
                 }
